@@ -1,4 +1,7 @@
 \documentclass[sigplan,protrusion=true,expansion,screen]{acmart}
+\settopmatter{printacmref=false} % Removes citation information below abstract
+\renewcommand\footnotetextcopyrightpermission[1]{} % removes footnote with conference information in first column
+\pagestyle{plain} % removes running headers
 
 %\setlength{\belowcaptionskip}{-10pt}
 
@@ -94,6 +97,7 @@ memory state.
 \terms{Languages, design, theory}
 \keywords{Determinism, Termination, Operational semantics, Synchronous languages}
 
+\begin{comment}
 \begin{CCSXML}
 <ccs2012>
  <concept>
@@ -118,6 +122,7 @@ memory state.
 \ccsdesc[500]{Theory of computation~Operational semantics}
 \ccsdesc[500]{Software and its engineering~Concurrent programming languages}
 \ccsdesc[300]{Computer systems organization~Embedded software}
+\end{comment}
 
 \maketitle
 
