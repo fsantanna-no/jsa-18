@@ -1,0 +1,198 @@
+\section{Artifact Appendix}
+
+%Submission and reviewing guidelines and methodology:
+%{\em http://cTuning.org/ae/submission.html}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{Abstract}
+
+Our artifact includes an open-source implementation of the programming language
+\CEU.
+The implementation is based on and should conform with the formal semantics
+presented in this paper.
+The artifact also includes an executable script with over 3500 test cases of
+valid and invalid programs in \CEU.
+The script is customizable and allows to create new tests providing inputs and
+expected outputs.
+The evaluation platform is a Linux/Intel with Lua-5.3 and GCC-7.2 installed.
+
+\subsection{Artifact Check-List (Meta-Information)}
+
+{\small
+\begin{itemize}
+  %\item {\bf Algorithm: }
+  %\item {\bf Program: }
+  \item {\bf Compilation: } The output of the \CEU compiler is a C program that requires a C compiler (e.g., GCC-7.2).
+  \item {\bf Transformations: } The compiler of \CEU is a Lua program (Lua-5.3) that generates a C program.
+  %\item {\bf Binary: }
+  \item {\bf Data set: } The data set is a set of program test cases included in the language distribution.
+  \item {\bf Run-time environment: } Linux with Lua-5.3 and GCC-7.2. Root access is required to install a single executable file.
+  \item {\bf Hardware: } An off-the-shelf Intel machine.
+  %\item {\bf Run-time state: }
+  \item {\bf Execution: } 5-10 minutes for the full test.
+  \item {\bf Output: } Console output: Success (termination) or Fail (abortion).
+  \item {\bf Experiments: } Manual steps performed by the user in the command line.
+  %\item {\bf Workflow frameworks used?: }
+  %\item {\bf Publicly available?: } Yes: \url{https://github.com/fsantanna/ceu}
+\end{itemize}
+
+\begin{itemize}
+  \item {\bf Artifacts publicly available?:} Yes.
+  \item {\bf Artifacts functional?:} Yes.
+  \item {\bf Artifacts reusable?:} No.
+  \item {\bf Results validated?:} No.
+\end{itemize}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{Description}
+
+\subsubsection{How Delivered}
+
+The compiler/distribution of \CEU is available on GitHub:
+
+\url{https://github.com/fsantanna/ceu}
+
+The website of \CEU includes an introductory video and an online tutorial:
+
+\url{http://www.ceu-lang.org/}
+
+The language also provides extensive documentation online:
+
+\url{http://fsantanna.github.io/ceu/out/manual/v0.30/}
+
+\subsubsection{Hardware Dependencies}
+
+An off-the-shelf Intel machine.
+
+\subsubsection{Software Dependencies}
+
+Linux, Lua-5.3 (with lpeg-1.0.0), and GCC-7.2.
+
+\subsubsection{Data Sets}
+
+A set of more than 3500 programs packed in a single script file which is
+included with the compiler distribution.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{Installation}
+
+Install all required software (assuming an Ubuntu-based distribution):
+
+\begin{verbatim}
+$ sudo apt-get install git lua5.3 lua-lpeg liblua5.3-0 \
+                          liblua5.3-dev
+\end{verbatim}
+
+Clone the repository of \CEU:
+
+\begin{verbatim}
+$ git clone https://github.com/fsantanna/ceu
+$ cd ceu/
+$ git checkout v0.30
+\end{verbatim}
+
+Install \CEU:
+
+\begin{verbatim}
+$ make
+$ sudo make install     # install as "/usr/local/bin/ceu"
+\end{verbatim}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{Experiment Workflow}
+
+Run the experiment:
+
+\begin{verbatim}
+$ cd tst/
+$ ./run.lua
+\end{verbatim}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{Evaluation and Expected Result}
+
+The experiment will execute all test cases.
+In about 5-10 minutes, a summary will be printed on screen:
+
+\begin{verbatim}
+$ cd tst/
+$ ./run.lua
+<...> # output with the test programs
+stats = {
+    count = 3478,
+    trails = 9082,
+    bytes = 50803896,
+    bcasts = 0,
+    visits = 5189770,
+}
+\end{verbatim}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{Experiment Customization}
+
+\subsubsection{Test Cases}
+
+The file \code{tst/tests.lua} includes all test cases.
+Each test case contains a program in \CEU as well as the expected result, e.g.:
+
+\begin{verbatim}
+Test { [[
+    var int ret = 0;
+    var int i;
+    loop i in [0 -> 10[ do
+        ret = ret + 1;
+    end
+    escape ret;
+]],
+    run = 10,
+}
+\end{verbatim}
+
+This test case should compile and run successfully yielding \code{10}.
+
+To customize the experiment, include a new test case at line \code{440}, after
+the string ``\code{--~OK:~well~tested}''.
+
+\subsubsection{Sample Programs}
+
+The distribution of \CEU comes with sample programs that can be executed as
+follows:
+
+\begin{verbatim}
+$ cd /<...>/ceu/         # change to the Céu repository
+$ make samples                # execute all samples one by one
+\end{verbatim}
+
+\subsubsection{Single File}
+
+It is also possible to compile a single file with a program in \CEU:
+
+\begin{verbatim}
+$ cd /<...>/ceu/               # change to the Céu repository
+$ make one CEU_SRC=/tmp/tst.ceu # compile a program
+$ /tmp/tst               # execute it
+\end{verbatim}
+
+%\balance
+As an example, the file \code{/tmp/tst.ceu} may contain a program such as
+follows:
+
+\begin{verbatim}
+input int A; // two input events
+input int B;
+
+spawn do     // generates test inputs asynchronously
+    await async do
+        emit A(10);
+        emit B(100);
+    end
+end
+
+var int a = await A; // main program
+var int b = await B;
+
+escape a+b;  // 110 is the result of the program
+\end{verbatim}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%\subsection{Notes}

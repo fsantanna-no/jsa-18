@@ -1,0 +1,1414 @@
+% \newcommand{\NST}{\1\xrightarrow[\mathit{nst}]\1}
+% \newcommand{\OUT}{\1\xrightarrow[\mathit{out}]\1}
+% \newcommand{\LL}{\langle}
+% \newcommand{\RR}{\rangle}
+% \newcommand{\DS}{\displaystyle}
+
+% \newcommand{\1}{\;}
+% \newcommand{\2}{\;\;}
+% \newcommand{\3}{\;\;\;}
+% \newcommand{\5}{\;\;\;\;\;}
+
+\def\JOT{.8\jot}
+
+\section{Formal Semantics}
+\label{sec.sem}
+
+In this section, we introduce a reduced, abstract syntax for \CEU and
+present an operational semantics that formalizes the behavior of its
+programs.
+% We describe a small synchronous kernel highlighting the peculiarities of \CEU,
+% in particular, the stack-based execution for internal events.
+%
+The semantics deals only with the control aspects of \CEU.
+Side-effects and system calls are encapsulated in a memory access
+primitive and are assumed to behave like in conventional imperative
+languages.
+
+
+\subsection{Abstract Syntax}
+\label{sec.sem.syntax}
+
+%-
+% \begin{lstlisting}[
+%   %numbers=left,
+%   basicstyle=\ttfamily\footnotesize,
+%   float=h,
+%   caption={Reduced syntax of \CEU.},
+%   label={lst.formal.syntax},
+%   mathescape=true
+% ]
+%                                    // primary expressions
+%   p ::= mem(id)                    (any memory access to `id')
+%       $|$ awaitExt(id)               (await external event `id')
+%       $|$ awaitInt(id)               (await internal event `id')
+%       $|$ emitInt(id)                (emit internal event `id')
+%       $|$ break                      (loop escape)
+%                                    // compound expressions
+%       $|$ if mem(id) then p else p   (conditional)
+%       $|$ p ; p                      (sequence)
+%       $|$ loop p                     (repetition)
+%       $|$ every id p                 (event iteration)
+%       $|$ p and p                    (par/and)
+%       $|$ p or p                     (par/or)
+%       $|$ fin p                      (finalization)
+%                                    // derived by semantic rules
+%       $|$ p @loop p                  (unwinded loop)
+%       $|$ p @and q                   (unwinded par/and)
+%       $|$ p @or q                    (unwinded par/or)
+%       $|$ @canrun(n)                 (can run on stack level `n')
+%       $|$ @nop                       (terminated expression)
+% \end{lstlisting}
+%-
+
+The grammar below defines the syntax of a subset of \CEU that is
+sufficient to describe all peculiarities of the language.
+\bgroup
+\def\lbl#1{\enspace\text{\emph{#1}}}%
+\newdimen\X
+\X=-1.3\jot
+\begin{alignat*}{2}
+  P\Coloneqq
+      &\enspace\ceu{\Mem(\Id)}
+      &&\lbl{any memory access to~``$\ceu\Id$''}\\[\X]
+      %%
+  \mid&\enspace\ceu{\AwaitExt(\Id)}
+      &&\lbl{await external event~``$\ceu\Id$''}\\[\X]
+      %%
+  \mid&\enspace\ceu{\AwaitInt(\Id)}
+      &&\lbl{await internal event~``$\ceu\Id$''}\\[\X]
+      %%
+  \mid&\enspace\ceu{\EmitInt(\Id)}
+      &&\lbl{emit internal event~``$\ceu\Id$''}\\[\X]
+      %%
+  \mid&\enspace\ceu{\Break}
+      &&\lbl{loop escape}\\[\X]
+      %%
+  \mid&\enspace\ceu{\IfElse{\Mem(\Id)}{P_1}{P_2}}
+      &&\lbl{conditional}\\[\X]
+      %%
+  \mid&\enspace\ceu{P_1\,;\,P_2}
+      &&\lbl{sequence}\\[\X]
+      %%
+  \mid&\enspace\ceu{\Loop P_1}
+      &&\lbl{repetition}\\[\X]
+      %%
+  \mid&\enspace\ceu{\Every{\Id}\ P_1}
+      &&\lbl{event iteration}\\[\X]
+      %%
+  \mid&\enspace\ceu{P_1\And P_2}
+      &&\lbl{par/and}\\[\X]
+      %%
+  \mid&\enspace\ceu{P_2\Or P_2}
+      &&\lbl{par/or}\\[\X]
+      %%
+  \mid&\enspace\ceu{\Fin P}
+      &&\lbl{finalization}\\[\X]
+      %%
+  \mid&\enspace\ceu{P_1\AtLoop P_2}
+      &&\lbl{unwinded loop}\\[\X]
+      %%
+  \mid&\enspace\ceu{P_1\AtAnd\ P_2}
+      &&\lbl{unwinded par/and}\\[\X]
+      %%
+  \mid&\enspace\ceu{P_1\AtOr\ P_2}
+      &&\lbl{unwinded par/or}\\[\X]
+      %%
+  \mid&\enspace\ceu{\CanRun(n)}
+      &&\lbl{can run on stack level~$n$}\\[\X]
+      %%
+  \mid&\enspace\ceu{\Nop}
+      &&\lbl{terminated program}
+\end{alignat*}
+\egroup
+
+The~$\ceu{\Mem(id)}$ primitive represents a read or write to the memory
+location identified by~$id$.\footnotemark\
+%
+Following the synchronous hypothesis, $\ceu{\Mem}$ statements and
+expressions are considered to be atomic and instantaneous.
+%
+% As the challenging parts of \CEU reside on its control structures, we are not
+% concerned here with a precise semantics for side effects, but only with their
+% occurrences in programs.
+%
+%The special notation $nop$ is used to represent an innocuous $mem$ expression
+%(it can be thought as a synonym for $mem(\epsilon)$, where $\epsilon$ is an
+%unused identifier).
+%
+\footnotetext{Although the same symbol~$\ceu{\Id}$ is used in their
+  definition, $\ceu{\Mem}$, $\ceu{\AwaitExt}$, $\ceu{\AwaitInt}$
+  and~$\ceu{\EmitInt}$ do not share identifiers: any identifier is either a
+  variable, an external event, or an internal event.}
+
+Most statements in the abstract language are mapped to their counterparts in
+the concrete language.  The exceptions are the finalization
+block~$\ceu{\Fin{p}}$ and the \texttt{@}-statements which do not exist in
+the concrete language.  These result from the expansion of the transition
+rules to be presented.
+
+A further difference between the concrete and abstract languages regards the
+emit-await pair.  In the concrete language, the \code{await} can be used as
+an expression which evaluates to the value stored in the corresponding emitted
+event, e.g., an
+``\code{emit a(10)}'' awakes a ``\code{v=await a}'' setting
+variable~\code{v} to~10.  Although the abstract $\ceu{\AwaitInt}$
+and~$\ceu{\EmitInt}$ do not support such communication of values, it can be
+easily simulated: one can use a shared variable to hold the value of an
+$\ceu{\EmitInt}$ and access it after the corresponding $\ceu{\AwaitInt}$
+awakes.
+
+Finally, a ``\code{finalize $A$ with $B$ end; $C$}'' in the concrete
+language is equivalent to ``\ceu{A;\;((\Fin{B})\ \Or\ C)}'' in the abstract
+language.  In the concrete language, $A$ and~$C$ execute in sequence, and
+the finalization code~$B$ is implicitly suspended waiting for~$C$
+to terminate.  In the abstract language, ``$\ceu{\Fin B}$'' suspends forever
+when reached (it is an awaiting statement that never awakes).  Hence, we
+need an explicit \code{or} to execute~$C$ in parallel, whose termination
+aborts ``$\ceu{\Fin B}$'', which finally causes~$B$ to execute (by the
+semantic rules below).
+
+
+\subsection{Operational Semantics}
+\label{sec.sem.opsem}
+
+The operational semantics is a mathematical model that describes how an
+abstract \CEU\ programs reacts to a single external input event, i.e., how
+starting from this input event the program advances its state until all its
+trails are blocked waiting for a another input event.
+%%
+The formalism we use here is that of small-step operational
+semantics~\cite{Plotkin-G-D-1981} in which the meaning of programs is
+defined in terms of transitions of an abstract machine.  Each transition
+transforms a triple consisting of a program~$p$, a stack level~$n$, and an
+emitted event~$e$ into a possibly different triple, i.e.,
+\[
+  \<p,n,e>\trans\<p',n',e'>\,,
+\]
+where~$p,p'\in\P$ are abstract-language programs, $n,n'\in\N$ are non-negative
+integers representing the current stack level, and~$e,e'\in\E\cup\{\nil\}$ are
+the events emitted before and after the transition (both possibly being the
+empty event~$\nil$).
+%$\E$ is a set of primitive events.
+
+We refer to the triples on the left-hand and right-hand sides of
+symbol~$\trans$ as \emph{descriptions} (denoted~$\delta$).  The description
+on the left of~$\trans$ is called the \emph{input description}, the one on
+its right is called the \emph{output description}.
+
+%-
+% \begin{align*}
+% p, p' &\in\P
+%     && (program~as~described~in~Listing~\ref{lst.formal.syntax})
+% \\
+% n, n' &\in\N
+%     && (current~stack~level)
+% \\
+% e, e' &\in\E \cup \{\epsilon\}
+%     && (emitted~event,~possibly~none)
+% \end{align*}
+%-
+
+At the beginning of a reaction to an input event~$id$, the input description
+is initialized with stack level~0 ($n=0$) and with the externally emitted
+event~$e=\ceu{\Id}$.  At the end of a reaction, after an arbitrary but
+finite number of transitions, the last output description will block with a
+possibly modified program~$p'$ at stack level~0 and no event
+emitted\footnote{We write~$\trans[i]$ to mean~$i$ transitions in sequence,
+  and we write~$\trans[*]$ to mean a finite (possibly zero) number of
+  transitions in sequence.}:
+\[
+  \<p,0,e>\mathbin{\trans[*]}\<p',0,\nil>\,.
+\]
+
+We now proceed to give the rules for possible the transitions.  We
+distinguish between two types of transitions:  \emph{outermost transitions}
+$\out$ and \emph{nested transitions} $\nst$\,.
+
+\subsubsection{Outermost Transitions}
+
+The rules \R{push} and \R{pop} for~$\out$ transitions are non-recursive
+definitions that apply to the program as a whole.  These are the only rules
+that manipulate the stack level.
+\begin{gather*}
+  \AxiomC{$e\ne\nil$}
+  \UnaryInfC{$\<p,n,e>\out\<\bcast(p,e),n+1,\nil>$}
+  \DisplayProof
+  \Rtag{push}\\[1.2\jot]
+  %%
+  \AxiomC{$n>0$}
+  \AxiomC{$p=\ceu{\Nop} \vee p=\ceu{\Break} \vee \isblocked(p,n)$}
+  \BinaryInfC{$\<p,n,\nil>\out\<p,n-1,\nil>$}
+  \DisplayProof
+  \Rtag{pop}
+\end{gather*}
+
+%-
+% { \setlength{\jot}{20pt}
+% \begin{eqnarray*}
+% & \frac
+%     { \DS e \neq \epsilon }
+% %   -----------------------------------------------------------
+%     { \DS \LL p,n,e \RR \OUT \LL bcast(p),n+1,\epsilon \RR }
+%     & \textbf{(push)}   \\
+% %%%
+% & \frac
+%     { \DS n>0, \2 ((p=@nop) \vee isblocked(n,p)) }
+% %   -----------------------------------------------------------
+%     { \DS \LL p,n,\epsilon \RR \OUT \LL p,n-1,\epsilon \RR }
+%     & \textbf{(pop)}    \\
+% %%%
+% %& \LL p,0,\epsilon \RR \1\xrightarrow\1 \bot
+%     %& \textbf{(end)}    %\\
+% \end{eqnarray*}
+% }
+%-
+
+Rule \R{push} can be applied whenever there is a nonempty event in the input
+description,
+and instantly broadcasts the event to the program, which means
+    (i)~awaking any active $\ceu{\AwaitExt}$ or $\ceu{\AwaitInt}$ statements
+    (see $\bcast$ in
+        Figure~\ref{fig.bcast}),
+    (ii)~creating a nested reaction by increasing the stack level, and, at the same time,
+    (iii)~consuming the event ($e$ becomes~$\nil$).
+%
+Rule \R{push} is the only rule that matches an
+emitted event and also immediately consumes it.
+
+Rule \R{pop} decreases the stack level by one and can only be applied if the
+program is blocked (see $\isblocked$
+in Figure~\ref{fig.isblocked}) or terminated ($p=\ceu{\Nop}$ or $p=\ceu{\Break}$).
+This condition ensures that an $\ceu{\EmitInt}$ only resumes after its internal
+reaction completes and blocks in the current stack level.
+
+At the beginning of a reaction, an external event is emitted, which
+triggers rule \R{push}, immediately raising the stack level
+to~1.
+At the end of the reaction, the program will block or terminate and
+successive applications of
+rule~\R{pop} will lead to a description with this
+same program at stack level~0.
+
+\subsubsection{Nested Transitions}
+
+The~$\nst$ rules are recursive definitions of the form
+\[
+\<p,n,\nil>\nst\<p',n,e>.
+\]
+%
+%-
+% \begin{align*}
+% \LL p, n,\epsilon \RR &\NST
+% \LL p',n,e        \RR
+%     & \textbf{(rule-inner)}
+% \end{align*}
+%-
+%
+Nested transitions do not affect the stack level and never have an emitted
+event as a precondition.  The distinction between~$\out$ and~$\nst$ prevents
+rules \R{push} and \R{pop} from matching and, consequently, from
+inadvertently modifying the current stack level before the nested reaction
+is complete.
+
+A complete reaction consists of a series of transitions% of the form
+\begin{align*}
+  \<p,0,e_\ext>\outpush\<p_1,1,\nil>
+  \Big[\null\nst[*]\null\out\null\Big]\!\!\ast
+  \null\nst[*]\null\outpop\<p',0,\nil>\,,
+\end{align*}
+%
+%-
+% \begin{align*}
+% a) &\5\5
+%     \LL p,0,ext \RR
+%         \1\xrightarrow[out]{push}\1
+%     \LL q,1,\epsilon \RR
+% \\
+% b) &\5\5 \1[ \1\xrightarrow[in]{*}\1
+%     \LL r,i,e \RR
+%         \1\xrightarrow[out]\1
+%     \LL s,j,\epsilon \RR \1]*
+% \\
+% c) &\5\5 \1\xrightarrow[in]{*}\1
+%     \LL t,k,\epsilon \RR
+%         \1\xrightarrow[out]{pop}\1
+%     \LL u,0,\epsilon \RR
+% \end{align*}
+%-
+%
+First, a~$\outpush$ starts a nested reaction at level~1.  Then, a series of
+alternations between zero or more~$\nst$ transitions (nested reactions) and
+a single~$\out$ transition (stack operation) takes place.  Finally, a
+last~$\outpop$ transition decrements the stack level to~0 and terminates the
+reaction.
+
+The~$\nst$ rules for atoms are defined as follows:
+\begingroup
+\def\JOT{-.1\jot}
+\begin{align*}
+  \<\ceu{\Mem(\Id)},n,\nil>
+  &\nst\<\ceu{\Nop},n,\nil>\Rtag{mem}\\[\JOT]
+  %%
+  \<\ceu{\EmitInt(\Id)},n,\nil>
+  &\nst\<\ceu{\CanRun(n)},n,\ceu{\Id}>\Rtag{emit-int}\\[\JOT]
+  %%
+  \<\ceu{\CanRun(n)},n,\nil>
+  &\nst\<\ceu{\Nop},n,\nil>\Rtag{can-run}
+\end{align*}
+\endgroup
+
+%-
+% { \setlength{\jot}{20pt}
+% \begin{align*}
+% \LL mem(id), n, \epsilon \RR &\NST
+% \LL @nop, n, \epsilon \RR
+%     & \textbf{(mem)}        \\
+% %%%
+% \LL emit(id), n, \epsilon \RR &\NST
+% \LL @canrun(n), n, id \RR
+%     & \textbf{(emitInt)}    \\
+% %%%
+% \LL @canrun(n), n, \epsilon \RR &\NST
+% \LL @nop, n, \epsilon \RR
+%     & \textbf{(canrun)}     \\
+% \end{align*}
+% }
+%-
+
+A $\ceu{\Mem}$ operation becomes a $\ceu{\Nop}$ which indicates the memory
+access (rule \R{mem}).
+An $\ceu{\EmitInt(id)}$ generates an event $\ceu{\Id}$ and becomes a
+$\ceu{\CanRun(n)}$ which can only resume at level~$n$ (rule \R{emit-int}).
+Since all~$\nst$ rules can only be applied if $e=\nil$, an $\ceu{\EmitInt}$
+inevitably causes rule \R{push} to execute at the outer level, creating a new
+level~$n+1$ on the stack.
+Also, with the new stack level, the resulting $\ceu{\CanRun}(n)$ itself cannot
+transition yet (rule~\R{can-run}), providing the desired stack-based semantics for
+internal events.
+
+The rules for conditionals and sequences are the following:
+\vskip-.6\baselineskip
+\begingroup
+\def\JOT{-.1\jot}
+\begin{gather*}
+  \AxiomC{$\eval(\ceu{\Mem(\Id)})$}
+  \UnaryInfC{$\<\ceu{\IfElse{\Mem(\Id)}{p}{q}},n,\nil>\nst\<p,n,\nil>$}
+  \DisplayProof
+  \Rtag{if-true}\\[\JOT]
+  %%
+  \AxiomC{$\lnot\eval(\ceu{\Mem(\Id)})$}
+  \UnaryInfC{$\<\ceu{\IfElse{\Mem(\Id)}{p}{q}},n,\nil>\nst\<q,n,\nil>$}
+  \DisplayProof
+  \Rtag{if-false}\\[\JOT]
+  %%
+  \AxiomC{$\<p,n,\nil>\nst\<p',n,e>$}
+  \UnaryInfC{$\<\ceu{p\,;\,q},n,\nil>\nst\<\ceu{p';\,q},n,e>$}
+  \DisplayProof
+  \Rtag{seq-adv}\\[\JOT]
+  \<\ceu{\Nop;\,q},n,\nil>\nst\<q,n,\nil>\Rtag{seq-nop}\\[\JOT]
+  %%
+  \<\ceu{\Break;\,q},n,\nil>\nst\<\ceu{\Break},n,\nil>\Rtag{seq-brk}
+\end{gather*}
+\endgroup
+% \begin{align*}
+%   \<\ceu{\Nop;\,q},n,\nil>&\nst\<q,n,\nil>\Rtag{seq-nop}\\[\JOT]
+%   %%
+%   \<\ceu{\Break;\,q},n,\nil>&\nst\<\ceu{\Break},n,\nil>\Rtag{seq-brk}
+% \end{align*}
+
+%-
+% { \setlength{\jot}{20pt}
+% \begin{eqnarray*}
+% & \frac
+%     { \DS val(id) \neq 0 }
+% %   -----------------------------------------------------------
+%     { \DS \LL (if~mem(id)~then~p~else~q),n,\epsilon \RR \NST
+%           \LL p, n, \epsilon \RR }
+%     & \textbf{(if-true)}       \\
+% %%%
+% & \frac
+%     { \DS val(id,n) = 0 }
+% %   -----------------------------------------------------------
+%     { \DS \LL (if~mem(id)~then~p~else~q),n,\epsilon \RR \NST
+%           \LL q,n,\epsilon \RR }
+%     & \textbf{(if-false)}       \\
+% %%%
+% & \frac
+%     { \DS \LL p,n,\epsilon \RR \NST \LL p',n,e \RR }
+% %   -----------------------------------------------------------
+%     { \DS \LL (p~;~q), n, \epsilon \RR \NST \LL (p'~;~q), n, e \RR }
+%     & \textbf{(seq-adv)}      \\
+% %%%
+% & \LL (@nop~;~q),n,\epsilon \RR \NST  \LL q,n,\epsilon \RR
+%     & \textbf{(seq-nop)}      \\
+% %%%
+% & \LL (break~;~q),n,\epsilon \RR \NST \LL break,n,\epsilon \RR
+%     & \textbf{(seq-brk)}
+% \end{eqnarray*}
+% }
+%-
+
+Rules \R{if-true} and \R{if-false} are the only rules that use~$\ceu{\Mem}$
+in a way that affects the control flow.
+%
+Function~$\eval$ evaluates a~$\ceu{\Mem}$ expression to a boolean value.
+%
+%Although the value here is arbitrary, it is unique in a reaction, because a
+%given expression can execute only once within it (remember that $loops$ must
+%contain $awaits$ which, from rule \textbf{await}, cannot awake in the same
+%reaction they are reached).
+%For all other rules, we omit these values (e.g., \textbf{seq-nop}).
+
+%As determined for nested rules, compound expressions also can only have
+%$\epsilon$ as a precondition and they never modify $n$.
+%However, they can still emit an event to nest another reaction.
+%For instance, in rule \textbf{seq-adv}, if the sub-expression $p$ emits event
+%$e$, the whole composition also emits $e$.
+%However, rules \textbf{push} and \textbf{pop} can only match at the outermost
+%level.
+
+The rules for loops are similar to those for sequences, but use ``\code{@}''
+as separators to bind breaks to their enclosing loops:
+\begin{align*}
+  \<\ceu{\Loop{p}},n,\nil>
+  &\nst\<\ceu{p\AtLoop{p}},n,\nil>\Rtag{loop-expd}\\[\JOT]
+  %%
+  &\hskip-6.35em
+  \AxiomC{$\<q,n,\nil>\nst\<q',n,e>$}
+  \UnaryInfC{$\<\ceu{q\AtLoop{p}},n,\nil>\nst\<\ceu{q'\AtLoop{p}},n,e>$}
+  \DisplayProof
+  \Rtag{loop-adv}\\[\JOT]
+  %%
+  \<\ceu{\Nop\AtLoop{p}},n,\nil>
+  &\nst\<\ceu{\Loop{p}},n,\nil>\Rtag{loop-nop}\\[\JOT]
+  %%
+  \<\ceu{\Break\AtLoop{p}},n,\nil>
+  &\nst\<\ceu{\Nop},n,\nil>\Rtag{loop-brk}
+\end{align*}
+
+%-
+% %
+% { \setlength{\jot}{20pt}
+% \begin{eqnarray*}
+% & \LL (loop~p),n,\epsilon \RR \NST \LL (p~@loop~p), n, \epsilon \RR
+%     & \textbf{(loop-expd)}       \\
+% %%%
+% & \frac
+%     { \DS \LL p,n,\epsilon \RR \NST \LL p',n,e \RR }
+% % -----------------------------------------------------------
+%     { \DS \LL (p~@loop~q),n,\epsilon \RR \NST \LL (p'~@loop~q), n, e \RR }
+%     & \textbf{(loop-adv)}    \\
+% %%%
+% & \LL (@nop~@loop~p), n, \epsilon \RR \NST \LL (loop~p), n, \epsilon \RR
+%     & \textbf{(loop-nop)}    \\
+% %%%
+% & \LL (break~@loop~p), n, \epsilon \RR \NST \LL @nop, n, \epsilon \RR
+%     & \textbf{(loop-brk)}
+% \end{eqnarray*}
+% }
+%-
+
+When a program encounters a $\ceu{\Loop}$, it first expands its body in sequence with
+itself (rule \R{loop-expd}).
+Rules \R{loop-adv} and \R{loop-nop} are similar to rules
+\R{seq-adv} and \R{seq-nop}, advancing the loop until a~$\ceu{\Nop}$ is reached.
+However, what follows the loop is the loop itself (rule \R{loop-nop}).
+Note that if we used ``\code{;}'' as a separator in loops, rules
+\R{loop-brk} and \R{seq-brk} would conflict.
+%
+Rule \R{loop-brk} escapes the enclosing loop, transforming everything into
+a~$\ceu{\Nop}$.
+%Rule \textbf{loop-brk} escapes the enclosing loop, transforming everything
+%into a $clear(p)$.
+%We cannot simply transform the loop into a $nop$ because its body may be a
+%parallel composition containing finalization blocks.
+
+The rules for~$\ceu{\And}$ and~$\ceu{\Or}$ compositions ensure that their
+left branch always transition before their right
+branch:
+%%
+\begin{gather*}
+  \hskip-.9em
+  \<\ceu{p\And{q}},n,\nil>
+  \nst\<\ceu{p\AtAnd(\CanRun(n);q)},n,\nil>
+  \Rtag{and-expd}\\[\JOT]
+  %%
+  \AxiomC{$\<p,n,\nil>\nst\<p',n,e>$}
+  \UnaryInfC{$\<\ceu{p\AtAnd{q}},n,\nil>\nst\<\ceu{p'\AtAnd{q}},n,e>$}
+  \DisplayProof
+  \Rtag{and-adv1}\\[\JOT]
+  %%
+  \AxiomC{$\isblocked(p,n)$}
+  \AxiomC{$\<q,n,\nil>\nst\<q',n,e>$}
+  \BinaryInfC{$\<\ceu{p\AtAnd{q}},n,\nil>\nst\<\ceu{p\AtAnd{q'}},n,e>$}
+  \DisplayProof
+  \Rtag{and-adv2}\\[1.2\jot]
+% \end{gather*}
+% \begin{gather*}
+  \<\ceu{p\Or{q}},n,\nil>
+  \nst\<\ceu{p\AtOr(\CanRun(n);q)},n,\nil>
+  \Rtag{or-expd}\\[\JOT]
+  %%
+  \AxiomC{$\<p,n,\nil>\nst\<p',n,e>$}
+  \UnaryInfC{$\<\ceu{p\AtOr{q}},n,\nil>\nst\<\ceu{p'\AtOr{q}},n,e>$}
+  \DisplayProof
+  \Rtag{or-adv1}\\[\JOT]
+  %%
+  \AxiomC{$\isblocked(p,n)$}
+  \AxiomC{$\<q,n,\nil>\nst\<q',n,e>$}
+  \BinaryInfC{$\<\ceu{p\AtOr{q}},n,\nil>\nst\<\ceu{p\AtOr{q'}},n,e>$}
+  \DisplayProof
+  \Rtag{or-adv2}
+\end{gather*}
+
+%-
+% { \setlength{\jot}{20pt}
+% \begin{eqnarray*}
+% & \LL (p~and~q),n,\epsilon \RR \NST \LL (p~@and~(@canrun(n)~;~q)),n,\epsilon \RR
+%     & \textbf{(and-expd)}       \\
+% %%%
+% & \frac
+%     { \DS \LL p,n,\epsilon \RR \NST \LL p',n,e \RR }
+% %   -----------------------------------------------------------
+%     { \DS \LL (p~@and~q),n,\epsilon \NST \LL (p'~@and~q),n,e \RR }
+%     & \textbf{(and-adv1)}      \\
+% %%%
+% & \frac
+%     { \DS isblocked(n,p) \1,\2 \LL q,n,\epsilon \RR \NST \LL q',n,e \RR }
+% %   -----------------------------------------------------------
+%     { \DS \LL (p~@and~q),n,\epsilon \RR \NST \LL (p~@and~q'), n, e \RR }
+%     & \textbf{(and-adv2)}      \\
+% %%%
+% & \LL (p~or~q), n, \epsilon \RR \NST \LL (p~@or~(@canrun(n)~;~q)), n, \epsilon \RR
+%     & \textbf{(or-expd)}       \\
+% %%%
+% & \frac
+%     { \DS \LL p,n,\epsilon \RR \NST \LL p',n,e \RR }
+% %   -----------------------------------------------------------
+%     { \DS \LL (p~@or~q),n,\epsilon \RR \NST \LL (p'~@or~q), n, e \RR }
+%     & \textbf{(or-adv1)}   \\
+% %%%
+% & \frac
+%     { \DS isblocked(n,p) \1,\2 \LL q,n,\epsilon \RR \NST \LL q',n,e \RR }
+% %   -----------------------------------------------------------
+%     { \DS \LL (p~@or~q),n,\epsilon \RR \NST \LL (p~@or~q'), n, e \RR }
+%     & \textbf{(or-adv2)}   %\\
+% \end{eqnarray*}
+% }
+%-
+
+Rules~\R{and-expd} and~\R{or-expd} insert a~$\ceu{\CanRun(n)}$ at the beginning
+of the right branch.
+This ensures that~any $\ceu{\EmitInt}$ on the left branch, which eventually becomes
+a~$\ceu{\CanRun(n)}$, resumes before the right branch starts.
+%
+The deterministic behavior of the semantics relies on the \emph{isblocked}
+predicate (see Figure~\ref{fig.isblocked}) which is used in rules
+\R{and-adv2} and \R{or-adv2}.
+These rules require the left branch~$p$ to be blocked for the
+right branch to transition from~$q$ to~$q'$.
+
+In a parallel~$\ceu{\AtAnd}$, if one branch terminates, the composition becomes the other branch (rules \R{and-nop1} and
+\R{and-nop2} below).
+%
+In a parallel~$\ceu{\AtOr}$, however, if one branch terminates, the
+whole composition
+terminates and~$\clear$ is called to finalize the aborted
+branch (rules \R{or-nop1} and \R{or-nop2}).
+
+\begingroup
+\begin{gather*}
+  \<\ceu{{\Nop}\AtAnd{q}},n,\nil>\nst\<q,n,\nil>\Rtag{and-nop1}\\[\JOT]
+  %%
+  \AxiomC{$\isblocked(p,n)$}
+  \UnaryInfC{$\<\ceu{p\AtAnd{\Nop}},n,\nil>\nst\<p,n,\nil>$}
+  \DisplayProof
+  \Rtag{and-nop2}\\[\JOT]
+  %%
+  \<\ceu{{\Nop}\AtOr{q}},n,\nil>\nst\<\clear(q),n,\nil>\Rtag{or-nop1}\\[\JOT]
+  %%
+  \AxiomC{$\isblocked(p,n)$}
+  \UnaryInfC{$\<\ceu{p\AtOr{\Nop}},n,\nil>\nst\<\clear(p),n,\nil>$}
+  \DisplayProof
+  \Rtag{or-nop2}
+\end{gather*}
+\endgroup
+
+%-
+% { \setlength{\jot}{20pt}
+% \begin{eqnarray*}
+% & \LL (@nop~@and~q), n, \epsilon \RR \NST \LL q,n,\epsilon \RR
+%     & \textbf{(and-nop1)}   \\
+% %%%
+% & \frac
+%     { \DS isblocked(n,p) }
+% %   -----------------------------------------------------------
+%     { \DS \LL (p~@and~@nop), n, \epsilon \RR \NST \LL p,n,\epsilon \RR }
+%     & \textbf{(and-nop2)}   \\
+% %%%
+% & \LL (@nop~@or~q), n, \epsilon \RR \NST \LL clear(q),n,\epsilon \RR
+%     & \textbf{(or-nop1)}   \\
+% %%%
+% & \frac
+%     { \DS isblocked(n,p) }
+% %   -----------------------------------------------------------
+%     { \DS \LL (p~@or~@nop), n, \epsilon \RR \NST \LL clear(p),n,\epsilon \RR }
+%     & \textbf{(or-nop2)}   %\\
+% \end{eqnarray*}
+% }
+%-
+
+The~$\clear$ function (see Figure~\ref{fig.clear}) concatenates all
+active~$\ceu{\Fin}$ bodies of the branch being aborted, so that they execute before the
+composition rejoins.
+
+As there are no transition rules for~$\ceu{\Fin}$ statements,
+ once reached, a $\ceu{\Fin}$ halts and will only be consumed
+if its trail is aborted.  At this point, its body will
+execute as a result of the~$\clear$ call.  The body of a~$\ceu{\Fin}$
+statement always execute within a reaction.  This is due to a syntactic
+restriction: $\ceu{\Fin}$ bodies cannot
+contain awaiting statements (namely, $\ceu{\AwaitExt}$, $\ceu{\AwaitInt}$,
+$\ceu{\Every}$, or $\ceu{\Fin}$).
+
+Finally, a~$\ceu{\Break}$ in one branch of a parallel escapes the closest
+enclosing~$\ceu{\Loop}$, properly aborting the other branch with the~$\clear$
+function:
+%
+\begingroup
+\begin{gather*}
+  \hskip-.5em
+  \<\ceu{{\Break}\AtAnd{q}},n,\nil>\nst\<\ceu{\clear(q);\Break},n,\nil>
+  \Rtag{and-brk1}\\[\JOT]
+  %%
+  \hskip-.5em
+  \AxiomC{$\isblocked(p,n)$}
+  \UnaryInfC{$\<\ceu{p\AtAnd{\Break}},n,\nil>
+    \nst\<\ceu{\clear(p);\Break},n,\nil>$}
+  \DisplayProof
+  \Rtag{and-brk2}\\[\JOT]
+  %%
+  \<\ceu{{\Break}\AtOr{q}},n,\nil>\nst\<\ceu{\clear(q);\Break},n,\nil>
+  \Rtag{or-brk1}\\[\JOT]
+  %%
+  \AxiomC{$\isblocked(p,n)$}
+  \UnaryInfC{$\<\ceu{p\AtOr{\Break}},n,\nil>
+    \nst\<\ceu{\clear(p);\Break},n,\nil>$}
+  \DisplayProof
+  \Rtag{or-brk2}
+\end{gather*}
+\endgroup
+
+%-
+% { \setlength{\jot}{20pt}
+% \begin{eqnarray*}
+% & \LL (break~@and~q), n, \epsilon \RR \NST \LL (clear(q)~;~break),n,\epsilon \RR
+%     & \textbf{(and-brk1)}   \\
+% %%%
+% & \frac
+%     { \DS isblocked(n,p) }
+% %   -----------------------------------------------------------
+%     { \DS \LL (p~@and~break), n, \epsilon \RR \NST \LL (clear(p)~;~break),n,\epsilon \RR }
+%     & \textbf{(and-brk2)}   \\
+% %%%
+% & \LL (break~@or~q),n,\epsilon \RR \NST \LL (clear(q)~;~break),n,\epsilon \RR
+%     & \textbf{(or-brk1)}   \\
+% %%%
+% & \frac
+%     { \DS isblocked(n,p) }
+% %   -----------------------------------------------------------
+%     { \DS \LL (p~@or~break),n,\epsilon \RR \NST \LL (clear(p)~;~break),n,\epsilon \RR }
+%     & \textbf{(or-brk2)}   %\\
+% \end{eqnarray*}
+% }
+%-
+
+A reaction eventually blocks in~$\ceu{\AwaitExt}$, $\ceu{\AwaitInt}$,
+$\ceu{\Every}$, $\ceu{\Fin}$, and~$\ceu{\CanRun}$ statements in parallel
+trails.
+%
+Then, if none of the trails is blocked in~$\ceu{\CanRun}$, it means that the
+program cannot advance in the current reaction.
+%
+However, $\ceu{\CanRun}$ statements can still resume at lower stack indexes
+and will eventually resume in the current reaction (see rule \R{pop}).
+
+\begin{figure}[h]
+\small
+\begin{gather*}
+  \boxed{
+    \begin{align*}
+      %%
+      %%-
+      \shortintertext{\llap{(i)~}Function~$\bcast$:}
+      %%-
+      %%
+      \bcast(\ceu{\AwaitExt(e)},e)
+      &=\ceu{\Nop}\\[-1\jot]
+      %%
+      \bcast(\ceu{\AwaitInt(e)},e)
+      &=\ceu{\Nop}\\[-1\jot]
+      %%
+      \bcast(\ceu{\Every{e}\ {p}},e)
+      &=\ceu{p;\,\Every{e}\ {p}}\\[-1\jot]
+      %%
+      \bcast(\ceu{\CanRun(n)},e)
+      &=\ceu{\CanRun(n)}\\[-1\jot]
+      %%
+      \bcast(\ceu{\Fin{p}},e)
+      &=\ceu{\Fin{p}}\\[-1\jot]
+      %%
+      \bcast(\ceu{p;\,q},e)
+      &=\ceu{\bcast(p,e);\,q}\\[-1\jot]
+      %%
+      \bcast(\ceu{p\AtLoop{q}},e)
+      &=\ceu{\bcast(p,e)\AtLoop{q}}\\[-1\jot]
+      %%
+      \bcast(\ceu{p\AtAnd{q}},e)
+      &=\ceu{{\bcast(p,e)}\AtAnd{\bcast(q,e)}}\\[-1\jot]
+      %%
+      \bcast(\ceu{p\AtOr{q}},e)
+      &=\ceu{{\bcast(p,e)}\AtOr{\bcast(q,e)}}\\[-1\jot]
+      %%
+      bcast(\_,e)
+      &=\_\enspace
+        (\ceu{\Mem},\ceu{\EmitInt},\ceu{\Break},\\[-1\jot]
+      &\quad\ceu{\IfElse{}{}},\ceu{\Loop},\ceu{\And},\ceu{\Or},\ceu{\Nop})
+      \\[1\jot]
+      %%
+      %%-
+      \shortintertext{\llap{(ii)~}Predicate~$\isblocked$:}
+      %%-
+      %%
+      \isblocked(\ceu{\AwaitExt(e)},n)
+      &=\mathit{true}\\[-1\jot]
+      %%
+      \isblocked(\ceu{\AwaitInt(e)},n)
+      &=\mathit{true}\\[-1\jot]
+      %%
+      \isblocked(\ceu{\Every{e}\ {p}},n)
+      &=\mathit{true}\\[-1\jot]
+      %%
+      \isblocked(\ceu{\CanRun(m)},n)
+      &=(n>m)\\[-1\jot]
+      %%
+      \isblocked(\ceu{\Fin{p}},n)
+      &=\mathit{true}\\[-1\jot]
+      %%
+      \isblocked(\ceu{p;\,q},n)
+      &=\isblocked(p,n)\\[-1\jot]
+      %%
+      \isblocked(\ceu{p\AtLoop{q}},n)
+      &=\isblocked(p,n)\\[-1\jot]
+      %%
+      \isblocked(\ceu{p\AtAnd{q}},n)
+      &=\isblocked(p,n)\land\isblocked(q,n)\\[-1\jot]
+      %%
+      \isblocked(\ceu{p\AtOr{q}},n)
+      &=\isblocked(p,n)\land\isblocked(q,n)\\[-1\jot]
+      %%
+      \isblocked(\_,n)
+      &=\mathit{false}\enspace
+        (\ceu{\Mem},\ceu{\EmitInt},\ceu{\Break},\\[-1\jot]
+      &\quad\ceu{\IfElse{}{}},\ceu{\Loop},\ceu{\And},\ceu{\Or},\ceu{\Nop})
+        \\[1\jot]
+      %%
+      %%-
+      \shortintertext{\llap{(iii)~}Function~$\clear$:}
+      %%-
+      %%
+      \clear(\ceu{\AwaitExt(e)})
+      &=\ceu{\Nop}\\[-1\jot]
+      %%
+      \clear(\ceu{\AwaitInt(e)})
+      &=\ceu{\Nop}\\[-1\jot]
+      %%
+      \clear(\ceu{\Every{e}\ p})
+      %%
+      &=\ceu{\Nop}\\[-1\jot]
+      %%
+      \clear(\ceu{\CanRun(n)})
+      &=\ceu{\Nop}\\[-1\jot]
+      %%
+      \clear(\ceu{\Fin{p}})
+      &=p\\[-1\jot]
+      %%
+      \clear(\ceu{p;\,q})
+      &=\clear(p)\\[-1\jot]
+      %%
+      \clear(\ceu{p\AtLoop{q}})
+      &=\clear(p)\\[-1\jot]
+      %%
+      \clear(\ceu{p\AtAnd{q}})
+      &=\ceu{\clear(p);\,\clear(q)}\\[-1\jot]
+      %%
+      \clear(\ceu{p\AtOr{q}})
+      &=\ceu{\clear(p);\,\clear(q)}\\[-1\jot]
+      %%
+      \clear(\_)
+      &=\xi\enspace
+        (\ceu{\Mem},\ceu{\EmitInt},\ceu{\Break},\\[-1\jot]
+      &\quad\ceu{\IfElse{}{}},\ceu{\Loop},\ceu{\And},\ceu{\Or},\ceu{\Nop})
+    \end{align*}}
+\end{gather*}
+\vskip-2\belowdisplayskip
+\caption{%
+  (i)~Function~$\bcast$ awakes awaiting trails matching the event by
+  converting~$\ceu{\protect\AwaitExt}$ and~$\ceu{\protect\AwaitInt}$
+  to~$\ceu{\protect\Nop}$, and by unwinding $\ceu{\protect\Every}$
+  statements.
+  %%
+  \space(ii)~Predicate~$\isblocked$ is true only if all branches in parallel
+  are blocked waiting for events, finalization clauses, or certain
+  stack levels.
+  %%
+  \space(iii)~Function~$\clear$ extracts~$\ceu{\protect\Fin}$ statements in
+  parallel and put their bodies in sequence.
+  %%
+  In~(i), (ii), and~(iii),~``$\_$'' denotes the omitted cases and~``$\xi$''
+  denotes the empty string.
+  %%
+}
+\label{fig.bcast}
+\label{fig.isblocked}
+\label{fig.clear}
+\end{figure}
+
+%-
+% {\small
+% \begin{align*}
+%   bcast(e, awaitExt(e)) &= @nop                         \\
+%   bcast(e, awaitInt(e)) &= @nop                         \\
+%   bcast(e, every~e~p)   &= p;~every~e~p                 \\
+%   bcast(e, @canrun(n))  &= @canrun(n)                   \\
+%   bcast(e, fin~p)       &= fin~p                        \\
+%   bcast(e, p~;~q)       &= bcast(e,p)~;~q               \\
+%   bcast(e, p~@loop~q)   &= bcast(e,p)~@loop~q           \\
+%   bcast(e, p~@and~q)    &= bcast(e,p)~@and~bcast(e,q)   \\
+%   bcast(e, p~@or~q)     &= bcast(e,p)~@or~bcast(e,q)    \\
+%   bcast(e, \_)          &= \bot \2 (mem,emitInt,break,if,  \\
+%                                  & \5\5 loop,and,or,@nop) %\\
+% \end{align*}
+% }
+%-
+
+%
+%-
+% {\small
+% \begin{align*}
+%   isblocked(n, \1 awaitExt(id)) &= true                                   \\
+%   isblocked(n, \1 awaitInt(id)) &= true                                   \\
+%   isblocked(n, \1 every~e~p)    &= true                                   \\
+%   isblocked(n, \1 @canrun(m))   &= (n > m)                                \\
+%   isblocked(n, \1 fin~p)        &= true                                   \\
+%   isblocked(n, \1 p~;~q)        &= isblocked(n,p)                         \\
+%   isblocked(n, \1 p~@loop~q)    &= isblocked(n,p)                         \\
+%   isblocked(n, \1 p~@and~q)     &= isblocked(n,p) \wedge isblocked(n,q)   \\
+%   isblocked(n, \1 p~@or~q)      &= isblocked(n,p) \wedge isblocked(n,q)   \\
+%   isblocked(n, \1 \_)           &= false \2 (mem,emitInt,break,if,        \\
+%                                 & \5\5\5\1 loop,and,or,@nop)   %\\
+% \end{align*}
+% }
+%-
+
+%-
+% {\small
+% \begin{align*}
+%   clear( awaitExt(e) ) &= @nop                  \\
+%   clear( awaitInt(e) ) &= @nop                  \\
+%   clear( every~e~p )   &= @nop                  \\
+%   clear( @canrun(n) )  &= @nop                  \\
+%   clear( fin~p )       &= p                     \\
+%   clear( p~;~q )       &= clear(p)              \\
+%   clear( p~@loop~q )   &= clear(p)              \\
+%   clear( p~@and~q )    &= clear(p)~;~clear(q)   \\
+%   clear( p~@or~q )     &= clear(p)~;~clear(q)   \\
+%   clear( \_ )          &= \bot \2 (mem,emitInt,break,if, \\
+%                                   & \5\5 loop,and,or,@nop) %\\
+% \end{align*}
+% }
+%-
+
+
+\subsection{Properties}
+\label{sec.sem.props}
+
+
+\subsubsection{Determinism}
+
+Transitions~$\out$ and~$\nst$ are defined in such a way that given an input
+description either no rule is applicable or exactly one of them can be
+applied (no choice involved).  This coupled with the fact that the output of
+every rule is a function of its input implies that transitions are
+deterministic: the same input description, if it can transition, will always
+result in the same output description.  Thus the transition
+relation~$\trans$ is in fact a partial function.
+
+The next two lemmas establish the determinism of a single application
+of~$\out$ and~$\nst$.  Lemma~\ref{lem.x.det-out} follows from a simple
+inspection of rules~\R{push} and~\R{pop}.  The proof of
+Lemma~\ref{lem.x.det-nst} follows by induction on the structure of the
+derivation trees produced by the rules for~$\nst$.  Both lemmas are used in
+the proof of the Theorem~\ref{thm.x.det}.
+
+\begin{restatable}{lemma}{lemxdetout}
+  \label{lem.x.det-out}
+  %%
+  If~$\delta\out\delta_1$ and~$\delta\out\delta_2$ then~$\delta_1=\delta_2$.
+\end{restatable}
+
+\begin{restatable}{lemma}{lemxdetnst}
+  \label{lem.x.det-nst}
+  %%
+  If~$\delta\nst\delta_1$ and~$\delta\nst\delta_2$ then~$\delta_1=\delta_2$.
+\end{restatable}
+
+The main result of this section, Theorem~\ref{thm.x.det}, establishes that
+any given number~$i\ge0$ of applications of arbitrary transition rules,
+starting from the same input description, will always lead to the same
+output description.  In other words, any finite sequence of transitions
+behave deterministically.
+
+\begin{restatable}[Determinism]{theorem}{thmxdet}
+  \label{thm.x.det}
+  %%
+  $\delta\trans[i]\delta_1$ and~$\delta\trans[i]\delta_2$
+  implies~$\delta_1=\delta_2$.
+\end{restatable}
+\begin{proof}
+  By induction on~$i$.  The theorem is trivially true if~$i=0$ and follows
+  directly from the previous lemmas if~$i=1$.  Suppose
+  \[
+    \delta\trans[1]\delta_1'\trans[i-1]\delta_1
+    \quad\text{and}\quad
+    \delta\trans[1]\delta_2'\trans[i-1]\delta_2\,,
+  \]
+  for some~$i>1$, $\delta_1'$ and~$\delta_2'$.
+  %%
+  Then, by Lemma~\ref{lem.x.det-out} or~\ref{lem.x.det-nst}, depending on
+  whether the first transition is~$\out$ or~$\nst$ (it cannot be both),
+  $\delta_1'=\delta_2'$, and by the induction hypothesis,
+  $\delta_1=\delta_2$.
+\end{proof}
+
+% The proof for determinism relies on the fact all semantic rules are
+% mutually exclusive, i.e., their preconditions are unique in the set of
+% rules.  This can be verified by direct inspection of rules.
+
+% Rule \textbf{push} is the only one with $e \neq \epsilon$ as a
+% precondition, and is trivially mutually exclusive with all other rules.
+
+% Rule \textbf{pop} either has $p=@nop$ or $isblocked(p,n)$ as
+% preconditions.
+% %
+% Note that rule \textbf{pop} only applies syntactically to top-level
+% transitions.  For instance, it can never match $\NST$ rules for
+% subprograms as in rule \textbf{seq-adv}.
+% %
+% Hence, for the first case, rule \textbf{pop} only applies, and is the only
+% one to apply, to $nop$ as the whole program (i.e., a $nop$ not surrounded
+% by other expressions, such as in rule \textbf{seq-nop}).
+% %
+% For the second case, we need to show that given $\LL p,n,\epsilon \RR$, no
+% $\NST$ transitions apply with $isblocked(p,n)$ and vice versa.  Except for
+% $@canrun$, there are no $\NST$ transitions for the other blocking
+% expressions ($awaitExt$, $awaitInt$, $every$, and $fin$).  However,
+% considering the precondition $\LL p,n,\epsilon \RR$,
+% $isblocked(@canrun(n),n)$ is false.  Hence, given the preconditions for
+% rule \textbf{pop}, no $\NST$ transitions can occur.  Conversely, if a
+% $\NST$ transition is possible, then $isblocked(p,n)$ must be false.
+% Again, except for $@canrun$, all other transitions do not involve blocking
+% expressions, hence, for these transitions, $isblocked(p,n)$ must be false.
+% For rule \R{can-run}, a transition can only occur if the current stack
+% level matches $@canrun(n)$.  In this case, $isblocked(@canrun(n),n)$ is
+% false.
+
+% Finally, we need to show that $\NST$ transitions are mutually exclusive
+% among themselves.
+% %
+% Note that most rules have unique syntactic prefixes, e.g., $(@nop~@and~q)$
+% (rule \textbf{and-nop1}) is trivially mutually exclusive with
+% $(@nop~@loop~p)$ (rule \textbf{or-nop1}).
+% %
+% The only exceptions are rules \textbf{and-adv1} vs. \textbf{and-adv2}, and
+% \textbf{or-adv1} vs. \textbf{or-adv2}.  In both cases, we need to show
+% that if the left branch can advance, then it cannot be blocked and
+% vice-versa, i.e., that $\LL p,n,\epsilon \RR \NST \LL p',n,e \RR$ and
+% $isblocked(p,n)$ are mutually exclusive, which is exactly the same
+% reasoning for rule \textbf{pop} above.
+
+
+\subsubsection{Termination}
+
+We now turn to the problem of termination.  We want to show that any
+sufficiently long sequence of applications of arbitrary transition rules
+will eventually lead to an irreducible description, i.e., one that cannot be
+modified by further transitions.  Before doing that, however, we need to
+introduce some notation and establish some basic properties of
+the transition relations~$\nst$ and~$\out$.
+
+\begin{definition}
+  \label{def.x.Hnst}
+  %%
+  A description~$\delta=\<p,n,e>$ is \emph{nested-irre\-ducible}
+  iff~$e\ne\nil$ or~$p=\ceu{\Nop}$ or~$p=\ceu{\Break}$
+  or~$\isblocked(p,n)$.\footnote{We sometimes abbreviate ``$p=\ceu{\Nop}$
+    or~$p=\ceu{\Break}$'' as~``$p=\ceu{\Nop,\Break}$''.}
+\end{definition}
+
+Nested-irreducible descriptions serve as normal forms for~$\nst$
+transitions: they embody the result of an exhaustive number of~$\nst$
+applications.  We will write~$\delta_\Hnst$ to indicate that
+description~$\delta$ is nested-irreducible.
+
+The use of qualifier ``irreducible'' in Definition~\ref{def.x.Hnst} is
+justified by Proposition~\ref{prop.x.irr-nst-i}, which states that if a
+finite number of applications of~$\nst$ results in an irreducible
+description, then that occurs exactly once, at some specific number~$i$.
+The proof of Proposition~\ref{prop.x.irr-nst-i} follows directly from the
+definition of~$\nst$ by contradiction on the hypothesis that there is
+such~$k\ne{i}$.
+
+\begin{restatable}{proposition}{propxirrnsti}
+  \label{prop.x.irr-nst-i}
+  %%
+  If~$\delta\nst[i]\delta_\Hnst'$ then, for all~$k\ne{i}$, there is
+  no~$\delta_\Hnst''$ such that~$\delta\nst[k]\delta''_\Hnst$.
+\end{restatable}
+
+The next lemma establishes that sequences of~$\nst$ transitions behave as
+expected regarding the order of evaluation of composition branches.  Its
+proof follows by induction on~$i$.
+
+\begin{restatable}{lemma}{lemxpropsnsti}
+  \label{lem.x.props-nst-i}\strut\\
+  %%
+  If~$\<p_1,n,e>\nst[i]\<p_1',n,e'>$, for any~$p_2$:
+  \begin{enumerate:a}
+  \item\label{lem.x.props-nst-i.a}
+    $\<\ceu{p_1;\,p_2},n,e>\nst[i]\<p_1';p_2,n,e'>$.
+    %%
+  \item\label{lem.x.props-nst-i.b}
+    $\<\ceu{p_1\AtLoop{p_2}},n,e>\nst[i]\<\ceu{p_1'\AtLoop{p_2}},n,e'>$.
+    %%
+  \item\label{lem.x.props-nst-i.c}
+    $\<\ceu{{p_1}\AtAnd{p_2}},n,e>\nst[i]\<\ceu{{p_1'}\AtAnd{p_2}},n,e'>$.
+    %%
+  \item\label{lem.x.props-nst-i.d}
+    $\<\ceu{{p_1}\AtOr{p_2}},n,e>\nst[i]\<\ceu{{p_1}'\AtOr{p_2}},n,e'>$.
+  \end{enumerate:a}
+  \smallskip
+  If~$\<p_2,n,e>\nst[i]\<p_2',n,e'>$, for any~$p_1$ such
+  that~$\isblocked(p_1,n)$:
+  \begin{enumerate:a}
+    \setcounter{enumi}{4}
+  \item\label{lem.x.props-nst-i.e}
+    $\<\ceu{{p_1}\AtAnd{p_2}},n,e>\nst[i]\<\ceu{{p_1}\AtAnd{p_2'}},n,e'>$.
+    %%
+  \item\label{lem.x.props-nst-i.f}
+    $\<\ceu{{p_1}\AtOr{p_2}},n,e>\nst[i]\<\ceu{{p_1}\AtOr{p_2'}},n,e'>$.
+  \end{enumerate:a}
+\end{restatable}
+%%
+% \begin{proof}[Proof of~(a)]
+%   By induction on~$i$.  The lemma is trivially true for~$i=0$,
+%   as~$p_1=p_1'$, and follows directly from~\R{seq-adv} for~$i=1$.  Suppose
+%   \begin{equation}
+%     \label{lem.x.props-nst-i.a.eq1}
+%     \<p_1,n,e>\nst[1]\<p_1'',n,e''>\nst[i-1]\<p_1',n,e'>\,,
+%   \end{equation}
+%   for some~$i>1$.  Then~$\<p_1'',n,e''>$ is not nested-irreducible, i.e.,
+%   $e=\nil$ and~$p\ne{\ceu{\Nop},\ceu{\Break}}$ and~$\isblocked(p_1'',n)$
+%   is false.  By~\eqref{lem.x.props-nst-i.a.eq1} and by~\R{seq-adv},
+%   \begin{equation}
+%     \label{lem.x.props-nst-i.a.eq2}
+%     \<\ceu{p_1;\,p_2},n,e>\nst[1]\<\ceu{p_1'';\,p_2},n,e''>\,.
+%   \end{equation}
+%   From~\eqref{lem.x.props-nst-i.a.eq1}, by the induction hypothesis,
+%   \begin{equation}
+%     \label{lem.x.props-nst-i.a.eq3}
+%     \<\ceu{p_1'';\,p_2},n,e''>\nst[i-1]\<\ceu{p_1';\,p_2},n,e'>\,.
+%   \end{equation}
+%   From~\eqref{lem.x.props-nst-i.a.eq2} and~\eqref{lem.x.props-nst-i.a.eq3},
+%   \[
+%     \<\ceu{p_1;\,p_2},n,e>\nst[i]\<\ceu{p_1';\,p_2},n,e'>\,.
+%   \]
+%   The proofs of the other cases are similar.
+% \end{proof}
+%%
+
+The syntactic restriction discussed in Section~\ref{sec.ceu.evts} regarding
+the body of loops and the restriction mentioned in
+Section~\ref{sec.sem.opsem} about the body of~$\ceu{\Fin}$ statements are
+formalized in Assumption~\ref{ass.x.syn-rest} below.  These restrictions are
+essential to prove the next theorem.
+
+\begin{assumption}[Syntactic restrictions]\strut
+  \label{ass.x.syn-rest}
+  %%
+  \begin{enumerate:a}
+  \item\label{ass.x.syn-rest.fin} If~$p=\ceu{\Fin{p_1}}$ then~$p_1$ contains
+    no occurrences of statements~$\ceu{\AwaitExt}$, $\ceu{\AwaitInt}$,
+    $\ceu{\Every}$, or~$\ceu{\Fin}$.  And so, for any~$n$,
+    $\<\clear(p_1),n,\nil>\nst[*]\<\ceu{\Nop},n,\nil>$.
+    %%
+    % \[
+    %   \<\clear(p_1),n,\nil>\nst[*]\<\ceu{\Nop},n,\nil>\,.
+    % \]
+    %%
+  \item\label{ass.x.syn-rest.loop} If~$p=\ceu{\Loop{p_1}}$ then all
+    execution paths of~$p_1$ contain a matching~$\ceu{\Break}$ or
+    an~$\ceu{\AwaitExt}$.  Consequently, for all~$n$, there are~$p_1'$
+    and~$e$ such that
+    $\<\ceu{\Loop{p_1}},n,\nil>\nst[*]\<p_1',n,e>$,
+    %%
+    % \[
+    %   \<\ceu{\Loop{p_1}},n,\nil>\nst[*]\<p_1',n,e>\,,
+    % \]
+    %%
+    where $p_1'=\ceu{{\Break}\AtLoop{p_1}}$ or~$\isblocked(p_1',n)$\,.
+  \end{enumerate:a}
+\end{assumption}
+
+Theorem~\ref{thm.x.term-nst-*} establishes that a finite (possibly zero)
+number of~$\nst$ transitions eventually leads to a nested-irreducible
+description.  Hence, for any input description~$\delta$, it is always
+possible to transform~$\delta$ in a nested-irreducible description~$\delta'$
+by applying to it a sufficiently long sequence of~$\nst$ transitions.  The
+proof of the theorem follows by induction on the structure of programs
+(members of set~$P$) and depends on Lemma~\ref{lem.x.props-nst-i} and
+Assumption~\ref{ass.x.syn-rest}.
+
+\begin{restatable}{theorem}{thmxtermnstx}
+  \label{thm.x.term-nst-*}
+  %%
+  For any~$\delta$ there is a~$\delta'_\Hnst$ such
+  that~$\delta\nst[*]\delta'_\Hnst$.
+\end{restatable}
+
+The main result of this section, Theorem~\ref{thm.x.term}, is similar to
+Theorem~\ref{thm.x.term-nst-*} but applies to transitions~$\trans$ in
+general.  Before stating and proving it, we need to characterize irreducible
+descriptions in general.  This characterization, given in
+Definition~\ref{def.x.H}, depends on the notions of potency and rank.
+
+\begin{definition}
+  \label{def.x.pot}
+  %%
+  The \emph{potency} of a program~$p$ in reaction to event~$e$,
+  denoted~$\pot(p,e)$, is the maximum number of~$\ceu{\EmitInt}$ statements
+  that can be executed in a reaction of~$p$ to~$e$, i.e.,
+  \[
+    \pot(p,e)=\pot'(\bcast(p,e))\,,
+  \]
+  where~$\pot'$ is an auxiliary function that counts the maximum number of
+  reachable~$\ceu{\EmitInt}$ statements in the program resulting from the
+  broadcast of event~$e$ to~$p$.
+
+  Function~$\pot'$ is defined by the following clauses:
+  \begin{enumerate:a}
+  \item\label{def.x.pot.first}$\pot'(\ceu{\EmitInt}(e))=1$.
+    %%
+  \item$\pot'(\ceu{\IfElse{\Mem(\Id)\!}{p_1\!}{p_2\!}})\!=\!
+    \max\{\pot'(p_1),\pot'(p_2)\}$.
+    %%
+  \item$\pot'(\ceu{\Loop{p_1}})=\pot'(p_1)$.
+    %%
+  \item$\pot'(\ceu{{p_1}\And{p_2}})=\pot'(\ceu{{p_1}\Or{p_2}})=
+    \pot'(p_1)+\pot'(p_2)$.
+    %%
+  \item If~$p_1\ne\ceu{\Break},\ceu{\AwaitExt(e)}$,
+    \begin{align*}
+      \pot'(\ceu{p_1;\,p_2})&=\pot'(p_1)+\pot'(p_2)\\[-.5\jot]
+      \pot'(\ceu{p_1\AtLoop{p_2}})&=
+      \begin{cases}
+        \pot'(p_1)              &\text{if\enspace(\dag)}\\[-.5\jot]
+        \pot'(p_1)+\pot'(p_2)   &\text{otherwise,}\\[-.5\jot]
+      \end{cases}
+    \end{align*}
+    where~(\dag) stands for: ``a~$\ceu{\Break}$ or~$\ceu{\AwaitExt}$ occurs
+    in all execution paths of~$p_1$''.
+    %%
+  \item If~$p_1,p_2\ne\ceu{\Break}$,
+    $\pot'(\ceu{{p_1}\AtAnd{p_2}})=\pot'(p_1)+\pot'(p_2)$.
+    %%
+  \item\label{def.x.pot.before-last} If~$p_1,p_2\ne\ceu{\Break}$
+    and~$p_1,p_2\ne\ceu{\Nop}$,
+    \vskip-.95em
+    \[
+      \pot'(\ceu{{p_1}\AtOr{p_2}})=\pot'(p_1)+\pot'(p_2)\,.
+    \]
+    %%
+  \item\label{def.x.pot.last} Otherwise, if none
+    of~\ref{def.x.pot.first}--\ref{def.x.pot.before-last} applies,
+    $\pot'(\_)=0$.
+  \end{enumerate:a}
+\end{definition}
+
+\begin{definition}
+  \label{def.x.rank}
+  %%
+  The \emph{rank} of a description~$\delta=\<p,n,e>$,
+  denoted~$\rank(\delta)$, is a pair of nonnegative integers~$\<i,j>$ such
+  that
+  \begin{alignat*}{2}
+    i&=\pot(p,e) &\quad\text{and}\quad
+    j&=
+       \begin{cases}
+         n  &\text{if~$e=\nil$}\\
+         n+1&\text{otherwise\,.}
+       \end{cases}
+  \end{alignat*}
+Intuitively, the rank of a description~$\delta$ is a measure of the maximum
+amount of ``work'' (transitions) required to transform~$\delta$ into an
+irreducible description, in the following sense.
+\end{definition}
+
+
+\begin{definition}
+  \label{def.x.H}
+  %%
+  A description~$\delta$ is \emph{irreducible} (in symbols, $\delta_\#$) iff
+  it is nested-irreducible and its~$\rank(\delta)$ is~$\<i,0>$, for
+  some~$i\ge0$.
+\end{definition}
+
+An irreducible description~$\delta_\#=\<p,n,e>$ serves as a normal form for
+transitions~$\trans$ in general.  Such description cannot be advanced
+by~$\nst$, as it is nested-irreducible, and neither by~$\outpush$
+nor~$\outpop$, as the second coordinate of its rank is~0, which
+implies~$e=\nil$ and~$n=0$.
+
+The next two lemmas establish that a single application of~$\out$ or~$\nst$
+either preserves or decreases the rank of the input description.  All rank
+comparisons assume lexicographic order, i.e., if~$\rank(\delta)=\<i,j>$
+and~$\rank(\delta')=\<i',j'>$ then~$\rank(\delta)>\rank(\delta')$ iff~$i>i'$
+or~$i=i$ and~$j>j'$.
+%%
+The proof of Lemma~\ref{lem.x.rank-out} follows directly from~\R{push}
+and~\R{pop} and from Definitions~\ref{def.x.pot} and~\ref{def.x.rank}.  The
+proof of Lemma~\ref{lem.x.rank-nst}, however, is by induction on the
+structure of~$\nst$ derivations.
+
+\begin{restatable}{lemma}{lemxrankout}\strut
+  \label{lem.x.rank-out}
+  %%
+  \begin{enumerate:a}
+  \item\label{lem.x.rank-out-push} If~$\delta\outpush\delta'$
+    then~$\rank(\delta)=\rank(\delta')$.
+  \item\label{lem.x.rank-out-pop} If~$\delta\outpop\delta'$
+    then~$\rank(\delta)>\rank(\delta')$.
+  \end{enumerate:a}
+\end{restatable}
+
+%\vskip-.25em
+
+\begin{restatable}{lemma}{lemxranknst}
+  \label{lem.x.rank-nst}
+  %%
+  If~$\delta\nst\delta'$ then~$\rank(\delta)\ge\rank(\delta')$.
+\end{restatable}
+
+The next theorem is a generalization of Lemma~\ref{lem.x.rank-nst}
+for~$\nst[*]$.  Its proof follows from the lemma by induction on~$i$.
+
+\begin{restatable}{theorem}{thmxranknstx}
+  \label{thm.x.rank-nst-*}
+  %%
+  If~$\delta\nst[*]\delta'$ then~$\rank(\delta)\ge\rank(\delta')$.
+\end{restatable}
+
+We now state and prove the main result of this section,
+Theorem~\ref{thm.x.term}, the termination theorem for~$\trans[*]$.  The idea
+of the proof is that a sufficiently large sequence of~$\nst$ and~$\out$
+transitions eventually decreases the rank of the current description until
+an irreducible description is reached.  This irreducible description is the
+final result of the reaction.
+%%
+\begin{restatable}[Termination]{theorem}{thmxterm}
+  \label{thm.x.term}
+  %%
+  For any~$\delta$, there is a~$\delta'_\#$ such
+  that~$\delta\trans[*]\delta'_\#$.
+\end{restatable}
+\begin{proof}
+  By lexicographic induction on~$\rank(\delta)$.  Let~$\delta=\<p,n,e>$ and
+  $\rank(\delta)=\<i,j>$.
+
+  For the basis, suppose $\<i,j>=\<0,0>$.  Then~$\delta$ cannot be advanced
+  by~$\out$, as~$j=0$ implies~$e=\nil$ and~$n=0$.  If~$\delta$ is
+  nested-irreducible, the theorem is trivially true,
+  as~$\delta\nst[0]\delta_\Hnst$ and~$\delta_\#$.  If~$\delta$ is not
+  nested-irreducible then, by Theorem~\ref{thm.x.term-nst-*},
+  $\delta\nst[*]\delta'_\Hnst$, for some~$\delta'_\Hnst$.  By
+  Theorem~\ref{thm.x.rank-nst-*}, $\rank(\delta)\ge\rank(\delta')$, which
+  implies~$\rank(\delta')=\<0,0>$, and so~$\delta'_\#$.
+
+  For the inductive step, suppose~$\<i,j>>\<0,0>$.
+  %%
+  Then, depending on whether or not $\delta$~is nested-irreducible, there
+  are two cases.
+  \begin{case}
+  \item\label{thm.x.term.Hnst}$\delta$~is nested-irreducible.
+    %%
+    If~$j=0$, by Definition~\ref{def.x.H}, $\delta_\#$, and
+    so~$\delta\trans[0]\delta_\#$.  If~$j>0$, there are two subcases:
+    \begin{case}
+    \item\label{thm.x.term.Hnst-j>0-nonnil}$e\ne\nil$.
+      %%
+      Then, by~\R{push} and by Theorem~\ref{thm.x.term-nst-*}, there
+      are~$\delta_1'$ and~$\delta'_\Hnst=\<p',n+1,e'>$ such that
+      $\delta\outpush\delta_1'\nst[*]\delta'_\Hnst$.  Thus, by
+      Lemma~\ref{lem.x.rank-out} and by Theorem~\ref{thm.x.rank-nst-*},
+      \begin{align*}
+        \rank(\delta)=\rank(\delta_1')=\<i,j>
+        \ge\rank(\delta')=\<i',j'>\,.
+      \end{align*}
+      If~$e'=\nil$, then $i=i'$ and~$j=j'$, and the rest of this proof is
+      similar to that of Case~\ref{thm.x.term.Hnst-j>0-nil} below.
+      Otherwise, if~$e'\ne\nil$, then $i>i'$, as an~$\ceu{\EmitInt(e')}$ was
+      consumed by the nested transitions.  Thus,
+      $\rank(\delta)>\rank(\delta')$.  By the induction hypothesis,
+      $\delta'\trans[*]\delta''_\#$, for some~$\delta''_\#$.  Therefore,
+      $\delta\trans[*]\delta''_\#$.
+      %%
+    \item\label{thm.x.term.Hnst-j>0-nil}$e=\nil$.
+      %%
+      Then, as~$j>0$, $\delta\outpop\delta'$, for some~$\delta'$.  By
+      Lemma~\ref{lem.x.rank-out}, $\rank(\delta)>\rank(\delta')$.  Hence, by
+      the induction hypothesis, $\delta'\trans[*]\delta''_\#$, for
+      some~$\delta''_\#$.  And so, $\delta\trans[*]\delta''_\#$.
+    \end{case}
+
+  \item$\delta$~is not nested-irreducible.
+    %%
+    Then~$e=\nil$ and, by Theorems~\ref{thm.x.term-nst-*}
+    and~\ref{thm.x.rank-nst-*}, there is a~$\delta'_\Hnst$ such
+    that~$\delta\nst[*]\delta'_\Hnst$
+    with~$\rank(\delta)\ge\rank(\delta'_\Hnst)$.  The rest of this proof is
+    similar to that of Case~\ref{thm.x.term.Hnst} above.\qedhere
+  \end{case}
+\end{proof}
+
+
+\subsubsection{Memory Boundedness}
+
+As \CEU has no mechanism for heap allocation, unbounded iteration, or
+general recursion, the maximum memory usage of a given \CEU program is
+determined solely by the length of its code, the number of variables it
+uses, and the size of the event stack that it requires to run.  The code
+length and the number of variables used are easily determined by code
+inspection.  The maximum size of the event stack during a reaction of
+program~$p$ to external event~$e$ corresponds to~$\pot(p,e)$, i.e., to the
+maximum number of internal events that~$p$ may emit in reaction to~$e$.
+If~$p$ may react to external events~$e_1$, \dots,~$e_n$ then, in the worst
+case, its event stack will need to
+store~$\max\{\pot(p,e_1),\dots,\pot(p,e_n)\}$ events.
+
+% - program is finite
+% - lexical scope
+%     - no heap allocation
+% - no code reentrancy
+%     - reexecution only due to loops
+%     - loop reuse nested vars

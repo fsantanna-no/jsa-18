@@ -1,0 +1,182 @@
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{enumerate}
+\usepackage{etoolbox}
+\usepackage{mathtools}
+\usepackage{thm-restate}
+\usepackage{balance}
+%\usepackage{flushend}
+\usepackage{tikz}
+\usetikzlibrary{
+  arrows,
+  arrows.meta,
+  calc,
+  decorations.pathreplacing,
+  decorations.text,
+  math,
+  positioning,
+  shapes,
+}
+
+% Céu.
+\newcommand{\CEU}{\textsc{C\'{e}u}\xspace}
+
+% Notes
+\usepackage[textsize=footnotesize]{todonotes}
+\newcommand{\rc}[1]{\todo[inline,color=green!40]{\textbf{Rodrigo}: #1}}
+\newcommand{\fs}[1]{\todo[inline,color=blue!40]{\textbf{Francisco}: #1}}
+\newcommand{\gl}[1]{\todo[inline,color=red!40]{\textbf{Guilherme}: #1}}
+
+% Concrete syntax.
+\usepackage{listings}
+\lstdefinelanguage{ceu}{%
+  language=C,
+  morekeywords={%
+    @const, @pure, @safe, CHAN, FOREVER, PAR, PROC, SIGNAL, abort, and,
+    await, bool, call, class, data, define, deterministic, do, each, else,
+    emit, end, escape, event, every, finalize, hor, implementation, in,
+    input, interface, loop, min, native, new, nohold, not, or, output, par,
+    pool, pure, return, s, signal, spawn, tag, then, this, traverse, until,
+    var, watching, when, with},
+}
+\lstset{
+  basicstyle=\ttfamily,
+  captionpos=b,
+  columns=flexible,
+  commentstyle=\rmfamily\itshape,
+  escapeinside={||},
+  frame=tb,
+  keepspaces=true,
+  keywordstyle=\bfseries,
+  language=ceu,
+  mathescape=true,
+  numbersep=4pt,
+  numberstyle=\scriptsize,
+  upquote=true,
+}
+\newcommand{\code}[1]{{\relax{\footnotesize\texttt{#1}}}}
+%\let\code\lstinline
+\usepackage{xspace}
+\newcommand{\ax}{[a]}
+\newcommand{\bx}{[b]}
+\def\<#1>{\langle#1\rangle}
+\let\nil\varepsilon
+
+% Syntactic sets for the abstract syntax.
+\def\P{P}                       % programs
+\def\N{N}                       % numbers
+\def\E{E}                       % events
+
+% Abstract syntax.
+\makeatletter
+\def\@int{\mathit{int}}
+\def\@ext{\mathit{ext}}
+\let\ext\@ext
+\def\@ceuop#1{\mathop{\relax{\texttt{#1}}}}%
+\def\@ceubin#1{\mathbin{\relax{\texttt{#1}}}}%
+\def\ceu{\protect\@ceu}
+\def\@ceu#1{%
+  \bgroup
+  \def\Id{\mathit{id}}%
+  \def\Mem{\@ceuop{mem}}%
+  \def\AwaitExt{\@ceuop{await}\nolimits_\@ext}%
+  \def\AwaitInt{\@ceuop{await}\nolimits_\@int}%
+  \def\EmitInt{\@ceuop{emit}\nolimits_\@int}%
+  \def\Break{\@ceuop{break}}%
+  \def\IfElse##1##2##3{\@ceuop{if}##1\@ceuop{then}{##2}\@ceuop{else}{##3}}%
+  \def\Loop{\@ceuop{loop}}%
+  \def\Every{\@ceuop{every}}%
+  \def\And{\@ceubin{and}}%
+  \def\Or{\@ceubin{or}}%
+  \def\Fin{\@ceuop{fin}}%
+  \def\AtLoop{\@ceuop{@loop}}%
+  \def\AtAnd{\@ceubin{@and}}%
+  \def\AtOr{\@ceubin{@or}}%
+  \def\CanRun{\@ceuop{@canrun}}%
+  \def\Nop{\@ceuop{@nop}}%
+  \ensuremath{#1}\ignorespaces
+  \egroup
+}
+\makeatother
+
+% Proof environments: assumptions and proof-by-cases.
+\makeatletter
+\AtEndPreamble{%
+  \theoremstyle{definition}
+  \newtheorem{assumption}[theorem]{Assumption}}
+\makeatother
+
+% Alternative enumerations and proof by cases.
+\usepackage{enumitem}
+\newlist{enumerate:a}{enumerate}{4}
+\setlist[enumerate:a]{label=(\alph*)}
+\newlist{enumerate:i}{enumerate}{4}
+\setlist[enumerate:i]{label=(\roman*)}
+%%
+\newlist{case}{enumerate}{4}
+\SetLabelAlign{case}{\emph{Case}~#1.\hfil}
+\setlist[case]{itemsep=1ex,leftmargin=\parindent,labelindent=\parindent,
+labelwidth=*,align=case,label*=.\arabic*}
+\setlist[case,1]{label=\arabic*,leftmargin=0pt,labelindent=0pt}
+
+% Proof trees (used to typeset proofs and rules).
+\usepackage{bussproofs}
+\def\labelSpacing{0em}
+\def\ScoreOverhang{0em}
+
+% Functions bcast, clear, eval, and isblocked.
+\makeatletter
+\let\op\operatorname
+\newcommand{\opi}[1]{\op{\mathit{#1}}}
+%%
+\def\bcast{\opi{bcast}}
+\def\clear{\opi{clear}}
+\def\eval{\opi{eval}}
+\def\isblockedext{\opi{isblocked}_\@ext}
+\def\isblocked{\opi{isblocked}}
+\def\pot{\opi{pot}}
+\def\rank{\opi{rank}}
+\makeatother
+
+% Rule labels.
+\makeatletter
+\def\@R#1{{\bfseries#1}}
+\def\Rtag#1{\tag{\@R{#1}}\label{R:#1}}
+\def\R#1{\hyperref[R:#1]{\@R{#1}}}
+\makeatother
+
+% Transition arrows.
+\makeatletter
+\newcommand{\@trans}[2][]{%
+  \setbox0=\hbox{$\mathord{\longrightarrow}$}%
+  \mathbin{%
+    \mathrlap{\longrightarrow}%
+    \notblank{#2}{%
+      \rlap{\raisebox{-3pt}%
+        {\makebox[\wd0][c]{\ensuremath{\scriptstyle#2}}}}%
+    }{}%
+    \notblank{#1}{%
+      \rlap{\raisebox{5pt}%
+        {\makebox[\wd0][c]{\ensuremath{\scriptstyle#1}}}}%
+    }{}%
+    \phantom{\longrightarrow}%
+  }%
+}
+\newcommand{\trans}[1][]{\@trans[#1]{}}
+\newcommand{\@out}{\mathit{out}}
+\newcommand{\@nst}{\mathit{nst}}
+\newcommand{\out}[1][]{\@trans[#1]{\@out\,\;}}
+\newcommand{\outpush}{\out[\mathit{push}]}
+\newcommand{\outpop}{\out[\mathit{pop}]}
+\newcommand{\nst}[1][]{\@trans[#1]{\@nst\,\;}}
+\makeatother
+
+% Irreducible predicate.
+\makeatletter
+\newcommand{\Hout}{{\#\@out}}
+\newcommand{\Hnst}{{\#\@nst}}
+\makeatother
+
+% Hacks to reduce the space after captions.
+\setlength{\textfloatsep}{.5\baselineskip}
+\setlength{\intextsep}{.5\baselineskip}

@@ -1,0 +1,68 @@
+\section{Related Work}
+
+\CEU follows the lineage of imperative synchronous languages initiated by
+Esterel~\cite{esterel.ieee91}.
+These languages typically define time as a discrete sequence of logical
+``ticks'' in which multiple simultaneous input events can be
+active~\cite{ceu.tecs17}.
+%
+The presence of multiple inputs requires careful static analysis to detect and
+reject programs with \emph{causality cycles} and \emph{schizophrenia problems}%
+~\cite{esterel.constructive}.
+%
+In contrast, \CEU defines time as a discrete sequence of reactions to
+unique input events, which is a prerequisite for the concurrency checks that
+enable safe shared-memory concurrency, as discussed in
+Section~\ref{sec.ceu.shared}.
+
+In most synchronous languages, the behavior of external and internal events is
+equivalent.
+However, in \CEU, internal events introduce stack-based micro reactions within
+external reactions, providing more fine-grained control for intra-reaction
+execution.
+%
+This allows for memory-bounded subroutines that can execute multiple times
+during the same external reaction.
+%
+The synchronous languages Statecharts~\cite{statecharts.variants} and
+Statemate~\cite{statecharts.statemate} also distinguish internal from external
+events.
+% TODO-FULL
+%In the former, \emph{``reactions to external and internal events (...) can be
+%sensed only after completion of the step''}.
+%In the latter, \emph{``the receiving state (of the internal event) acts here as
+%a function''}.
+Although the descriptions suggest a stack-based semantics, we are not aware of
+formalizations or more precision for a deeper comparison with \CEU.
+
+Like \CEU, many other synchronous languages%
+~\cite{rp.rc,wsn.protothreads,wsn.sol,rp.synchc,rp.pretc}
+rely on lexical scheduling to preserve determinism.
+%
+In contrast, in Esterel, the execution order for operations within a reaction
+is non-deterministic: \emph{``if there is no control dependency, as in
+{\scriptsize\code{(call~f1()||call~f2())}},
+the order is unspecified and it would be an error to rely on
+it''}~\cite{esterel.primer}.
+%
+For this reason, Esterel, does not support shared-memory concurrency:
+\emph{``if a variable is written by some thread, then it can neither be read
+nor be written by concurrent threads''}~\cite{esterel.primer}.
+%
+Considering the constant and low-level interactions with the underlying
+architecture in embedded systems (e.g., direct port manipulation), we believe
+that it is advantageous to embrace lexical scheduling as part of the language
+specification as a pragmatic design decision to enforce determinism.
+%
+However, since \CEU statically detects trails not sharing memory, an optimized
+scheduler could exploit real parallelism in such cases.
+
+% TODO-FULL
+Regarding the integration with $C$ language-based environments, \CEU
+supports a finalization mechanism for external resources.
+%
+In addition, \CEU also tracks pointers representing resources that cross $C$
+boundaries and forces the programmer to provide associated finalizers.
+%
+As far as we know, this extra safety level is unique to \CEU among synchronous
+languages.

@@ -1,0 +1,149 @@
+\documentclass[sigplan,protrusion=true,expansion,screen]{acmart}
+
+%\setlength{\belowcaptionskip}{-10pt}
+
+\input{header}
+% Copyright
+%\setcopyright{none}
+%\setcopyright{acmcopyright}
+%\setcopyright{acmlicensed}
+%\setcopyright{rightsretained}
+%\setcopyright{usgov}
+%\setcopyright{usgovmixed}
+%\setcopyright{cagov}
+%\setcopyright{cagovmixed}
+
+% DOI
+%\acmDOI{10.475/123_4}
+
+% ISBN
+%\acmISBN{123-4567-24-567/08/06}
+
+%Conference
+%\acmConference[LCTES'18]{ACM SIGPLAN/SIGBED}{June 2018}{Philadelphia, USA}
+%\acmYear{1997}
+%\copyrightyear{2016}
+
+%\acmPrice{15.00}
+
+%\acmBadgeL[http://ctuning.org/ae/ppopp2016.html]{ae-logo}
+%\acmBadgeR[http://ctuning.org/ae/ppopp2016.html]{ae-logo}
+
+%%% If you see 'ACMUNKNOWN' in the 'setcopyright' statement below,
+%%% please first submit your publishing-rights agreement with ACM (follow link on submission page).
+%%% Then please update our instructions page and copy-and-paste the NEW commands into your article.
+%%% Please contact us in case of questions; allow up to 10 min for the system to propagate the information.
+%%%
+%%% The following is specific to LCTES'18 and the paper
+%%% 'A Memory-Bounded, Deterministic and Terminating Semantics for the Synchronous Programming Language Céu'
+%%% by Guilherme F. Lima, Rodrigo C. M. Santos, Edward Hermann Haeusler, Roberto Ierusalimschy, and Francisco Sant'Anna.
+%%%
+%\setcopyright{ACMUNKNOWN}
+\setcopyright{acmcopyright}
+\acmPrice{15.00}
+\acmDOI{10.1145/3211332.3211334}
+\acmYear{2018}
+\copyrightyear{2018}
+\acmISBN{978-1-4503-5803-3/18/06}
+\acmConference[LCTES'18]{19th ACM SIGPLAN/SIGBED Conference on Languages, Compilers, and Tools for Embedded Systems}{June 19--20, 2018}{Philadelphia, PA, USA}
+
+\begin{document}
+
+\title[A Memory-Bounded, Deterministic and Terminating Semantics for~\CEU]
+{A Memory-Bounded, Deterministic and Terminating Semantics for the
+       Synchronous Programming Language~\CEU}
+
+\author[Santos]{Rodrigo C.\,M.~Santos}
+\affiliation{PUC-Rio, Brazil}
+\email{rsantos@inf.puc-rio.br}
+%
+\author[Lima]{Guilherme F.~Lima}
+\affiliation{PUC-Rio, Brazil}
+\email{glima@inf.puc-rio.br}
+%
+\author[Sant'Anna]{Francisco Sant'Anna}
+\affiliation{UERJ, Brazil}
+\email{francisco@ime.uerj.br}
+%
+\author[Ierusalimschy]{Roberto Ierusalimschy}
+\affiliation{PUC-Rio, Brazil}
+\email{roberto@inf.puc-rio.br}
+%
+\author[Haeusler]{Edward H. Haeusler}
+\affiliation{PUC-Rio, Brazil}
+\email{hermann@inf.puc-rio.br}
+
+\begin{abstract}
+\CEU is a synchronous programming language for embedded soft real-time systems.
+%
+It focuses on control-flow safety features, such as safe shared-memory
+concurrency and safe abortion of lines of execution, while enforcing
+memory-bounded, deterministic, and terminating reactions to the environment.
+%
+In this work, we present a small-step structural operational semantics for
+\CEU and a proof that reactions have the properties enumerated above:
+%
+that for a given arbitrary timeline of input events, multiple executions of the
+same program always react in bounded time and arrive at the same final finite
+memory state.
+%
+%We also discuss some equivalence results and the relation between the proposed
+%semantics and its actual implementation.
+\end{abstract}
+
+\terms{Languages, design, theory}
+\keywords{Determinism, Termination, Operational semantics, Synchronous languages}
+
+\begin{CCSXML}
+<ccs2012>
+ <concept>
+  <concept_id>10003752.10010124.10010131.10010134</concept_id>
+  <concept_desc>Theory of computation~Operational semantics</concept_desc>
+  <concept_significance>500</concept_significance>
+ </concept>
+ <concept>
+  <concept_id>10011007.10011006.10011008.10011009.10011014</concept_id>
+  <concept_desc>Software and its
+                engineering~Concurrent programming languages</concept_desc>
+  <concept_significance>500</concept_significance>
+ </concept>
+ <concept>
+  <concept_id>10010520.10010553.10010562.10010564</concept_id>
+  <concept_desc>Computer systems
+                organization~Embedded software</concept_desc>
+  <concept_significance>300</concept_significance>
+ </concept>
+</ccs2012>
+\end{CCSXML}
+\ccsdesc[500]{Theory of computation~Operational semantics}
+\ccsdesc[500]{Software and its engineering~Concurrent programming languages}
+\ccsdesc[300]{Computer systems organization~Embedded software}
+
+\maketitle
+
+\input{01-intro}
+\input{02-ceu}
+\input{03-semantics}
+\input{04-related}
+\input{05-conclusion}
+
+\appendix
+%\clearpage
+%\balance
+\input{06-appendix}
+%\nobalance
+%\clearpage
+%\nobalance
+\input{07-artifact}
+%\nobalance
+
+\begin{acks}
+This work was supported by the Serrapilheira Institute (grant number
+Serra-1708-15612).
+\end{acks}
+
+\balance
+\bibliographystyle{abbrv}
+\bibliography{my,other}
+
+\end{document}

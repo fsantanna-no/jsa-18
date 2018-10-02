@@ -1,0 +1,102 @@
+\section{Introduction}
+\label{sec.intro}
+
+\CEU~\cite{ceu.sensys13,ceu.tecs17} is a Esterel-based~\cite{esterel.ieee91}
+programming language for embedded soft real-time systems that aims to offer a
+concurrent, safe, and expressive alternative to C with the characteristics that
+follow:
+%
+\begin{description}
+\item [Reactive:] code only executes in reactions to events.
+\item [Structured:] programs use structured control mechanisms, such as
+    \code{await} (to suspend a line of execution), and \code{par} (to combine
+    multiple lines of execution).
+\item [Synchronous:] reactions run atomically and to completion on each line of
+    execution, i.e., there's no implicit preemption or real parallelism.
+\end{description}
+%
+Structured reactive programming lets developers write code in direct style,
+recovering from the inversion of control imposed by event-driven
+execution~\cite{rp.deprecating,rp.rescala,sync_async.cooperative}.
+%
+Synchronous languages offer a simple run-to-completion execution model that
+enables deterministic execution and make formal reasoning tractable.
+For this reason, it has been successfully adopted in safety-critical real-time
+embedded systems~\cite{rp.twelve}.
+
+Previous work in the context of embedded sensor networks evaluates the
+expressiveness of \CEU in comparison to event-driven code in C and attests a
+reduction in source code size (around 25\%) with a small increase in memory
+usage (around 5--10\%)~\cite{ceu.sensys13}.
+%
+\CEU has also been used in the context of multimedia
+systems~\cite{ceumedia.webmedia16} and games~\cite{ceu.mod15}.
+%, and as an
+%alternative language in an undergraduate-level course on embedded systems for
+%the past 6 years.
+
+\CEU inherits the synchronous and imperative mindset of Esterel but adopts a
+simpler semantics with fine-grained execution control.
+%
+The list that follows summarizes the semantic peculiarities of
+\CEU~\cite{ceu.tecs17}:
+%
+\begin{itemize}
+    \item Fine-grained, intra-reaction deterministic execution, which makes
+          \CEU fully deterministic.
+    \item Stack-based execution for internal events, which provides a limited
+          but memory-bounded form of subroutines.
+    \item Finalization mechanism for lines of execution, which makes abortion
+          safe with regard to external resources.
+\end{itemize}
+
+In this work, we present a formal small-step structural operational
+semantics for \CEU and prove that it enforces memory-bounded, deterministic,
+and terminating reactions to the environment, i.e., that for a given
+arbitrary timeline of input events, multiple executions of the same program
+always react in bounded time and arrive at the same final finite memory
+state.
+%
+Conceiving a formal semantics for \CEU leads to a number of capabilities and
+outcomes as follows:
+
+\begin{enumerate}
+\item
+    Understanding, finding corner cases, and stabilizing the language.
+    After the semantics was complete and discussed in extent in our group, we
+    found a critical bug in the order of execution of statements.
+\item
+    Explaining core aspects of the language in a reduced, precise, and
+    unambiguous way.
+    This is particularly important when comparing languages that are similar in
+    the surface (e.g., \CEU and Esterel).
+\item
+    Implementing the language.
+    A small-step operational semantics describes an abstract machine that is
+    close to a concrete implementation.
+    The current implementation of the \CEU scheduler is based on the formal
+    semantics presented in this paper.
+\item
+    Proving properties for particular or all programs in the language.
+    For instance, in this work, we prove that all programs in \CEU are memory
+    bounded, deterministic, and react in finite time.
+\end{enumerate}
+
+The last item is particularly important in the context of constrained embedded
+systems:
+
+\begin{description}
+\item[Memory Boundedness:]
+At compile time, we can ensure that the program fits in the device's restricted
+memory and that it will not grow unexpectedly during runtime.
+\item[Deterministic Execution:]
+We can simulate an entire program execution providing an input history with the
+guarantee that it will always have the same behavior.
+This can be done in negligible time in a controlled development environment
+before deploying the application to the actual device (e.g., by multiple
+developers in standard desktops).
+\item[Terminating Reactions:]
+Real-time applications must guarantee responses within specified deadlines.
+A terminating semantics enforces upper bounds for all reactions and guarantees
+that programs always progress with the time.
+\end{description}
