@@ -39,6 +39,7 @@ Listing~\ref{lst.syntax} shows a compact reference of~\CEU.
 \def\CC#1#2{\hfill\makebox[#1][l]{\C{#2}}}
 \def\T<#1>{\langle\mathit{#1}\rangle}
 \bgroup
+\begin{figure}
 \begin{lstlisting}[
   basicstyle=\ttfamily\small,
   caption={The concrete syntax of \CEU.},
@@ -68,6 +69,7 @@ par/and do $\!\T<stmt>\!$ with $\!\T<stmt>\!$ end |\CC{13.5em}{terminates if all
 $\T<id>$ = $\T<expr>$; | \CC{19.5em}{assigns a value to a variable}              |
 _$\T<id>$($\T<exprs>$) | \CC{19.5em}{calls a C function (id starts with `\_'\,)} |
 \end{lstlisting}
+\end{figure}
 \egroup
 
 Listing~\ref{lst.ceu} shows a complete example in \CEU that toggles a LED
@@ -75,13 +77,13 @@ whenever a radio packet is received, terminating on a button press always
 with the LED off.
 %
 The program first declares the \code{BUTTON} and \code{RADIO\_RECV} as
-input events (ln.~1--2).
+input events (ln~1--2).
 Then, it uses a \code{par/or} composition to run two activities in parallel:
 a single-statement trail that waits for a button press before terminating
-(ln.~4), and an endless loop that toggles the LED on and off on radio receives
-(ln.~9--14).
-The \code{finalize} clause (ln.~6--8) ensures that, no matter how its enclosing
-trail terminates, the LED will be unconditionally turned off~(ln.~7).
+(ln~4), and an endless loop that toggles the LED on and off on radio receives
+(ln~9--14).
+The \code{finalize} clause (ln~6--8) ensures that, no matter how its enclosing
+trail terminates, the LED will be unconditionally turned off~(ln~7).
 
 The \code{par/or} composition, which stands for a \emph{parallel-or}, provides
 an orthogonal abortion mechanism~\cite{esterel.preemption} in which its
@@ -320,19 +322,19 @@ stack-based processing, can be used to implement a limited form of subroutines,
 as illustrated in Listing~\ref{lst.sub}.
 
 In the example, the ``subroutine'' \code{inc} is defined as an event iterator
-(ln.~4--6) that continuously awaits its identifying event (ln.~4), and
-increments the value passed by reference (ln.~5).
+(ln~4--6) that continuously awaits its identifying event (ln~4), and
+increments the value passed by reference (ln~5).
 %
-A trail in parallel (ln.~8--11) invokes the subroutine through two consecutive
-\code{emit} statements (ln.~9--10).
+A trail in parallel (ln~8--11) invokes the subroutine through two consecutive
+\code{emit} statements (ln~9--10).
 %
 Given the stack-based execution for internal events, as the first emit
-executes, the calling trail pauses (ln.~9), the subroutine awakes (ln.~4), runs
-its body (yielding \code{v=2}), iterates, and awaits the next ``call'' (ln.~4,
+executes, the calling trail pauses (ln~9), the subroutine awakes (ln~4), runs
+its body (yielding \code{v=2}), iterates, and awaits the next ``call'' (ln~4,
 again).
 %
-Only after this sequence does the calling trail resumes (ln.~9), makes a new
-invocation (ln.~10), and passes the assertion test (ln.~11).
+Only after this sequence does the calling trail resumes (ln~9), makes a new
+invocation (ln~10), and passes the assertion test (ln~11).
 
 \begin{lstlisting}[
   xleftmargin=1em,
@@ -361,7 +363,7 @@ end
 %- footnote to distinguish from TECS
 
 \CEU also supports nested \code{emit} invocations, e.g., the body of the
-subroutine \code{inc} (ln.~5) could \code{emit} an event targeting another
+subroutine \code{inc} (ln~5) could \code{emit} an event targeting another
 subroutine, creating a new level in the stack.
 %
 We can think of the stack as a record of the nested, fine-grained internal
@@ -407,7 +409,13 @@ environment.
 \begingroup
 \begin{figure}[b!]
 \begin{minipage}[t]{0.45\linewidth}
-\begin{lstlisting}[numbers=right,basicstyle=\ttfamily\small]
+\begin{lstlisting}[
+    numbers=right,
+    basicstyle=\ttfamily\small,
+    label={lst.shared.a},
+    %caption={Accesses to \code{x} are never concurrent.},
+    caption={\,},
+]
 input void A;
 input void B;
 var int x = 1;
@@ -419,12 +427,17 @@ with
     x = x * 2;
 end
 \end{lstlisting}
-\small{\ax\ Accesses to \code{x} are never concurrent.}
 \end{minipage}%
 %
 \begin{minipage}[t]{0.53\linewidth}
 %\begin{lstlisting}
-\begin{lstlisting}[xleftmargin=1.75em,basicstyle=\ttfamily\small]
+\begin{lstlisting}[
+    xleftmargin=1.75em,
+    basicstyle=\ttfamily\small,
+    label={lst.shared.b},
+    %caption={Accesses to \code{y} are concurrent but still deterministic.},
+    caption={\,},
+]
 input void A;
 |\C{(empty line)}|
 var int y = 1;
@@ -437,16 +450,13 @@ with
 end
 
 \end{lstlisting}
-\hskip1.5em
-\begin{minipage}[t]{.9\columnwidth}
-\small{\bx\ Accesses to \code{y} are concurrent but still deterministic.}
-\end{minipage}%
 \end{minipage}%
 %\rule{8.4cm}{0.37pt}
 \caption{Shared-memory concurrency in \CEU:
-\ax\ is safe because the trails access \code{x} atomically in different
-reactions;
-\bx\ is unsafe because both trails access \code{y} in the same reaction}
+Listing~\ref{lst.shared.a} is never concurrent because the trails access
+\code{x} atomically in different reactions;
+Listing~\ref{lst.shared.b} is concurrent, but still deterministic, because both
+trails access \code{y} atomically in the same reaction.}
 \label{lst.shared}
 \end{figure}
 \endgroup
@@ -456,19 +466,17 @@ scheduled in lexical order, i.e., in the order they appear in the program
 source code.
 %
 For instance, consider the examples in Figure~\ref{lst.shared}, both
-defining shared variables (ln.~3), and assigning to them in parallel trails
-(ln.~6, 9).
+defining shared variables (ln~3), and assigning to them in parallel trails
+(ln~6,9).
 
-In \ax, the two assignments to \code{x} can only execute in
-reactions to different events \code{A} and \code{B} (ln.~5, 8), which cannot
+In Listing~\ref{lst.shared.a}, the two assignments to \code{x} can only execute
+in reactions to different events \code{A} and \code{B} (ln~5,8), which cannot
 occur simultaneously by definition.
-Hence, for the sequence of events \code{A->B}, \code{x} becomes \code{4}% TODO-FULL
-%(\code{(1+1)*2})
-, while for \code{B->A}, \code{x} becomes \code{3}% TODO-FULL
-%(\code{(1*2)+1})
-.
+Hence, for the sequence of events \code{A->B}, \code{x} becomes \code{4}
+(\code{(1+1)*2}), while for \code{B->A}, \code{x} becomes \code{3}
+(\code{(1*2)+1}).
 
-In \bx, the two assignments to \code{y} are simultaneous because
+In Listing~\ref{lst.shared.b}, the two assignments to \code{y} are simultaneous because
 they execute in reaction to the same event \code{A}.
 Since \CEU employs lexical order for intra-reaction statements, the execution
 is still deterministic, and \code{y} always becomes \code{4} (\code{(1+1)*2}).
@@ -507,33 +515,33 @@ aborted.
 
 \CEU also enforces, at compile time, the use of \code{finalize} for system
 calls that deal with pointers representing resources, as illustrated in the two
-examples of Figure~\ref{lst.fin.ceu}.
+examples of Figure~\ref{lst.fin}.
 %
 %\begin{itemize}
- If \CEU \emph{passes} a pointer to a system call (ln.~\ax:5), the
-          pointer represents a \emph{local} resource (ln.~\ax:2) that
-          requires finalization (ln.~\ax:7).
+ If \CEU \emph{passes} a pointer to a system call (Listing~\ref{lst.fin.a},
+    ln~5), the pointer represents a \emph{local} resource (ln~2) that
+    requires finalization (ln~7).
  If \CEU \emph{receives} a pointer from a system call return
-          (ln.~ \bx:4), the pointer represents an \emph{external} resource
-          (ln.~\bx:2) that requires finalization (ln.~\bx:6).
+    (Listing~\ref{lst.fin.b},ln~4), the pointer represents an
+    \emph{external} resource (ln~2) that requires finalization (ln~6).
 %\end{itemize}
 
 \CEU tracks the interaction of system calls with pointers and requires
 finalization clauses to accompany them.
 %
-In Figure~\ref{lst.fin.ceu}.a, the local variable \code{msg}
-(ln.~2) is an internal resource passed as a pointer to \code{\_send} (ln.~5),
+In Listing~\ref{lst.fin.a}, the local variable \code{msg}
+(ln~2) is an internal resource passed as a pointer to \code{\_send} (ln~5),
 which is an asynchronous call that transmits the buffer in the background.
-If the block aborts (ln.~11) before receiving an acknowledge from the
-environment (ln.~9), the local \code{msg} goes out of scope and the external
+If the block aborts (ln~11) before receiving an acknowledge from the
+environment (ln~9), the local \code{msg} goes out of scope and the external
 transmission now holds a \emph{dangling pointer}.
-The finalization ensures that the transmission also aborts (ln.~7).
+The finalization ensures that the transmission also aborts (ln~7).
 %
-In Figure~\ref{lst.fin.ceu}.b, the call to \code{\_fopen} (ln.
-4) returns an external file resource as a pointer.
-If the block aborts (ln.~12) during the \code{await A} (ln.~9), the file
+In Listing~\ref{lst.fin.b}, the call to \code{\_fopen} (ln~4) returns an
+external file resource as a pointer.
+If the block aborts (ln~12) during the \code{await A} (ln~9), the file
 remains open as a \emph{memory leak}.
-The finalization ensures that the file closes properly (ln.~6).
+The finalization ensures that the file closes properly (ln~6).
 %
 In both cases, the code does not compile without the \code{finalize}.%
 \footnote{%
@@ -543,7 +551,12 @@ cannot check if it actually handles the resource properly.}
 %\vspace{2cm}
 \begin{figure}[b!]
 \begin{minipage}[t]{0.45\linewidth}
-\begin{lstlisting}[numbers=right,basicstyle=\ttfamily\small]
+\begin{lstlisting}[
+    numbers=right,
+    basicstyle=\ttfamily\small,
+    label={lst.fin.a},
+    caption={Local resource finalization.},
+]
 par/or do
    var _msg_t msg;
    $\T<\cdots>$   |\C{prepare msg}|
@@ -558,11 +571,15 @@ with
 end
 |\C{(empty line)}|
 \end{lstlisting}
-\small{\ax\ Local resource finalization.}
 \end{minipage}%
 %
 \begin{minipage}[t]{0.53\linewidth}
-\begin{lstlisting}[xleftmargin=1.75em,basicstyle=\ttfamily\small]
+\begin{lstlisting}[
+    xleftmargin=1.75em,
+    basicstyle=\ttfamily\small,
+    label={lst.fin.b},
+    caption={External resource finalization.},
+]
 par/or do
    var _FILE* f;
    finalize
@@ -577,15 +594,11 @@ with
    $\T<\cdots>$
 end
 \end{lstlisting}
-\hskip1em
-\begin{minipage}[t]{.94\columnwidth}
-\small{\bx\ External resource finalization.}
-\end{minipage}%
 \end{minipage}%
 %\rule{8.4cm}{0.37pt}
 \caption{%
 \CEU enforces the use of finalization to prevent dangling pointers and memory leaks.}
-\label{lst.fin.ceu}
+\label{lst.fin}
 \end{figure}
 
 The finalization mechanism of \CEU is fundamental to preserve the orthogonality
