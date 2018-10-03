@@ -102,3 +102,21 @@ Real-time applications must guarantee responses within specified deadlines.
 A terminating semantics enforces upper bounds for all reactions and guarantees
 that programs always progress with the time.
 \end{description}
+
+The rest of the paper is organized as follows:
+%
+Section~\ref{sec.ceu} is a review of the main characteristics of \CEU from
+previous work~\cite{ceu.sensys13,ceu.tecs17}, namely deterministic event-driven
+execution, safe shared-memory concurrency, abortion and finalization for
+concurrent lines of execution, and first-class synchronized timers.
+%
+Section~\ref{sec.sem} proposes a formal small-step operational semantics for
+\CEU that encompasses all peculiarities of the language.
+%
+Section~\ref{sec.proofs} presents the proofs for memory boundedness,
+deterministic execution, and terminating reactions for all programs in \CEU.
+%
+Section~\ref{sec.related} compares the semantics of \CEU with related
+synchronous languages.
+%
+Section~\ref{sec.conclusion} concludes the paper.
