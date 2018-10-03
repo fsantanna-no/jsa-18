@@ -550,12 +550,12 @@ cannot check if it actually handles the resource properly.}
 
 %\vspace{2cm}
 \begin{figure}[b!]
-\begin{minipage}[t]{0.45\linewidth}
+\begin{minipage}[t]{0.46\linewidth}
 \begin{lstlisting}[
     numbers=right,
     basicstyle=\ttfamily\small,
     label={lst.fin.a},
-    caption={Local resource finalization.},
+    caption={Local resource.},
 ]
 par/or do
    var _msg_t msg;
@@ -573,12 +573,12 @@ end
 \end{lstlisting}
 \end{minipage}%
 %
-\begin{minipage}[t]{0.53\linewidth}
+\begin{minipage}[t]{0.54\linewidth}
 \begin{lstlisting}[
     xleftmargin=1.75em,
     basicstyle=\ttfamily\small,
     label={lst.fin.b},
-    caption={External resource finalization.},
+    caption={External resource.},
 ]
 par/or do
    var _FILE* f;
@@ -616,7 +616,7 @@ hours, minutes, etc.
 appear in typical patterns of embedded development~\cite{esterel.delays}, such
 as timeout watchdogs and sensor samplings.
 %
-\CEU supports wall-clock time with the \code{await}
+\CEU supports wall-clock timers through the \code{await}
 statement~\cite{ceu.tecs17}, as illustrated in Listing~\ref{lst.timers}.
 The \code{await} blocks the current running trail for the specified amount of
 time.
