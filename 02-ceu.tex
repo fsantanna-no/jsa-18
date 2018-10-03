@@ -604,3 +604,156 @@ end
 The finalization mechanism of \CEU is fundamental to preserve the orthogonality
 of the \code{par/or} construct since the clean up code is encapsulated in the
 aborted trail itself.
+
+\subsection{ First-Class Timers }
+\label{sec.ceu.timers}
+
+Activities that involve reactions to \emph{wall-clock time}%
+\footnote{
+By wall-clock time we mean the passage of time from the real world, measured in 
+hours, minutes, etc.
+}
+appear in typical patterns of embedded development~\cite{esterel.delays}, such
+as timeout watchdogs and sensor samplings.
+%
+\CEU supports wall-clock time with the \code{await}
+statement~\cite{ceu.tecs17}, as illustrated in Listing~\ref{lst.timers}.
+The \code{await} blocks the current running trail for the specified amount of
+time.
+
+However, underlying system timers do not activate programs with zero delay
+due to
+ (e.g., OS scheduling or high priority interrupts)
+is not absolutely
+precise, a fact that is usually ignored in the development process.
+We define the difference between a requested timeout and the actual expiring 
+time as the \emph{residual delta time (delta)}.
+Without explicit manipulation, the recurrent use of timed activities in a row 
+(or in a loop) may accumulate a considerable amount of deltas that can lead to 
+incorrect behavior in programs.
+%
+For this reason, \CEU handles deltas automatically, as illustrated in
+Listing~\ref{lst.timers.a}.
+Suppose that after the first \code{await~10ms} request (ln~2), the underlying
+system gets busy and takes 15ms to notify \CEU.
+%
+The scheduler will notice that the \code{await} has not only already expired,
+but is delayed with \code{delta=5ms}.
+The awaiting trail awakes, sets \code{v=1} (ln~3), and then invokes
+\code{await~1ms} (ln~4).
+As the current delta is still higher than the requested timeout
+(i.e.~$5ms>1ms$), the trail is rescheduled for execution, now with
+\code{delta=4ms}.
+
+Delta compensation also implies that timers can be added and compared when
+reasoning about time as a physical quantity.
+For instance, in the example in Listing~\ref{lst.timers.b}, although the 
+scheduler cannot guarantee that the first trail terminates exactly in 11ms
+(ln~2,4), it can at least ensure that the program always terminates with 
+\code{v=1}.
+%
+Given that any non-awaiting sequence is considered to take no time in the 
+synchronous model, the first trail (ln~2--5) is guaranteed to awake first and
+terminate the \code{par/or} before the second trail executes (ln~7--8),
+because $10+1 < 12$.
+%
+A similar program in a language without first-class support for timers would 
+depend on the execution timings for the code marked as \code{<...>}, making the 
+reasoning about the execution behavior more difficult.
+
+\begin{figure}
+\begin{minipage}[t]{0.37\linewidth}
+\begin{lstlisting}[
+    numbers=right,
+    basicstyle=\ttfamily\small,
+    label={lst.timers.a},
+    caption={\,},
+]
+var int v;
+await 10ms;
+v = 1;
+await 1ms;
+v = 2;
+
+
+
+.
+\end{lstlisting}
+\end{minipage}
+%
+\begin{minipage}[t]{0.60\linewidth}
+\begin{lstlisting}[
+    xleftmargin=1.75em,
+    basicstyle=\ttfamily\small,
+    label={lst.timers.b},
+    caption={\,},
+]
+par/or do
+  await 10ms;
+  <...> // non awaiting stmts
+  await  1ms;
+  v = 1;
+with
+  await 12ms;
+  v = 2;
+end
+\end{lstlisting}
+\end{minipage}
+%\rule{8.5cm}{0.37pt}
+\caption{ First-class timers in \CEU.
+\label{lst.timers}
+}
+\end{figure}
+
+The \code{await} statement for timers returns the current \emph{delta}, as
+illustrated in Figure~\ref{lst.delta}.
+Listing~\ref{lst.delta.a} is a variation of Listing~\ref{lst.timers.a} in which
+the second \code{await} adds the current delta to annul it and guarantee that
+\code{v} remains set to \code{1} during 1 millisecond.
+Listing~\ref{lst.delta.b} deals with the possible case in which a small $1us$
+timer in a loop never ``catches up'' with the external clock, resulting in a
+\emph{delta} that increases indefinitely.
+
+\begin{figure}
+\begin{minipage}[t]{0.37\linewidth}
+\begin{lstlisting}[
+    numbers=right,
+    basicstyle=\ttfamily\small,
+    label={lst.delta.a},
+    caption={\,},
+]
+var int v;
+var int late =
+    await 10ms;
+v = 1;
+await (late+1000)us;
+v = 2;
+
+.
+\end{lstlisting}
+\end{minipage}
+%
+\begin{minipage}[t]{0.60\linewidth}
+\begin{lstlisting}[
+    xleftmargin=1.75em,
+    basicstyle=\ttfamily\small,
+    label={lst.delta.b},
+    caption={\,},
+]
+loop do
+  var int late = await 1us;
+  if late>100 then // too late?
+    <...> // abnormal behavior
+  else
+    <...> // normal behavior
+  end
+end
+\end{lstlisting}
+\end{minipage}
+%\rule{8.5cm}{0.37pt}
+\caption{ The \code{await} statement for timers returns the current
+\emph{residual delta} in microseconds.
+\label{lst.delta}
+}
+\end{figure}
+
