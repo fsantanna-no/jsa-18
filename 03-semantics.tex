@@ -157,23 +157,6 @@ Also note that the \texttt{@}-statements do not exist in the concrete language
 and are results of expansions in the transition rules to be presented in
 Section~\ref{sec.sem.opsem}.
 
-\begin{comment}
-Although the abstract $\ceu{\AwaitInt}$ and~$\ceu{\EmitInt}$ do not support
-such communication of values, it can be easily simulated: one can use a shared variable to hold the value of an
-$\ceu{\EmitInt}$ and access it after the corresponding $\ceu{\AwaitInt}$
-awakes.
-
-Finally, a ``\code{finalize $A$ with $B$ end; $C$}'' in the concrete
-language is equivalent to ``\ceu{A;\;((\Fin{B})\ \Or\ C)}'' in the abstract
-language.  In the concrete language, $A$ and~$C$ execute in sequence, and
-the finalization code~$B$ is implicitly suspended waiting for~$C$
-to terminate.  In the abstract language, ``$\ceu{\Fin B}$'' suspends forever
-when reached (it is an awaiting statement that never awakes).  Hence, we
-need an explicit \code{or} to execute~$C$ in parallel, whose termination
-aborts ``$\ceu{\Fin B}$'', which finally causes~$B$ to execute (by the
-semantic rules below).
-\end{comment}
-
 \subsubsection{\code{await} and \code{emit}}
 
 The \code{await} and \code{emit} primitives of \CEU are slightly more complex 
@@ -277,7 +260,7 @@ await 10ms;
 
 
 await 1ms;
-.
+
 \end{lstlisting}
 \end{minipage}
 %
@@ -304,6 +287,77 @@ var int tot_ = 1000 + delta_;
 \end{minipage}
 \caption{ Concrete-to-abstract translation for timers. }
 \label{lst.TIMER}
+\end{figure}
+
+\subsubsection{Finalization}
+
+\begin{comment}
+Finally, a ``\code{finalize $A$ with $B$ end; $C$}'' in the concrete
+language is equivalent to ``\ceu{A;\;((\Fin{B})\ \Or\ C)}'' in the abstract
+language.  In the concrete language, $A$ and~$C$ execute in sequence, and
+the finalization code~$B$ is implicitly suspended waiting for~$C$
+to terminate.  In the abstract language, ``$\ceu{\Fin B}$'' suspends forever
+when reached (it is an awaiting statement that never awakes).  Hence, we
+need an explicit \code{or} to execute~$C$ in parallel, whose termination
+aborts ``$\ceu{\Fin B}$'', which finally causes~$B$ to execute (by the
+semantic rules below).
+\end{comment}
+
+The biggest mismatch between \CEU and the formal semantics is due to the
+concrete \code{finalize} and the abstract \code{fin}.
+%
+Listing~\ref{lst.fin.a} shows the original program with an explicit block
+(ln~1,8) that executes the statements in \code{<A>} (ln~3) immediately followed
+by \code{<C>} (ln~7), and unconditionally executes \code{<B>} (ln~5) when the
+block terminates or aborts.
+%
+The translation in Listing~\ref{lst.fin.b} also executes \code{<A>} (ln~1)
+immediately followed by \code{<C>} (ln~5).
+The difference is that the \code{fin <B>} (ln~3) in the abstract semantics
+blocks the pending statement forever, which only awakes and executes when it is
+aborted.
+The \code{par/or} (ln~2--6) serves this purpose since it allows \code{<C>} to
+execute immediately and aborts the \code{fin} when terminating.
+
+\begin{figure}
+\begin{minipage}[t]{0.48\linewidth}
+\begin{lstlisting}[
+    numbers=right,
+    basicstyle=\ttfamily\small,
+    caption={\,},
+    label={lst.fin.a},
+]
+do
+    finalize
+        <A>
+    with
+        <B>
+    end
+    <C>
+end
+\end{lstlisting}
+\end{minipage}
+%
+\begin{minipage}[t]{0.45\linewidth}
+\begin{lstlisting}[
+    xleftmargin=1.75em,
+    basicstyle=\ttfamily\small,
+    caption={\,},
+    label={lst.fin.b},
+]
+<A>
+par/or do
+    fin <B>
+with
+    <C>
+end
+
+
+\end{lstlisting}
+\end{minipage}
+%
+\caption{ Concrete-to-abstract translation for finalization. }
+\label{lst.fin}
 \end{figure}
 
 \subsection{Operational Semantics}
