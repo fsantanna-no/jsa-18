@@ -241,6 +241,71 @@ end
 \label{lst.await_emit}
 \end{figure}
 
+\subsubsection{First-class timers}
+
+To support first-class timers, we introduce a \code{TIMER} input to notify the
+passage of time, and two global variables \code{timer\_} (to hold the elapsed
+time) and \code{delta\_} (to hold the residual time set to 0).
+
+Listing~\ref{lst.TIMER.b} shows the translation from Listing~\ref{lst.TIMER.a}
+for two timers in sequence (ln~1,11).
+A timer first adds a (possibly) negative delta from the time it should await
+(ln~1).
+Then, it enters in a loop that awakes on every occurrence of \code{TIMER}
+(ln~7) and decrements the time it should await (ln~8).
+Each iteration of the loop checks if the timer has expired (ln~3), and sets the
+new delta, which may affect a timer in sequence.
+The check happens before the await because the timer may already start expired
+due to the residual time.
+
+\begin{figure}
+\begin{minipage}[t]{0.33\linewidth}
+\begin{lstlisting}[
+    numbers=right,
+    basicstyle=\ttfamily\small,
+    caption={\,},
+    label={lst.TIMER.a},
+]
+await 10ms;
+
+
+
+
+
+
+
+
+
+await 1ms;
+.
+\end{lstlisting}
+\end{minipage}
+%
+\begin{minipage}[t]{0.63\linewidth}
+\begin{lstlisting}[
+    xleftmargin=1.75em,
+    basicstyle=\ttfamily\small,
+    caption={\,},
+    label={lst.TIMER.b},
+]
+var int tot_ = 10000 + delta_;
+loop do
+    if tot_ <= 0 then
+        delta_ = tot_;
+        break;
+    end
+    await TIMER;
+    tot_ = tot_ - timer_;
+end
+
+var int tot_ = 1000 + delta_;
+<...> // same loop as above
+\end{lstlisting}
+\end{minipage}
+\caption{ Concrete-to-abstract translation for timers. }
+\label{lst.TIMER}
+\end{figure}
+
 \subsection{Operational Semantics}
 \label{sec.sem.opsem}
 
