@@ -60,9 +60,8 @@ languages.
 % \end{lstlisting}
 %-
 
-The grammar below defines the syntax of a subset of \CEU that is
-sufficient to describe all peculiarities of the language.
 \bgroup
+\begin{figure}
 \def\lbl#1{\enspace\text{\emph{#1}}}%
 \newdimen\X
 \X=-1.3\jot
@@ -119,8 +118,14 @@ sufficient to describe all peculiarities of the language.
   \mid&\enspace\ceu{\Nop}
       &&\lbl{terminated program}
 \end{alignat*}
+\caption{ The abstract syntax of \CEU. }
+\label{fig.sem.syntax}
+\end{figure}
 \egroup
 
+Figure~\ref{fig.sem.syntax} defines the syntax of a subset of \CEU that is
+sufficient to describe all peculiarities of the language.
+%
 The~$\ceu{\Mem(id)}$ primitive represents a read or write to the memory
 location identified by~$id$.\footnotemark\
 %
@@ -140,20 +145,21 @@ expressions are considered to be atomic and instantaneous.
   and~$\ceu{\EmitInt}$ do not share identifiers: any identifier is either a
   variable, an external event, or an internal event.}
 
-Most statements in the abstract language are mapped to their counterparts in
-the concrete language.  The exceptions are the finalization
-block~$\ceu{\Fin{p}}$ and the \texttt{@}-statements which do not exist in
-the concrete language.  These result from the expansion of the transition
-rules to be presented.
+\subsection{Concrete Language Mapping}
+\label{sec.sem.concrete}
 
-A further difference between the concrete and abstract languages regards the
-emit-await pair.  In the concrete language, the \code{await} can be used as
-an expression which evaluates to the value stored in the corresponding emitted
-event, e.g., an
-``\code{emit a(10)}'' awakes a ``\code{v=await a}'' setting
-variable~\code{v} to~10.  Although the abstract $\ceu{\AwaitInt}$
-and~$\ceu{\EmitInt}$ do not support such communication of values, it can be
-easily simulated: one can use a shared variable to hold the value of an
+Although the abstract syntax presented in Figure~\ref{fig.sem.syntax} is 
+similar to the concrete language in Listing~\ref{lst.syntax}, there are some 
+significant mismatches between \CEU and the formal semantics that require some 
+clarification.
+
+Also note that the \texttt{@}-statements do not exist in the concrete language
+and are results of expansions in the transition rules to be presented in
+Section~\ref{sec.sem.opsem}.
+
+\begin{comment}
+Although the abstract $\ceu{\AwaitInt}$ and~$\ceu{\EmitInt}$ do not support
+such communication of values, it can be easily simulated: one can use a shared variable to hold the value of an
 $\ceu{\EmitInt}$ and access it after the corresponding $\ceu{\AwaitInt}$
 awakes.
 
@@ -166,8 +172,75 @@ when reached (it is an awaiting statement that never awakes).  Hence, we
 need an explicit \code{or} to execute~$C$ in parallel, whose termination
 aborts ``$\ceu{\Fin B}$'', which finally causes~$B$ to execute (by the
 semantic rules below).
+\end{comment}
 
-
+\subsubsection{\code{await} and \code{emit}}
+
+The \code{await} and \code{emit} primitives of \CEU are slightly more complex 
+in comparison to the formal semantics, as they support communication of values 
+between emits and awaits.
+
+Figure~\ref{lst.await_emit} shows a translation that adds a variable to hold
+the value in the communication.
+%
+The original code in Listing~\ref{lst.await_emit.a} declares an internal event
+\code{e} (ln~2) and has and \code{await} (ln~4) and \code{emit} (ln~10) to
+communicate the value $1$ between the trails in parallel.
+%
+The translation in Listing~\ref{lst.await_emit.b} declares an additional shared
+variable \code{e\_} (ln~1) to hold the emitted value (ln~9), which can be
+accessed by the awaking trail (ln~5).
+
+External events require a similar translation, i.e., each event needs a
+corresponding global variable shared between all awaiting trails.
+
+\begin{figure}
+\begin{minipage}[t]{0.48\linewidth}
+\begin{lstlisting}[
+    numbers=right,
+    basicstyle=\ttfamily\small,
+    caption={\,},
+    label={lst.await_emit.a},
+]
+
+event int e;
+par/or do
+  var int v = await e;
+
+  <...>
+with
+  <...>
+
+  emit e(1);
+end
+\end{lstlisting}
+\end{minipage}
+%
+\begin{minipage}[t]{0.45\linewidth}
+\begin{lstlisting}[
+    xleftmargin=1.75em,
+    basicstyle=\ttfamily\small,
+    caption={\,},
+    label={lst.await_emit.b},
+]
+var int e_;
+event int e;
+par/or do
+  await e;
+  var int v = e_;
+  <...>
+with
+  <...>
+  e_ = 1;
+  emit e;
+end
+\end{lstlisting}
+\end{minipage}
+%
+\caption{ Concrete-to-abstract translation for \code{await} and \code{emit}. }
+\label{lst.await_emit}
+\end{figure}
+
 \subsection{Operational Semantics}
 \label{sec.sem.opsem}
 
