@@ -38,6 +38,8 @@ Here are the statements of basic \CEU:
 \end{alignat*}
 \endgroup
 
+\fs{Tirar de listing/figura vai perder o ref da próxima seção.}
+
 In the above list, the metavariables~$\stmt$, $\expr$, $e$, $v$, and~$n$
 denote statements, expressions, event identifiers, variable identifiers, and
 nonnegative integers, respectively.  Expressions are used to denote integer
@@ -51,6 +53,9 @@ by the usual mathematical and boolean operators ($+$, $\times$, $\le$,
   \textbf{Pergunta:} Como descrever o \emph{block} sem falar de ambiente?
   Estou assumindo que o usuário pode declarar variável em qualquer lugar, e
   não apenas dentro de \emph{block}, certo?}
+\fs{Pelo que conversamos hoje, o \emph{Var} vai sair e só teremos o
+    \emph{Block} que deve declarar todas as suas variáveis. O mapeamento entre
+    full e basic fica trivial também.}
 
 The~$\ceu{\Mem(id)}$ primitive represents a read or write to the memory
 location identified by~$id$.\footnotemark\

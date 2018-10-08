@@ -19,12 +19,9 @@ hypothesis~\cite{rp.hypothesis}.
 allowing the program to execute its other trails; when all trails are blocked,
 the reaction terminates and control returns to the environment.
 
-In \CEU, every execution path within loops must contain at least one
-\code{await} statement to an external input
+In \CEU, every execution path within loops must contain at least a \code{break}
+or \code{await} statement to an external input
 event~\cite{ceu.sensys13,esterel.primer}.
-%
-\gl{Não seria melhor já dizer que todo caminho deve conter um \emph{await}
-  externo \textbf{ou um \emph{break}}?}\noindent
 %
 This restriction, which is statically checked by the compiler, ensures that
 every reaction runs in bounded time, eventually terminating with all trails
@@ -408,6 +405,10 @@ an \code{every} statement.
   de execução dentro de loops deve conter um \emph{await} externo,
   \emph{break}, ou \emph{every}.  \textbf{Pergunta}: pode \emph{every}
   dentro de \emph{every}?}
+%
+\fs{Não. Aí é mais por uma razão de design. O programador espera que o
+    \emph{every} sempre vai responder ao evento do iterador. Se puder esperar
+    outras coisas dentro, essa espectativa pode ser quebrada.}
 
 \subsection{Shared-Memory Concurrency}
 \label{sec.ceu.shared}
