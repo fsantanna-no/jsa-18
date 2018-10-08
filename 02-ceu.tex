@@ -23,6 +23,9 @@ In \CEU, every execution path within loops must contain at least one
 \code{await} statement to an external input
 event~\cite{ceu.sensys13,esterel.primer}.
 %
+\gl{Não seria melhor já dizer que todo caminho deve conter um \emph{await}
+  externo \textbf{ou um \emph{break}}?}\noindent
+%
 This restriction, which is statically checked by the compiler, ensures that
 every reaction runs in bounded time, eventually terminating with all trails
 blocked in \code{await} statements.
@@ -62,8 +65,8 @@ every $\T<id>$ in $\T<id>$ do $\T<stmt>$ end | \CC{8em}{event iteration}   |
 finalize [$\T<stmt>$] with $\T<stmt>$ end | \CC{8em}{finalization} |
 
 |\C{Logical parallelism}|
-par/or  do $\!\T<stmt>\!$ with $\!\T<stmt>\!$ end |\CC{13.5em}{aborts if any side ends}      |
-par/and do $\!\T<stmt>\!$ with $\!\T<stmt>\!$ end |\CC{13.5em}{terminates if all sides end} |
+par/or  do $\!\T<stmt>\!$ with $\!\T<stmt>\!$ end |\CC{10.5em}{aborts if any side ends}      |
+par/and do $\!\T<stmt>\!$ with $\!\T<stmt>\!$ end |\CC{10.5em}{terminates if all sides end} |
 
 |\C{Assignment \& Integration with C}|
 $\T<id>$ = $\T<expr>$; | \CC{19.5em}{assigns a value to a variable}              |
@@ -109,7 +112,7 @@ environment should only provide access to~C operations that can be assumed to
 be instantaneous, such as non-blocking~I/O and simple data structure accessors.%
 \footnote {
 The actual implementation of \CEU supports a command-line option that accepts a
-white list of library calls.
+whitelist of library calls.
 If a program tries to use a function not in the list, the compiler raises an
 error.
 }
@@ -389,6 +392,7 @@ an external input \code{await} (\code{e} is an internal event).
 The \code{every} variation compiles because event iterators have an additional
 syntactic restriction that they cannot contain \code{break} or \code{await}
 statements.
+%
 This restriction guarantees that an iterator never terminates from itself and,
 thus, always awaits its identifying event, essentially behaving as a safe
 blocking point in the program.
@@ -396,6 +400,14 @@ blocking point in the program.
 For this reason, the restriction that execution paths within loops must
 contain at least one external \code{await} is extended to alternatively contain
 an \code{every} statement.
+%
+%
+\gl{Verificar se a restrição do \emph{every} não conter \emph{breaks} ou
+  \emph{awaits} está sendo tratada na semântica.  Verificar também a
+  extensão da restrição dos \emph{loops} para o \emph{every}: todo caminho
+  de execução dentro de loops deve conter um \emph{await} externo,
+  \emph{break}, ou \emph{every}.  \textbf{Pergunta}: pode \emph{every}
+  dentro de \emph{every}?}
 
 \subsection{Shared-Memory Concurrency}
 \label{sec.ceu.shared}
@@ -406,8 +418,39 @@ Hence, an important goal of \CEU is to ensure a reliable behavior for programs
 with concurrent lines of execution sharing memory and interacting with the
 environment.
 
+In \CEU, when multiple trails are active in the same reaction, they are
+scheduled in lexical order, i.e., in the order they appear in the program
+source code.
+%
+For instance, consider the examples in Figure~\ref{lst.shared}, both
+defining shared variables (ln~3), and assigning to them in parallel trails
+(ln~6,9).
+
+In Listing~\ref{lst.shared.a}, the two assignments to \code{x} can only execute
+in reactions to different events \code{A} and \code{B} (ln~5,8), which cannot
+occur simultaneously by definition.
+Hence, for the sequence of events \code{A->B}, \code{x} becomes \code{4}
+(\code{(1+1)*2}), while for \code{B->A}, \code{x} becomes \code{3}
+(\code{(1*2)+1}).
+
+In Listing~\ref{lst.shared.b}, the two assignments to \code{y} are simultaneous because
+they execute in reaction to the same event \code{A}.
+Since \CEU employs lexical order for intra-reaction statements, the execution
+is still deterministic, and \code{y} always becomes \code{4} (\code{(1+1)*2}).
+%
+However, note that an apparently innocuous change in the order of trails
+modifies the behavior of the program.
+%
+To mitigate this threat, \CEU performs concurrency checks at compile time to
+detect conflicting accesses to shared variables:
+if a variable is written in a trail segment, then a concurrent trail segment
+cannot access that variable~\cite{ceu.sensys13}.
+%
+Nonetheless, the static checks are optional and are not a prerequisite for the
+deterministic semantics of the language.
+
 \begingroup
-\begin{figure}[b!]
+\begin{figure}[h!]
 \begin{minipage}[t]{0.45\linewidth}
 \begin{lstlisting}[
     numbers=right,
@@ -460,37 +503,6 @@ trails access \code{y} atomically in the same reaction.}
 \end{figure}
 \endgroup
 
-In \CEU, when multiple trails are active in the same reaction, they are
-scheduled in lexical order, i.e., in the order they appear in the program
-source code.
-%
-For instance, consider the examples in Figure~\ref{lst.shared}, both
-defining shared variables (ln~3), and assigning to them in parallel trails
-(ln~6,9).
-
-In Listing~\ref{lst.shared.a}, the two assignments to \code{x} can only execute
-in reactions to different events \code{A} and \code{B} (ln~5,8), which cannot
-occur simultaneously by definition.
-Hence, for the sequence of events \code{A->B}, \code{x} becomes \code{4}
-(\code{(1+1)*2}), while for \code{B->A}, \code{x} becomes \code{3}
-(\code{(1*2)+1}).
-
-In Listing~\ref{lst.shared.b}, the two assignments to \code{y} are simultaneous because
-they execute in reaction to the same event \code{A}.
-Since \CEU employs lexical order for intra-reaction statements, the execution
-is still deterministic, and \code{y} always becomes \code{4} (\code{(1+1)*2}).
-%
-However, note that an apparently innocuous change in the order of trails
-modifies the behavior of the program.
-%
-To mitigate this threat, \CEU performs concurrency checks at compile time to
-detect conflicting accesses to shared variables:
-if a variable is written in a trail segment, then a concurrent trail segment
-cannot access that variable~\cite{ceu.sensys13}.
-%
-Nonetheless, the static checks are optional and are not a prerequisite for the
-deterministic semantics of the language.
-
 \subsection{Abortion and Finalization}
 \label{sec.ceu.fin}
 
@@ -521,7 +533,7 @@ examples of Figure~\ref{lst.fin}.
     ln~5), the pointer represents a \emph{local} resource (ln~2) that
     requires finalization (ln~7).
  If \CEU \emph{receives} a pointer from a system call return
-    (Listing~\ref{lst.fin.b},ln~4), the pointer represents an
+    (Listing~\ref{lst.fin.b}, ln~4), the pointer represents an
     \emph{external} resource (ln~2) that requires finalization (ln~6).
 %\end{itemize}
 
@@ -548,7 +560,7 @@ The compiler only forces the programmer to write the finalization clause, but
 cannot check if it actually handles the resource properly.}
 
 %\vspace{2cm}
-\begin{figure}[b!]
+\begin{figure}[h!]
 \begin{minipage}[t]{0.46\linewidth}
 \begin{lstlisting}[
     numbers=right,
@@ -656,7 +668,7 @@ A similar program in a language without first-class support for timers would
 depend on the execution timings for the code marked as \code{<...>} (ln~3),
 making the reasoning about the execution behavior more difficult.
 
-\begin{figure}
+\begin{figure}[h!]
 \begin{minipage}[t]{0.37\linewidth}
 \begin{lstlisting}[
     numbers=right,
@@ -699,3 +711,8 @@ end
 \label{lst.timers}
 }
 \end{figure}
+
+%%% Local Variables:
+%%% mode: latex
+%%% TeX-master: "index.tex"
+%%% End:

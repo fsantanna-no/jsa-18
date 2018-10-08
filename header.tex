@@ -4,8 +4,7 @@
 \usepackage{etoolbox}
 \usepackage{mathtools}
 \usepackage{thm-restate}
-\usepackage{balance}
-%\usepackage{flushend}
+
 \usepackage{tikz}
 \usetikzlibrary{
   arrows,
@@ -71,11 +70,13 @@
 \def\@int{\mathit{int}}
 \def\@ext{\mathit{ext}}
 \let\ext\@ext
-\def\@ceuop#1{\mathop{\relax{\texttt{#1}}}}%
+\def\@ceuop#1{\mathop{\relax{\texttt{#1}}\,}}%
 \def\@ceubin#1{\mathbin{\relax{\texttt{#1}}}}%
 \def\ceu{\protect\@ceu}
 \def\@ceu#1{%
   \bgroup
+  \def\Block{\@ceuop{block}}%
+  \def\Var{\@ceuop{var}}%
   \def\Id{\mathit{id}}%
   \def\Mem{\@ceuop{mem}}%
   \def\AwaitExt{\@ceuop{await}\nolimits_\@ext}%
@@ -97,6 +98,8 @@
   \egroup
 }
 \makeatother
+\newcommand*\stmt{\mathit{stmt}}
+\newcommand*\expr{\mathit{expr}}
 
 % Proof environments: assumptions and proof-by-cases.
 \makeatletter
@@ -179,3 +182,8 @@ labelwidth=*,align=case,label*=.\arabic*}
 % Hacks to reduce the space after captions.
 \setlength{\textfloatsep}{.5\baselineskip}
 \setlength{\intextsep}{.5\baselineskip}
+
+%%% Local Variables:
+%%% mode: latex
+%%% TeX-master: "index.tex"
+%%% End:

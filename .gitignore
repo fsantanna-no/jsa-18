@@ -1,0 +1,9 @@
+*.aux
+*.bbl
+*.blg
+*.cut
+*.log
+*.out
+*.synctex.gz
+*~
+/auto
