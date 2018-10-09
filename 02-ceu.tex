@@ -398,17 +398,16 @@ For this reason, the restriction that execution paths within loops must
 contain at least one external \code{await} is extended to alternatively contain
 an \code{every} statement.
 %
-%
-\gl{Verificar se a restrição do \emph{every} não conter \emph{breaks} ou
-  \emph{awaits} está sendo tratada na semântica.  Verificar também a
-  extensão da restrição dos \emph{loops} para o \emph{every}: todo caminho
-  de execução dentro de loops deve conter um \emph{await} externo,
-  \emph{break}, ou \emph{every}.  \textbf{Pergunta}: pode \emph{every}
-  dentro de \emph{every}?}
-%
-\fs{Não. Aí é mais por uma razão de design. O programador espera que o
-    \emph{every} sempre vai responder ao evento do iterador. Se puder esperar
-    outras coisas dentro, essa espectativa pode ser quebrada.}
+% \gl{Verificar se a restrição do \emph{every} não conter \emph{breaks} ou
+% \emph{awaits} está sendo tratada na semântica.  Verificar também a
+% extensão da restrição dos \emph{loops} para o \emph{every}: todo caminho
+% de execução dentro de loops deve conter um \emph{await} externo,
+% \emph{break}, ou \emph{every}.  \textbf{Pergunta}: pode \emph{every}
+% dentro de \emph{every}?}
+% %
+% \fs{Não. Aí é mais por uma razão de design. O programador espera que o
+% \emph{every} sempre vai responder ao evento do iterador. Se puder esperar
+% outras coisas dentro, essa espectativa pode ser quebrada.}
 
 \subsection{Shared-Memory Concurrency}
 \label{sec.ceu.shared}

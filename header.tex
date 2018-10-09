@@ -3,8 +3,7 @@
 \usepackage{enumerate}
 \usepackage{etoolbox}
 \usepackage{mathtools}
-\usepackage{thm-restate}
-
+\usepackage{thmtools}
 \usepackage{tikz}
 \usetikzlibrary{
   arrows,
@@ -16,6 +15,10 @@
   positioning,
   shapes,
 }
+
+% The original value of \jot.
+\newlength{\savedjot}
+\setlength{\savedjot}{\jot}
 
 % Céu.
 \newcommand{\CEU}{\textsc{C\'{e}u}\xspace}
@@ -70,7 +73,7 @@
 \def\@int{\mathit{int}}
 \def\@ext{\mathit{ext}}
 \let\ext\@ext
-\def\@ceuop#1{\mathop{\relax{\texttt{#1}}\,}}%
+\def\@ceuop#1{\mathop{\relax{\texttt{#1}}}}%
 \def\@ceubin#1{\mathbin{\relax{\texttt{#1}}}}%
 \def\ceu{\protect\@ceu}
 \def\@ceu#1{%
@@ -89,17 +92,19 @@
   \def\And{\@ceubin{and}}%
   \def\Or{\@ceubin{or}}%
   \def\Fin{\@ceuop{fin}}%
+  \def\Nop{\@ceuop{@nop}}%
+  \def\CanRun{\@ceuop{@canrun}}%
+  \def\Restore{\@ceuop{@restore}}%
   \def\AtLoop{\@ceuop{@loop}}%
   \def\AtAnd{\@ceubin{@and}}%
   \def\AtOr{\@ceubin{@or}}%
-  \def\CanRun{\@ceuop{@canrun}}%
-  \def\Nop{\@ceuop{@nop}}%
   \ensuremath{#1}\ignorespaces
   \egroup
 }
 \makeatother
-\newcommand*\stmt{\mathit{stmt}}
 \newcommand*\expr{\mathit{expr}}
+\newcommand*\stmt{\mathit{stmt}}
+\newcommand*\vars{\mathit{vars}}
 
 % Proof environments: assumptions and proof-by-cases.
 \makeatletter

@@ -8,73 +8,130 @@ called \emph{basic \CEU}.  Although simpler than the full language presented
 in Section~\ref{sec.ceu}, basic \CEU is expressive enough to capture all the
 essential characteristics of full \CEU, in particular, the stack-based
 execution policy for internal events.  Once basic \CEU is defined, the more
-elaborate constructs of full \CEU can be easily defined on top of basic \CEU
-primitives, as we shall discuss shortly.
+elaborate constructs of full \CEU can be easily defined on top of it, as we
+shall see shortly.
 
-Here are the statements of basic \CEU:
-%%
+The statements of basic \CEU are presented in Figure~\ref{fig.sem.syntax}.
+We use the metavariables~$v$, $e$, and~$n$ to range over variable
+identifiers, event identifiers, and integers.  We use~$\vars$ to range over
+lists of zero or more variable identifiers, and~$\stmt$ and $\expr$ to range
+over statements and expressions.  For simplicity, we only consider
+expressions that evaluate to integers.  Expressions are build up from
+constants and variables by the usual mathematical operators ($+$, $-$,
+$\le$, \ldots).  We assume that expression evaluation takes zero time and
+always produces an integer value.  In places where a boolean value is
+expected, a nonzero value means true while zero means false.
+
+\begin{figure}[ht!]
 \begingroup
-\setlength{\jot}{1.5pt}
+\setlength{\jot}{0pt}
 \begin{alignat*}{2}
-  &\ceu{\Block{\stmt}} &\quad&\text{\it block of statements}\\
-  &\ceu{\Var{v}}            &&\text{\it local variable declaration}\\
+  &\ceu{\Block{\vars\ \stmt}}&\quad&\text{\it declaration block}\\
   &\ceu{v\coloneqq\expr}    &&\text{\it assignment statement}\\
   &\ceu{\AwaitExt(e)}       &&\text{\it await external event}\\
   &\ceu{\AwaitInt(e)}       &&\text{\it await internal event}\\
   &\ceu{\EmitInt(e)}        &&\text{\it emit internal event}\\
-  &\ceu{\Break}             &&\text{\it break from loop}\\
+  &\ceu{\Break}             &&\text{\it loop escape}\\
   &\ceu{\IfElse{\expr}{\stmt_1}{\stmt_2}}&&\text{\it conditional}\\
   &\ceu{\stmt_1\,;\,\stmt_2}&&\text{\it sequence}\\
   &\ceu{\Loop \stmt}        &&\text{\it infinite loop}\\
-  &\ceu{\Every{e}\ \stmt}   &&\text{\it event iteration}\\
+  &\ceu{\Every{e}\,\stmt}   &&\text{\it event iteration}\\
   &\ceu{\stmt_1\And\stmt_2} &&\text{\it par/and statement}\\
   &\ceu{\stmt_2\Or\stmt_2}  &&\text{\it par/or statement}\\
   &\ceu{\Fin\stmt}          &&\text{\it finalization statement}\\
   &\ceu{\Nop}               &&\text{\it dummy statement}\\
-  &\ceu{\CanRun(n)}         &&\text{\it can run on stack level~$n$}\\
+  &\ceu{\CanRun(n)}         &&\text{\it wait for stack level~$n$}\\
+  &\ceu{\Restore(n)}        &&\text{\it restore environment}\\
   &\ceu{\stmt_1\AtLoop\stmt_2}&&\text{\it unwinded loop}\\
   &\ceu{\stmt_1\AtAnd\stmt_2}&&\text{\it unwinded par/and}\\
   &\ceu{\stmt_1\AtOr\stmt_2}&&\text{\it unwinded par/or}
 \end{alignat*}
 \endgroup
+\caption{The syntax of basic \CEU.}
+\label{fig.sem.syntax}
+\end{figure}
 
-\fs{Tirar de listing/figura vai perder o ref da próxima seção.}
+We distinguish between three kinds of basic \CEU statements.  First, there
+are those statements which are common in imperative languages: assignments,
+conditionals, sequences, loops, and breaks.  The~$\ceu{\Block}$ statement,
+which defines a block introducing local variables, is also a statement of
+the first kind.  All of these common imperative statements behave as usual
+and execute in zero time.
 
-In the above list, the metavariables~$\stmt$, $\expr$, $e$, $v$, and~$n$
-denote statements, expressions, event identifiers, variable identifiers, and
-nonnegative integers, respectively.  Expressions are used to denote integer
-values.  They are build up from constants (0, 1, 123, \ldots) and variables
-by the usual mathematical and boolean operators ($+$, $\times$, $\le$,
-\ldots).
+The statements of the second kind are those which are specific to \CEU.
+These are the statements~$\ceu{\AwaitExt}$, $\ceu{\AwaitInt}$,
+$\ceu{\EmitInt}$, and~$\ceu{\Every}$, which deal with events, the
+statements~$\ceu{\And}$ and~$\ceu{\Or}$, which define parallel compositions,
+and the statement~$\ceu{\Fin}$, which defines a finalization block.  These
+basic \CEU statements behave more or less similarly to their counterparts in
+full \CEU.  We defer a precise description of their behavior and of the of
+the properties entailed by this behavior to Section~\ref{sec.sem.opsem}.
 
-\gl{Minha ideia aqui é deixar a notação e a terminologia menos pesada.
-  TODO: Dizer que expr int é suficiente; dizer que alguns do stmts são
-  internos; fazer a ligação com a próxima seção (mapeamento para full \CEU).
-  \textbf{Pergunta:} Como descrever o \emph{block} sem falar de ambiente?
-  Estou assumindo que o usuário pode declarar variável em qualquer lugar, e
-  não apenas dentro de \emph{block}, certo?}
-\fs{Pelo que conversamos hoje, o \emph{Var} vai sair e só teremos o
-    \emph{Block} que deve declarar todas as suas variáveis. O mapeamento entre
-    full e basic fica trivial também.}
+Finally, the statements of the third kind are the remaining ones:
+$\ceu{\Nop}$, $\ceu{\CanRun}$, $\ceu{\Restore}$, $\ceu{\AtLoop}$,
+$\ceu{\AtAnd}$, and~$\ceu{\AtOr}$.  These are internal (hidden) statements
+that do not appear in user programs; they are used by the basic \CEU
+interpreter to encode in the program's text information about the progress
+of its execution.  We will have more to say about \texttt{@}-statements in
+Section~\ref{sec.sem.opsem}.  Before that, however, we need to present the
+syntactical restrictions of basic \CEU and the mapping of full \CEU programs
+into basic \CEU programs.
 
-The~$\ceu{\Mem(id)}$ primitive represents a read or write to the memory
-location identified by~$id$.\footnotemark\
-% 
+\subsection{Syntactic Restrictions of Basic \CEU}
+\label{sec.sem.restrictions}
+
+The syntax of basic \CEU shown in Figure~\ref{fig.sem.syntax} can be seen as
+a schema for generating programs.  Not all programs generated by this schema
+are valid though.  To be considered a valid basic \CEU program, the program
+must also satisfy the following restrictions.
+\begin{enumerate}
+\item\label{sec.sem.restrictions.1} If a statement of the
+  form~$\ceu{\Loop{\stmt}}$ occurs in the program, then all execution paths
+  within~$\stmt$ must contain an occurrence of a~$\ceu{\Break}$
+  or~$\ceu{\AwaitExt}$ or~$\ceu{\Every}$ statement.
+\item\label{sec.sem.restrictions.2} If a statement of the
+  form~$\ceu{\Every{e}\,{\stmt}}$ occurs in the program, then~$\stmt$ must
+  contain no occurrence of~$\ceu{\Break}$ or~$\ceu{\AwaitExt}$
+  or~$\ceu{\Every}$ statements.
+\item\label{sec.sem.restrictions.3} If a statement of the
+  form~$\ceu{\Fin{\stmt}}$ occurs in the program, then~$\stmt$ must contain
+  no occurrence of~$\ceu{\AwaitExt}$ or~$\ceu{\AwaitInt}$ or~$\ceu{\Every}$
+  or~$\ceu{\Fin}$ statements.
+\end{enumerate}
+
+The purpose of restriction~\eqref{sec.sem.restrictions.1} is to ensure that
+the program does not contain loops that run in zero time.  The purpose of
+restriction~\eqref{sec.sem.restrictions.2} is to ensure that
+the~$\ceu{\Every}$ statement functions as a safe blocking point in the
+program.  Both restrictions are also present in full \CEU, as discussed in
+Section~\ref{sec.ceu}.
+
+\strut\gl{Esqueci alguma coisa?  Pode $\ceu{\protect\AwaitInt}$ dentro de
+  $\ceu{\protect\Every}$?  E $\ceu{\protect\AwaitInt}$,
+  $\ceu{\protect\Break}$, $\ceu{\protect\And}$, $\ceu{\protect\Or}$ dentro
+  de~$\ceu{\protect\Fin}$? TODO: O propósito da restrição (3) e como ela
+  aparece em full \CEU.}
+
+\strut\gl{Parei aqui.  Vou para a Seção~\ref{sec.sem.opsem} amanhã.}
+
+% The~$\ceu{\Mem(id)}$ primitive represents a read or write to the memory
+% location identified by~$id$.\footnotemark\
 % 
 % As the challenging parts of \CEU reside on its control structures, we are
 % not concerned here with a precise semantics for side effects, but only
 % with their occurrences in programs.
 % 
-% The special notation $nop$ is used to represent an innocuous $mem$ expression
-% (it can be thought as a synonym for $mem(\epsilon)$, where $\epsilon$ is an
-% unused identifier).
+% The special notation $nop$ is used to represent an innocuous $mem$
+% expression (it can be thought as a synonym for $mem(\epsilon)$, where
+% $\epsilon$ is an unused identifier).
 % 
-\footnotetext{Although the same symbol~$\ceu{\Id}$ is used in their
-  definition, $\ceu{\Mem}$, $\ceu{\AwaitExt}$, $\ceu{\AwaitInt}$
-  and~$\ceu{\EmitInt}$ do not share identifiers: any identifier is either a
-  variable, an external event, or an internal event.}
+% \footnotetext{Although the same symbol~$\ceu{\Id}$ is used in their
+%   definition, $\ceu{\Mem}$, $\ceu{\AwaitExt}$, $\ceu{\AwaitInt}$
+%   and~$\ceu{\EmitInt}$ do not share identifiers: any identifier is either a
+%   variable, an external event, or an internal event.}
 
-\subsection{Concrete Language Mapping}
+%\subsection{Concrete Language Mapping}
+\subsection{From \CEU to Basic \CEU}
 \label{sec.sem.concrete}
 
 Although the abstract syntax presented in Figure~\ref{fig.sem.syntax} is 
@@ -106,7 +163,7 @@ accessed by the awaking trail (ln~5).
 External events require a similar translation, i.e., each event needs a
 corresponding global variable shared between all awaiting trails.
 
-\begin{figure}
+\begin{figure}[ht!]
 \begin{minipage}[t]{0.48\linewidth}
 \begin{lstlisting}[
     numbers=right,
