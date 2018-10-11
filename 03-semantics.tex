@@ -12,20 +12,20 @@ elaborate constructs of full \CEU can be easily defined on top of it, as we
 shall see shortly.
 
 The statements of basic \CEU are presented in Figure~\ref{fig.sem.syntax}.
-We use the metavariables~$v$, $e$, and~$n$ to range over variable
-identifiers, event identifiers, and integers.  We use~$\vars$ to range over
-lists of zero or more variable identifiers, and~$\stmt$ and $\expr$ to range
-over statements and expressions.  For simplicity, we only consider
-expressions that evaluate to integers.  Expressions are build up from
-constants and variables by the usual mathematical operators ($+$, $-$,
-$\le$, \ldots).  We assume that expression evaluation takes zero time and
-always produces an integer value.  In places where a boolean value is
-expected, a nonzero value means true while zero means false.
+In the figure, the metavariables~$v$, $e$, and~$n$ range over variable
+identifiers, event identifiers, and integers.  The metavariable~$\vars$
+denotes zero or more variable identifiers, and the metavariables~$\stmt$ and
+$\expr$ denote statements and expressions.  For simplicity, we only consider
+integer expressions; these are build up from integer constants and variables
+by the usual mathematical operators ($+$, $-$, $\le$, \ldots).  We assume
+that expression evaluation takes zero time and that it always produces an
+integer value.  In places where a boolean value is expected, any nonzero
+value means true while zero means false.
 
 \begin{figure}[ht!]
 \begingroup
 \setlength{\jot}{0pt}
-\begin{alignat*}{2}
+\begin{empheq}[box=\fbox]{alignat*=2}
   &\ceu{\Block{\vars\ \stmt}}&\quad&\text{\it declaration block}\\
   &\ceu{v\coloneqq\expr}    &&\text{\it assignment statement}\\
   &\ceu{\AwaitExt(e)}       &&\text{\it await external event}\\
@@ -45,37 +45,36 @@ expected, a nonzero value means true while zero means false.
   &\ceu{\stmt_1\AtLoop\stmt_2}&&\text{\it unwinded loop}\\
   &\ceu{\stmt_1\AtAnd\stmt_2}&&\text{\it unwinded par/and}\\
   &\ceu{\stmt_1\AtOr\stmt_2}&&\text{\it unwinded par/or}
-\end{alignat*}
+\end{empheq}
 \endgroup
-\caption{The syntax of basic \CEU.}
+\caption{The statements of basic \CEU.}
 \label{fig.sem.syntax}
 \end{figure}
 
 We distinguish between three kinds of basic \CEU statements.  First, there
-are those statements which are common in imperative languages: assignments,
-conditionals, sequences, loops, and breaks.  The~$\ceu{\Block}$ statement,
-which defines a block introducing local variables, is also a statement of
-the first kind.  All of these common imperative statements behave as usual
-and execute in zero time.
+are those statements which are common in imperative languages, namely,
+assignments, conditionals, sequences, loops, and breaks.  The~$\ceu{\Block}$
+statement, which defines a block introducing local variables, is also a
+statement of the first kind.  All of these common imperative statements
+behave as usual and execute in zero time.
 
 The statements of the second kind are those which are specific to \CEU.
 These are the statements~$\ceu{\AwaitExt}$, $\ceu{\AwaitInt}$,
 $\ceu{\EmitInt}$, and~$\ceu{\Every}$, which deal with events, the
 statements~$\ceu{\And}$ and~$\ceu{\Or}$, which define parallel compositions,
 and the statement~$\ceu{\Fin}$, which defines a finalization block.  These
-basic \CEU statements behave more or less similarly to their counterparts in
+basic \CEU statements are more or less equivalent to their counterparts in
 full \CEU.  We defer a precise description of their behavior and of the of
 the properties entailed by this behavior to Section~\ref{sec.sem.opsem}.
 
-Finally, the statements of the third kind are the remaining ones:
-$\ceu{\Nop}$, $\ceu{\CanRun}$, $\ceu{\Restore}$, $\ceu{\AtLoop}$,
-$\ceu{\AtAnd}$, and~$\ceu{\AtOr}$.  These are internal (hidden) statements
-that do not appear in user programs; they are used by the basic \CEU
-interpreter to encode in the program's text information about the progress
-of its execution.  We will have more to say about \texttt{@}-statements in
+Finally, the statements of the third kind are the remaining statements,
+namely, $\ceu{\Nop}$, $\ceu{\CanRun}$, $\ceu{\Restore}$, $\ceu{\AtLoop}$,
+$\ceu{\AtAnd}$, and~$\ceu{\AtOr}$.  These are hidden statements used by the
+interpreter to encode in the program's text information about its execution.
+We will have more to say about these \texttt{@}-statements in
 Section~\ref{sec.sem.opsem}.  Before that, however, we need to present the
-syntactical restrictions of basic \CEU and the mapping of full \CEU programs
-into basic \CEU programs.
+syntactical restrictions of basic \CEU and discuss the mapping of full \CEU
+programs into basic \CEU programs.
 
 \subsection{Syntactic Restrictions of Basic \CEU}
 \label{sec.sem.restrictions}
@@ -87,32 +86,21 @@ must also satisfy the following restrictions.
 \begin{enumerate}
 \item\label{sec.sem.restrictions.1} If a statement of the
   form~$\ceu{\Loop{\stmt}}$ occurs in the program, then all execution paths
-  within~$\stmt$ must contain an occurrence of a~$\ceu{\Break}$
-  or~$\ceu{\AwaitExt}$ or~$\ceu{\Every}$ statement.
+  within~$\stmt$ must contain an occurrence of a matching $\ceu{\Break}$ or
+  an~$\ceu{\AwaitExt}$ statement or an~$\ceu{\Every}$ statement.
 \item\label{sec.sem.restrictions.2} If a statement of the
-  form~$\ceu{\Every{e}\,{\stmt}}$ occurs in the program, then~$\stmt$ must
-  contain no occurrence of~$\ceu{\Break}$ or~$\ceu{\AwaitExt}$
-  or~$\ceu{\Every}$ statements.
-\item\label{sec.sem.restrictions.3} If a statement of the
-  form~$\ceu{\Fin{\stmt}}$ occurs in the program, then~$\stmt$ must contain
-  no occurrence of~$\ceu{\AwaitExt}$ or~$\ceu{\AwaitInt}$ or~$\ceu{\Every}$
-  or~$\ceu{\Fin}$ statements.
+  form~$\ceu{\Every{e}\,{\stmt}}$ or~$\ceu{\Fin{\stmt}}$ occurs in the
+  program, then~$\stmt$ must contain an occurrences of $\ceu{\Loop}$,
+  $\ceu{\Break}$, $\ceu{\AwaitExt}$, $\ceu{\AwaitInt}$, $\ceu{\Every}$,
+  or~$\ceu{\Fin}$.
 \end{enumerate}
 
-The purpose of restriction~\eqref{sec.sem.restrictions.1} is to ensure that
-the program does not contain loops that run in zero time.  The purpose of
-restriction~\eqref{sec.sem.restrictions.2} is to ensure that
-the~$\ceu{\Every}$ statement functions as a safe blocking point in the
-program.  Both restrictions are also present in full \CEU, as discussed in
-Section~\ref{sec.ceu}.
-
-\strut\gl{Esqueci alguma coisa?  Pode $\ceu{\protect\AwaitInt}$ dentro de
-  $\ceu{\protect\Every}$?  E $\ceu{\protect\AwaitInt}$,
-  $\ceu{\protect\Break}$, $\ceu{\protect\And}$, $\ceu{\protect\Or}$ dentro
-  de~$\ceu{\protect\Fin}$? TODO: O propósito da restrição (3) e como ela
-  aparece em full \CEU.}
-
-\strut\gl{Parei aqui.  Vou para a Seção~\ref{sec.sem.opsem} amanhã.}
+The purpose of the first restriction is to ensure that the program does not
+contain an infinite loop with a body that runs in zero time.  The purpose of
+the second restriction is to ensure that the statements~$\ceu{\Every}$
+and~$\ceu{\Fin}$ function as a safe blocking points in the program whose
+bodies run in zero time.  Both restrictions are also present in full \CEU,
+as discussed in Section~\ref{sec.ceu}.
 
 % The~$\ceu{\Mem(id)}$ primitive represents a read or write to the memory
 % location identified by~$id$.\footnotemark\
@@ -134,31 +122,45 @@ Section~\ref{sec.ceu}.
 \subsection{From \CEU to Basic \CEU}
 \label{sec.sem.concrete}
 
-Although the abstract syntax presented in Figure~\ref{fig.sem.syntax} is 
-similar to the concrete language in Listing~\ref{lst.syntax}, there are some 
-significant mismatches between \CEU and the formal semantics that require some 
-clarification.
+With the exception of \texttt{@}-statements, most statements of basic \CEU
+are also present in full \CEU.  These shared statements, however, are not
+exactly equivalent.  It is often the case that a statement of basic \CEU
+(say~$\ceu{\AwaitInt}$) lacks some of the features of its full \CEU
+counterpart (\code{await}).  Moreover, some statements of full \CEU, such as
+\code{finalize}, are simply not present in basic \CEU.  If we are to use
+basic \CEU as a basis for implementing full \CEU then these gaps need to be
+filled.  In this section, we discuss the three main gaps between the two
+languages.  We leave out of the discussion the \texttt{@}-statements of
+basic \CEU, as these are not exposed to end users.
 
-Also note that the \texttt{@}-statements do not exist in the concrete language
-and are results of expansions in the transition rules to be presented in
-Section~\ref{sec.sem.opsem}.
+% \texttt{@}-statements of basic \CEU are not considered in
+
+% Although the abstract syntax presented in Figure~\ref{fig.sem.syntax} is
+% similar to the concrete language in Listing~\ref{lst.syntax}, there are
+% some significant mismatches between \CEU and the formal semantics that
+% require some clarification.
+
+% Also note that the \texttt{@}-statements do not exist in the concrete
+% language and are results of expansions in the transition rules to be
+% presented in Section~\ref{sec.sem.opsem}.
 
 \subsubsection{\code{await} and \code{emit}}
 
-The \code{await} and \code{emit} primitives of \CEU are slightly more complex 
-in comparison to the formal semantics, as they support communication of values 
+The \code{await} and \code{emit} primitives of full \CEU are slightly more
+complex than those of basic \CEU: they support communication of values
 between emits and awaits.
 
 Figure~\ref{lst.await_emit} shows a translation that adds a variable to hold
-the value in the communication.
+the value being communicated.
 %
-The original code in Listing~\ref{lst.await_emit.a} declares an internal event
-\code{e} (ln~2) and has and \code{await} (ln~4) and \code{emit} (ln~10) to
-communicate the value $1$ between the trails in parallel.
+The original full \CEU code in Listing~\ref{lst.await_emit.a} declares an
+internal event \code{e} (ln~2) and has an \code{await} (ln~4) and an
+\code{emit} (ln~10) that communicate the value~$1$ between the trails in
+parallel.
 %
-The translation in Listing~\ref{lst.await_emit.b} declares an additional shared
-variable \code{e\_} (ln~1) to hold the emitted value (ln~9), which can be
-accessed by the awaking trail (ln~5).
+The translation to basic \CEU in Listing~\ref{lst.await_emit.b} declares an
+additional shared variable \code{e\_} (ln~1) to hold the emitted value
+(ln~9) and which can be accessed by the awaking trail (ln~5).
 
 External events require a similar translation, i.e., each event needs a
 corresponding global variable shared between all awaiting trails.
@@ -212,22 +214,22 @@ end
 
 \subsubsection{First-class timers}
 
-To support first-class timers, we introduce a \code{TIMER} input to notify the
-passage of time, and two global variables \code{timer\_} (to hold the elapsed
-time) and \code{delta\_} (to hold the residual time set to 0).
+To add support for first-class timers to basic \CEU , we introduce a
+\code{TIMER} input event, which notifies the passage of time, and two global
+variables: \code{timer\_} which holds the elapsed time, and \code{delta\_}
+which holds the residual time, initially set to 0.
 
-Listing~\ref{lst.TIMER.b} shows the translation from Listing~\ref{lst.TIMER.a}
-for two timers in sequence (ln~1,11).
+Listing~\ref{lst.TIMER.b} shows the basic \CEU program resulting from the
+translation of the two timers shown in Listing~\ref{lst.TIMER.a} (ln~1,11).
 A timer first adds a (possibly) negative delta from the time it should await
-(ln~1).
-Then, it enters in a loop that awakes on every occurrence of \code{TIMER}
-(ln~7) and decrements the time it should await (ln~8).
-Each iteration of the loop checks if the timer has expired (ln~3), and sets the
-new delta, which may affect a timer in sequence.
-The check happens before the await because the timer may already start expired
-due to the residual time.
+(ln~1).  Then, it enters in a loop that awakes on every occurrence of
+\code{TIMER} (ln~7) and decrements the time it should await (ln~8).  Each
+iteration of the loop checks if the timer has expired (ln~3), and sets the
+new delta, which may affect a timer in sequence.  The check happens before
+the await because the timer may already start expired due to the residual
+time.
 
-\begin{figure}
+\begin{figure}[!ht]
 \begin{minipage}[t]{0.33\linewidth}
 \begin{lstlisting}[
     numbers=right,
@@ -289,23 +291,24 @@ aborts ``$\ceu{\Fin B}$'', which finally causes~$B$ to execute (by the
 semantic rules below).
 \end{comment}
 
-The biggest mismatch between \CEU and the formal semantics is due to the
-concrete \code{finalize} and the abstract \code{fin}.
+The biggest mismatch between full \CEU and basic \CEU is in their support
+for finalization, i.e., between the statements \code{finalize} of full \CEU
+and $\ceu{\Fin}$ of basic \CEU.
 %
-Listing~\ref{3.lst.fin.a} shows the original program with an explicit block
-(ln~1,8) that executes the statements in \code{<A>} (ln~3) immediately followed
-by \code{<C>} (ln~7), and unconditionally executes \code{<B>} (ln~5) when the
-block terminates or aborts.
+Listing~\ref{3.lst.fin.a} shows a full \CEU program containing an explicit
+block (ln~1,8) that executes the statements in \code{<A>} (ln~3) immediately
+followed by \code{<C>} (ln~7), and unconditionally executes \code{<B>}
+(ln~5) when the block terminates or aborts.
 %
-The translation in Listing~\ref{3.lst.fin.b} also executes \code{<A>} (ln~1)
-immediately followed by \code{<C>} (ln~5).
-The difference is that the \code{fin <B>} (ln~3) in the abstract semantics
-blocks the pending statement forever, which only awakes and executes when it is
-aborted.
-The \code{par/or} (ln~2--6) serves this purpose since it allows \code{<C>} to
+The simulate this behavior in basic \CEU we need to perform the translation
+shown in Listing~\ref{3.lst.fin.b}.  This basic \CEU code also executes
+\code{<A>} (ln~1) immediately followed by \code{<C>} (ln~5).  The difference
+is that the \code{fin <B>} statement (ln~3) blocks the pending statement
+forever, which only awakes and executes when it is aborted.  The
+\code{par/or} (ln~2--6) serves this purpose since it allows \code{<C>} to
 execute immediately and aborts the \code{fin} when terminating.
 
-\begin{figure}
+\begin{figure}[ht!]
 \begin{minipage}[t]{0.48\linewidth}
 \begin{lstlisting}[
     numbers=right,
@@ -342,7 +345,7 @@ end
 \end{lstlisting}
 \end{minipage}
 %
-\caption{ Concrete-to-abstract translation for finalization. }
+\caption{Concrete-to-abstract translation for finalization. }
 \label{3.lst.fin}
 \end{figure}
 
