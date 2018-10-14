@@ -1,5 +1,3 @@
-\def\JOT{.8\jot}
-
 \section{Formal Semantics of~\CEU}
 \label{sec.sem}
 
@@ -12,51 +10,76 @@ elaborate constructs of full \CEU can be easily defined on top of it, as we
 will discuss shortly.
 
 The statements of basic \CEU are presented in Figure~\ref{fig.sem.syntax}.
-In the figure, the metavariables~$v$, $e$, and~$n$ range over variable
-identifiers, event identifiers, and integers.  The metavariable~$\vars$
-denotes zero or more variable identifiers, and the metavariables~$\stmt$ and
-$\expr$ denote statements and expressions.  For simplicity, we only consider
-integer expressions; these are build up from integer constants and variables
-by the usual mathematical operators ($+$, $-$, $\le$, \ldots).  We assume
-that expression evaluation takes zero time (in accordance with the synchronous
-hypothesis) and that it always produces an integer value.  In places where a
-boolean value is expected, any nonzero value means true while zero means false.
+In the figure, the metavariables~$v$ (ln~2), $e$ (ln~3--5, 10), and~$n$
+(ln~15--16) range over variable identifiers, event identifiers, and
+integers.  The metavariable~$\vars$ (ln~1) denotes zero or more variable
+identifiers.  The metavariable~$\stmt$ (ln~1, 7--13, 17--19) denotes a
+statement, i.e., any of the basic \CEU statements listed in
+Figure~\ref{fig.sem.syntax}---compound statements are constructed
+inductively from simpler statements.  Finally, the metavariable $\expr$
+(ln~2, 7) denotes an expression.
 
-\fs{Tem como colocar linhas e indicá-las no texto? É chato ficar procurando as
-    definições...}
-\fs{Acho que deixar mais claro que stmt é uma definição recursiva.}
-\fs{\code{canrun} dá uma idéia de que já pode executar, pensei em \code{runat}.}
-\fs{Outra mudança que eu também faria é \code{or} -> \code{paror} e \code{and}
--> \code{parand}. As vezes me condunde durante a leitura.}
+% \fs{Tem como colocar linhas e indicá-las no texto? É chato ficar
+% procurando as definições...}
+
+% \fs{Acho que deixar mais claro que stmt é uma definição recursiva.}
+
+% \fs{\code{canrun} dá uma idéia de que já pode executar, pensei em
+% \code{runat}.}
+
+% \fs{Outra mudança que eu também faria é \code{or} -> \code{paror} e
+% \code{and} -> \code{parand}. As vezes me condunde durante a leitura.}
+
+\gl{Mudei ``canrun'' para ``wait'', ao invés de ``runat''.  Só porque
+  ``@runat'' já tem um ``at'' no início.  Frescura, eu sei.  Se não gostar é
+  só mudar no header.}
+
+\gl{Outra opção para o basic, seria usar o mesmo estilo do full mas colocar
+  um $\upbeta$ no final, e.g.,
+  \lstinline[mathescape=true,keywords={block}]|block$_\upbeta$ ...|,
+  \lstinline[mathescape=true,keywords={set}]|set$_\upbeta$ x:=y|,
+  \lstinline[mathescape=true,keywords={seq}]|seq$_\upbeta$ x; y|,
+  \lstinline[mathescape=true]|if$_\upbeta$...then...else...|,
+  \lstinline[mathescape=true]|...par/and$_\upbeta$...|.  Assim daria para
+  usar $\CEU_\upbeta$ (basic) e \CEU (full).}
 
 \begin{figure}[ht!]
 \begingroup
 \setlength{\jot}{0pt}
-\begin{empheq}[box=\fbox]{alignat*=2}
-  &\ceu{\Block{\vars\ \stmt}}&\quad&\text{\it declaration block}\\
-  &\ceu{v\coloneqq\expr}    &&\text{\it assignment statement}\\
-  &\ceu{\AwaitExt(e)}       &&\text{\it await external event}\\
-  &\ceu{\AwaitInt(e)}       &&\text{\it await internal event}\\
-  &\ceu{\EmitInt(e)}        &&\text{\it emit internal event}\\
-  &\ceu{\Break}             &&\text{\it loop escape}\\
-  &\ceu{\IfElse{\expr}{\stmt_1}{\stmt_2}}&&\text{\it conditional}\\
-  &\ceu{\stmt_1\,;\,\stmt_2}&&\text{\it sequence}\\
-  &\ceu{\Loop \stmt}        &&\text{\it infinite loop}\\
-  &\ceu{\Every{e}\,\stmt}   &&\text{\it event iteration}\\
-  &\ceu{\stmt_1\And\stmt_2} &&\text{\it par/and statement}\\
-  &\ceu{\stmt_2\Or\stmt_2}  &&\text{\it par/or statement}\\
-  &\ceu{\Fin\stmt}          &&\text{\it finalization statement}\\
-  &\ceu{\Nop}               &&\text{\it dummy statement}\\
-  &\ceu{\CanRun(n)}         &&\text{\it wait for stack level~$n$}\\
-  &\ceu{\Restore(n)}        &&\text{\it restore environment}\\
-  &\ceu{\stmt_1\AtLoop\stmt_2}&&\text{\it unwinded loop}\\
-  &\ceu{\stmt_1\AtAnd\stmt_2}&&\text{\it unwinded par/and}\\
-  &\ceu{\stmt_1\AtOr\stmt_2}&&\text{\it unwinded par/or}
+\def\N#1{\mathllap{\text{\scriptsize{#1}}\hspace{1em}}}
+\begin{empheq}[box=\fbox]{alignat*=3}
+  \N1&\hskip4pt&&\ceu{\Block{\vars\ \stmt}}
+                                       &\quad&\text{\it declaration block}\\
+  \N2&&&\ceu{v\coloneqq\expr}          &&\text{\it assignment statement}\\
+  \N3&&&\ceu{\AwaitExt(e)}             &&\text{\it await external event}\\
+  \N4&&&\ceu{\AwaitInt(e)}             &&\text{\it await internal event}\\
+  \N5&&&\ceu{\EmitInt(e)}              &&\text{\it emit internal event}\\
+  \N6&&&\ceu{\Break}                   &&\text{\it loop escape}\\
+  \N7&&&\ceu{\IfElse{\expr}{\stmt_1}{\stmt_2}} &&\text{\it conditional}\\
+  \N8&&&\ceu{\stmt_1\,;\,\stmt_2}      &&\text{\it sequence}\\
+  \N9&&&\ceu{\Loop \stmt}              &&\text{\it infinite loop}\\
+  \N{10}&&&\ceu{\Every{e}\,\stmt}      &&\text{\it event iteration}\\
+  \N{11}&&&\ceu{\stmt_1\ParAnd\stmt_2} &&\text{\it par/and statement}\\
+  \N{12}&&&\ceu{\stmt_2\ParOr\stmt_2}  &&\text{\it par/or statement}\\
+  \N{13}&&&\ceu{\Fin\stmt}             &&\text{\it finalization statement}\\
+  \N{14}&&&\ceu{\Nop}                  &&\text{\it dummy statement}\\
+  \N{15}&&&\ceu{\Wait(n)}             &&\text{\it wait for stack level~$n$}\\
+  \N{16}&&&\ceu{\Restore(n)}           &&\text{\it restore environment}\\
+  \N{17}&&&\ceu{\stmt_1\AtLoop\stmt_2} &&\text{\it unwinded loop}\\
+  \N{18}&&&\ceu{\stmt_1\AtParAnd\stmt_2}  &&\text{\it unwinded par/and}\\
+  \N{19}&&&\ceu{\stmt_1\AtParOr\stmt_2}   &&\text{\it unwinded par/or}
 \end{empheq}
 \endgroup
 \caption{The statements of basic \CEU.}
 \label{fig.sem.syntax}
 \end{figure}
+
+For simplicity, we only consider integer expressions.  These are build up
+from integer constants and variables by the usual mathematical operators
+($+$, $-$, $\le$, \ldots).  We assume that expression evaluation takes zero
+time (in accordance with the synchronous hypothesis) and that it always
+produces an integer value.  In places where a boolean value is expected, any
+nonzero value means true while zero means false.
 
 We distinguish between three kinds of basic \CEU statements.  First, there
 are those statements which are common in imperative languages and behave as
@@ -67,14 +90,14 @@ at once in a list of identifiers.
 The statements of the second kind are those which are specific to \CEU.
 These are the statements~$\ceu{\AwaitExt}$, $\ceu{\AwaitInt}$,
 $\ceu{\EmitInt}$, and~$\ceu{\Every}$, which deal with events, the
-statements~$\ceu{\And}$ and~$\ceu{\Or}$, which define parallel compositions,
-and the statement~$\ceu{\Fin}$, which defines a finalization block.  These
-basic \CEU statements are more or less equivalent to their counterparts in
-full \CEU.  We defer a precise description of their behavior and entailed
-properties to Section~\ref{sec.sem.opsem}.
+statements~$\ceu{\ParAnd}$ and~$\ceu{\ParOr}$, which define parallel
+compositions, and the statement~$\ceu{\Fin}$, which defines a finalization
+block.  These basic \CEU statements are more or less equivalent to their
+counterparts in full \CEU.  We defer a precise description of their behavior
+and entailed properties to Section~\ref{sec.sem.opsem}.
 
 Finally, the statements of the third kind are the remaining ones, namely,
-$\ceu{\Nop}$, $\ceu{\CanRun}$, $\ceu{\Restore}$, $\ceu{\AtLoop}$,
+$\ceu{\Nop}$, $\ceu{\Wait}$, $\ceu{\Restore}$, $\ceu{\AtLoop}$,
 $\ceu{\AtAnd}$, and~$\ceu{\AtOr}$.  These are hidden statements used by the
 interpreter to encode in the program's text information about its execution.
 We will have more to say about these \texttt{@}-statements in
@@ -90,34 +113,45 @@ a schema for generating programs.  Not all programs generated by this schema
 are valid though.  To be considered a valid basic \CEU program, the
 generated program must also satisfy the following restrictions.
 \begin{enumerate}
-\item\label{sec.sem.restrictions.1} If a statement of the
-  form~$\ceu{\Loop{\stmt}}$ occurs in the program, then all execution paths
-  within~$\stmt$ must contain an occurrence of a matching $\ceu{\Break}$ or
-  an~$\ceu{\AwaitExt}$ statement or an~$\ceu{\Every}$ statement.
-\item\label{sec.sem.restrictions.2} If a statement of the
-  form~$\ceu{\Every{e}\,{\stmt}}$ or~$\ceu{\Fin{\stmt}}$ occurs in the
-  program, then~$\stmt$ must \emph{not} contain occurrences of
-  $\ceu{\Loop}$, $\ceu{\Break}$, $\ceu{\AwaitExt}$, $\ceu{\AwaitInt}$,
-  $\ceu{\Every}$, or~$\ceu{\Fin}$.
+\item If a statement of the form~$\ceu{\Break}$ occurs in the program, then
+  it occurs inside the body of some~$\ceu{\Loop}$ statement.
+\item If a statement of the form~$\ceu{\Loop{\stmt}}$ occurs in the program,
+  then all execution paths within~$\stmt$ contain an occurrence of a
+  matching $\ceu{\Break}$ statement or an~$\ceu{\AwaitExt}$ statement or
+  an~$\ceu{\Every}$ statement.
+\item If a statement of the form~$\ceu{\Every{e}\,{\stmt}}$
+  or~$\ceu{\Fin{\stmt}}$ occurs in the program, then~$\stmt$ does not
+  contain occurrences of $\ceu{\Loop}$, $\ceu{\Break}$, $\ceu{\AwaitExt}$,
+  $\ceu{\AwaitInt}$, $\ceu{\Every}$, or~$\ceu{\Fin}$.
 \end{enumerate}
 
-\fs{Também não faz sentido eles terem parand e paror (mas acho que nao afeta as provas).}
+\fs{Também não faz sentido eles terem parand e paror (mas acho que nao afeta
+  as provas).}
 
-The purpose of the first restriction is to ensure that the program does not
-have an infinite loop with a body that runs in zero time.  The purpose of
-the second restriction is to ensure that the statements~$\ceu{\Every}$
-and~$\ceu{\Fin}$ function as a safe blocking points in the program whose
-bodies run in zero time.  Similar restrictions exist in full \CEU, as
+\gl{Nas provas essas restrições viram o assumption de que~$\nst[*]$ reduz o
+  corpo do every/fin para nop.  Não adicionei parand/or na restrição porque
+  de fato não precisa, mas fique à vontade para adicionar.}
+
+The purpose of the first restriction is to ensure that every~$\ceu{\Break}$
+has a parent~$\ceu{\Loop}$.  The purpose of the second restriction is to
+ensure that the program does not have an infinite loop with a body that runs
+in zero time.  And the purpose of the third restriction is to ensure that
+the body of $\ceu{\Every}$ and~$\ceu{\Fin}$ always execute to completion
+within the same reaction.  Similar restrictions exist in full \CEU, as
 discussed in Section~\ref{sec.ceu}.
 
-\fs{A restrição do fin não é por ser blocking point, pelo contrário.
-Uma vez que ele começa a executar, ele tem que terminar na mesma reação pois a
-trilha tem que morrer pro programa continuar.}
-\fs{A restrição do every também não tem a ver com ser blocking point. O bloco
-do every também precisa terminar na mesma reação pro every não perder eventos.}
+\fs{A restrição do fin não é por ser blocking point, pelo contrário.  Uma
+  vez que ele começa a executar, ele tem que terminar na mesma reação pois a
+  trilha tem que morrer pro programa continuar.}
+
+\fs{A restrição do every também não tem a ver com ser blocking point. O
+  bloco do every também precisa terminar na mesma reação pro every não
+  perder eventos.}
+
 \fs{A única restrição que tem a ver com safe blocking point é não poder ter
-break dentro de every.}
-\fs{Também não faz sentido eles terem parand e paror (mas acho que nao afeta as provas).}
+  break dentro de every.}
+
+\gl{Veja se agora está OK.}
 
 % The~$\ceu{\Mem(id)}$ primitive represents a read or write to the memory
 % location identified by~$id$.\footnotemark\
@@ -139,21 +173,19 @@ break dentro de every.}
 \subsection{From Full \CEU to Basic \CEU}
 \label{sec.sem.concrete}
 
-\fs{Não gostei desse parágrafo. (1) foco duplo no @-stmt que é óbvio que está
-fora da comparação. (2) "It is often the case" dá a impressão que temos 100
-casos, quando na verdade são casos claros e enumeráveis. (3) o
-\code{finalize} está sim presente como \code{fin} mas com diferenças notáveis.}
+Most statements of full \CEU are also present in basic \CEU.  These shared
+statements, however, are not exactly equivalent.  It is sometimes the case
+that a statement full \CEU (say~\code{await}) has more features than its
+basic \CEU counterpart ($\ceu{\AwaitInt}$).  In this section, we discuss how
+the extra features of full \CEU are implemented in basic \CEU.
 
-With the exception of \texttt{@}-statements, most statements of basic \CEU
-are also present in full \CEU.  These shared statements, however, are not
-exactly equivalent.  It is often the case that a statement of basic \CEU
-(say~$\ceu{\AwaitInt}$) lacks some of the features of its full \CEU
-counterpart (\code{await}).  Moreover, some statements of full \CEU, such as
-\code{finalize}, are simply not present in basic \CEU.  If we are to use
-basic \CEU as a basis for implementing full \CEU then these gaps need to be
-filled.  In this section, we discuss the three main gaps between the two
-languages.  We leave out of the discussion the \texttt{@}-statements of
-basic \CEU, as these are not exposed to end users.
+\fs{Não gostei desse parágrafo. (1) foco duplo no @-stmt que é óbvio que
+  está fora da comparação. (2) "It is often the case" dá a impressão que
+  temos 100 casos, quando na verdade são casos claros e enumeráveis. (3) o
+  \code{finalize} está sim presente como \code{fin} mas com diferenças
+  notáveis.}
+
+\gl{Veja se está melhor.}
 
 % \texttt{@}-statements of basic \CEU are not considered in
 
@@ -464,6 +496,7 @@ types of transitions: \emph{outermost transitions} $\out$ and \emph{nested
 
 \strut\gl{Parei aqui.}
 \strut\fs{Parei aqui também.}
+\def\JOT{.8\jot}
 
 % We now proceed to give the rules for possible the transitions.  We
 % distinguish between two types of transitions: \emph{outermost transitions}

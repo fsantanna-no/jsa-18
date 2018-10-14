@@ -4,6 +4,7 @@
 \usepackage{etoolbox}
 \usepackage{mathtools}
 \usepackage{thmtools}
+\usepackage{upgreek}
 \usepackage{empheq}
 \usepackage{tikz}
 \usetikzlibrary{
@@ -90,15 +91,20 @@
   \def\IfElse##1##2##3{\@ceuop{if}##1\@ceuop{then}{##2}\@ceuop{else}{##3}}%
   \def\Loop{\@ceuop{loop}}%
   \def\Every{\@ceuop{every}}%
-  \def\And{\@ceubin{and}}%
-  \def\Or{\@ceubin{or}}%
+  \def\And{\@ceubin{and}}%          to be removed
+  \def\Or{\@ceubin{or}}%            to be removed
+  \def\ParAnd{\@ceubin{par/and}}%
+  \def\ParOr{\@ceubin{par/or}}%
   \def\Fin{\@ceuop{fin}}%
   \def\Nop{\@ceuop{@nop}}%
-  \def\CanRun{\@ceuop{@canrun}}%
+  \def\CanRun{\@ceuop{@canrun}}%    to be removed
+  \def\Wait{\@ceuop{@wait}}%
   \def\Restore{\@ceuop{@restore}}%
   \def\AtLoop{\@ceuop{@loop}}%
-  \def\AtAnd{\@ceubin{@and}}%
-  \def\AtOr{\@ceubin{@or}}%
+  \def\AtAnd{\@ceubin{@and}}%       to be removed
+  \def\AtOr{\@ceubin{@or}}%         to be removed
+  \def\AtParAnd{\@ceubin{@par/and}}%
+  \def\AtParOr{\@ceubin{@par/or}}%
   \ensuremath{#1}\ignorespaces
   \egroup
 }
