@@ -9,7 +9,7 @@ in Section~\ref{sec.ceu}, basic \CEU is expressive enough to capture all the
 essential characteristics of full \CEU, in particular, the stack-based
 execution of internal events.  Once basic \CEU is defined, the more
 elaborate constructs of full \CEU can be easily defined on top of it, as we
-shall discuss shortly.
+will discuss shortly.
 
 The statements of basic \CEU are presented in Figure~\ref{fig.sem.syntax}.
 In the figure, the metavariables~$v$, $e$, and~$n$ range over variable
@@ -18,9 +18,16 @@ denotes zero or more variable identifiers, and the metavariables~$\stmt$ and
 $\expr$ denote statements and expressions.  For simplicity, we only consider
 integer expressions; these are build up from integer constants and variables
 by the usual mathematical operators ($+$, $-$, $\le$, \ldots).  We assume
-that expression evaluation takes zero time and that it always produces an
-integer value.  In places where a boolean value is expected, any nonzero
-value means true while zero means false.
+that expression evaluation takes zero time (in accordance with the synchronous
+hypothesis) and that it always produces an integer value.  In places where a
+boolean value is expected, any nonzero value means true while zero means false.
+
+\fs{Tem como colocar linhas e indicá-las no texto? É chato ficar procurando as
+    definições...}
+\fs{Acho que deixar mais claro que stmt é uma definição recursiva.}
+\fs{\code{canrun} dá uma idéia de que já pode executar, pensei em \code{runat}.}
+\fs{Outra mudança que eu também faria é \code{or} -> \code{paror} e \code{and}
+-> \code{parand}. As vezes me condunde durante a leitura.}
 
 \begin{figure}[ht!]
 \begingroup
@@ -52,11 +59,10 @@ value means true while zero means false.
 \end{figure}
 
 We distinguish between three kinds of basic \CEU statements.  First, there
-are those statements which are common in imperative languages, namely,
-assignments, conditionals, sequences, loops, and breaks.  The~$\ceu{\Block}$
-statement, which defines a block introducing local variables, is also a
-statement of the first kind.  All of these common imperative statements
-behave as usual and execute in zero time.
+are those statements which are common in imperative languages and behave as
+usual, namely, blocks, assignments, conditionals, sequences, loops, and breaks.
+The $\ceu{\Block}$ statement in the basic \CEU introduces its local variables
+at once in a list of identifiers.
 
 The statements of the second kind are those which are specific to \CEU.
 These are the statements~$\ceu{\AwaitExt}$, $\ceu{\AwaitInt}$,
@@ -64,8 +70,8 @@ $\ceu{\EmitInt}$, and~$\ceu{\Every}$, which deal with events, the
 statements~$\ceu{\And}$ and~$\ceu{\Or}$, which define parallel compositions,
 and the statement~$\ceu{\Fin}$, which defines a finalization block.  These
 basic \CEU statements are more or less equivalent to their counterparts in
-full \CEU.  We defer a precise description of their behavior and of the of
-the properties entailed by this behavior to Section~\ref{sec.sem.opsem}.
+full \CEU.  We defer a precise description of their behavior and entailed
+properties to Section~\ref{sec.sem.opsem}.
 
 Finally, the statements of the third kind are the remaining ones, namely,
 $\ceu{\Nop}$, $\ceu{\CanRun}$, $\ceu{\Restore}$, $\ceu{\AtLoop}$,
@@ -95,12 +101,23 @@ generated program must also satisfy the following restrictions.
   $\ceu{\Every}$, or~$\ceu{\Fin}$.
 \end{enumerate}
 
+\fs{Também não faz sentido eles terem parand e paror (mas acho que nao afeta as provas).}
+
 The purpose of the first restriction is to ensure that the program does not
 have an infinite loop with a body that runs in zero time.  The purpose of
 the second restriction is to ensure that the statements~$\ceu{\Every}$
 and~$\ceu{\Fin}$ function as a safe blocking points in the program whose
 bodies run in zero time.  Similar restrictions exist in full \CEU, as
 discussed in Section~\ref{sec.ceu}.
+
+\fs{A restrição do fin não é por ser blocking point, pelo contrário.
+Uma vez que ele começa a executar, ele tem que terminar na mesma reação pois a
+trilha tem que morrer pro programa continuar.}
+\fs{A restrição do every também não tem a ver com ser blocking point. O bloco
+do every também precisa terminar na mesma reação pro every não perder eventos.}
+\fs{A única restrição que tem a ver com safe blocking point é não poder ter
+break dentro de every.}
+\fs{Também não faz sentido eles terem parand e paror (mas acho que nao afeta as provas).}
 
 % The~$\ceu{\Mem(id)}$ primitive represents a read or write to the memory
 % location identified by~$id$.\footnotemark\
@@ -121,6 +138,11 @@ discussed in Section~\ref{sec.ceu}.
 %\subsection{Concrete Language Mapping}
 \subsection{From Full \CEU to Basic \CEU}
 \label{sec.sem.concrete}
+
+\fs{Não gostei desse parágrafo. (1) foco duplo no @-stmt que é óbvio que está
+fora da comparação. (2) "It is often the case" dá a impressão que temos 100
+casos, quando na verdade são casos claros e enumeráveis. (3) o
+\code{finalize} está sim presente como \code{fin} mas com diferenças notáveis.}
 
 With the exception of \texttt{@}-statements, most statements of basic \CEU
 are also present in full \CEU.  These shared statements, however, are not
@@ -148,7 +170,7 @@ basic \CEU, as these are not exposed to end users.
 
 The \code{await} and \code{emit} primitives of full \CEU are slightly more
 complex than those of basic \CEU: they support communication of values
-between emits and awaits.
+between them.
 
 Figure~\ref{lst.await_emit} shows a translation that adds a variable to hold
 the value being communicated.
@@ -208,7 +230,7 @@ end
 \end{lstlisting}
 \end{minipage}
 %
-\caption{Concrete-to-abstract translation for \code{await} and \code{emit}. }
+\caption{Full-to-Basic translation for \code{await} and \code{emit}. }
 \label{lst.await_emit}
 \end{figure}
 
@@ -273,7 +295,7 @@ var int tot_ = 1000 + delta_;
 <...> // same loop as above
 \end{lstlisting}
 \end{minipage}
-\caption{ Concrete-to-abstract translation for timers. }
+\caption{ Full-to-Basic translation for timers. }
 \label{lst.TIMER}
 \end{figure}
 
@@ -300,10 +322,10 @@ block (ln~1,8) that executes the statements in \code{<A>} (ln~3) immediately
 followed by \code{<C>} (ln~7), and unconditionally executes \code{<B>}
 (ln~5) when the block terminates or aborts.
 %
-The simulate this behavior in basic \CEU we need to perform the translation
-shown in Listing~\ref{3.lst.fin.b}.  This basic \CEU code also executes
+To simulate this behavior in basic \CEU we need to perform the translation
+shown in Listing~\ref{3.lst.fin.b}.  The basic \CEU code also executes
 \code{<A>} (ln~1) immediately followed by \code{<C>} (ln~5).  The difference
-is that the \code{fin <B>} statement (ln~3) blocks the pending statement
+is that the basic \code{fin <B>} statement (ln~3) blocks the pending statement
 forever, which only awakes and executes when it is aborted.  The
 \code{par/or} (ln~2--6) serves this purpose since it allows \code{<C>} to
 execute immediately and aborts the \code{fin} when terminating.
@@ -345,7 +367,7 @@ end
 \end{lstlisting}
 \end{minipage}
 %
-\caption{Concrete-to-abstract translation for finalization. }
+\caption{Full-to-Basic translation for finalization. }
 \label{3.lst.fin}
 \end{figure}
 
@@ -355,8 +377,9 @@ end
 We now proceed to formalize the operation of the basic \CEU interpreter.
 Our goal here is twofold.  First, we want to define a function~$\reaction$
 that describes precisely the operation steps taken by the interpreter to
-compute a single reaction.  Second, we want to establish (prove) some
-properties of this function.  In particular, we want to establish that
+compute a single reaction to an external input.  Second, we want to establish
+(prove) some properties of this function.  In particular, we want to establish
+that
 \begin{enumerate}
 \item $\reaction$ is indeed a function: the same program will always react
   in the same way to a same external event (i.e., reactions are
@@ -368,7 +391,7 @@ properties of this function.  In particular, we want to establish that
   the input program (i.e., reactions are memory-bounded).
 \end{enumerate}
 
-We will define $\reaction$ using a set of rules, in a style called
+We will define $\reaction$ using a set of rules for an
 small-step operational semantics~\cite{Plotkin-G-D-1981}.  These rules
 dictate how the internal state of the basic \CEU interpreter progresses
 while it is computing a reaction.  A snapshot of this internal state is
@@ -377,7 +400,7 @@ quadruple~$\<\stmt,n,e,\theta>$ where
 \begin{itemize}
 \item $\stmt$ is a valid basic \CEU program;
 \item $n$ is a nonnegative integer, called the \emph{stack level};
-\item $e$ is an internal event identifier or the empty identifier~$\nil$;
+\item $e$ is an event identifier or the empty identifier~$\nil$;
   and
 \item $\theta$ is a memory environment.
 \end{itemize}
@@ -387,7 +410,7 @@ description in due course.  The important thing for now is that the steps
 taken by the interpreter to compute a reaction can be viewed as transitions
 between descriptions.  The transitions are dictated by rules hardcoded in
 the interpreter.  Each rule establishes that when the interpreter is in a
-description~$\delta$ and certain criteria are met, then it shall
+description~$\delta$ and certain criteria are met, then it will
 \emph{transition} to a modified description~$\delta'$, in symbols,
 \[
   \delta\trans\delta'.
@@ -410,16 +433,16 @@ The initial description~$\delta_0$ is of the form~$\<\stmt_0,0,e,\theta_0>$
 and contains the three inputs of the reaction: the text of the program at
 the beginning of the reaction ($\stmt_0$), the event~$e$ to which this
 program must react, and the memory environment~$\theta_0$ which holds the
-content of the variables used in~$\stmt_0$ at the beginning of the reaction.
+values of the variables used in~$\stmt_0$ at the beginning of the reaction.
 The final description~$\delta_f$ is of the form~$\<stmt_f,0,\nil,\theta_f>$
 and contains the two outputs of the reaction: the text of the program at the
-end of the reaction ($\stmt_f$) and the contents of the variables used
+end of the reaction ($\stmt_f$) and the values of the variables used
 in~$\stmt_f$ at the end of the reaction.  This possibly modified
 program~$\stmt_f$ and memory environment~$\theta_f$ will be used by the
 interpreter as inputs in an eventual subsequent reaction.
 
 We will write~$\delta_0\trans[i]\delta_f$ to indicate that $\delta_0$ leads
-to~$\delta_f$ after exactly~$i$ of transitions, and we will
+to~$\delta_f$ after exactly~$i$ number of transitions, and we will
 write~$\delta_0\trans[*]\delta_f$ to indicate that it does so after an
 unspecified but finite number of transitions.  Using this notation, we can
 define function~$\reaction$ (one of our goals) as follows:
@@ -432,14 +455,15 @@ if, and only if,
 \]
 where~$\<\stmt_f,0,\nil,\theta_f>$ is an irreducible description.  Under
 this definition, $\reaction$ will be deterministic, terminating, and
-memory-bounded (another of our goals) if relation~$\trans[*]$ happens to be
+memory-bounded if relation~$\trans[*]$ happens to be
 so.  That this is the case is a consequence of the way transitions are
-defined, as we shall see in Section~\ref{sec.proofs}.  Before that, however,
+defined, as we will see in Section~\ref{sec.proofs}.  Before that, however,
 we need to give the exact rules for transitions.  We distinguish between two
 types of transitions: \emph{outermost transitions} $\out$ and \emph{nested
   transitions} $\nst$\,.
 
 \strut\gl{Parei aqui.}
+\strut\fs{Parei aqui também.}
 
 % We now proceed to give the rules for possible the transitions.  We
 % distinguish between two types of transitions: \emph{outermost transitions}

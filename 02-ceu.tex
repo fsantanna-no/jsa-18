@@ -208,7 +208,7 @@ at \code{D-4}.
 %handled in the subsequent reactions~\code{E-5} and~\code{E-6}.
 
 \begingroup
-\begin{figure}[b!]
+\begin{figure}
 \centering
 \begin{tikzpicture}[x=1em,y=1em,
   font=\footnotesize\sffamily,>=stealth,
@@ -423,18 +423,18 @@ scheduled in lexical order, i.e., in the order they appear in the program
 source code.
 %
 For instance, consider the examples in Figure~\ref{lst.shared}, both
-defining shared variables (ln~3), and assigning to them in parallel trails
-(ln~6,9).
+defining shared variables (ln~2), and assigning to them in parallel trails
+(ln~5,8).
 
 In Listing~\ref{lst.shared.a}, the two assignments to \code{x} can only execute
-in reactions to different events \code{A} and \code{B} (ln~5,8), which cannot
+in reactions to different events \code{A} and \code{B} (ln~4,7), which cannot
 occur simultaneously by definition.
 Hence, for the sequence of events \code{A->B}, \code{x} becomes \code{4}
 (\code{(1+1)*2}), while for \code{B->A}, \code{x} becomes \code{3}
 (\code{(1*2)+1}).
 
 In Listing~\ref{lst.shared.b}, the two assignments to \code{y} are simultaneous because
-they execute in reaction to the same event \code{A}.
+they execute in reaction to the same event \code{A} (ln~4,7).
 Since \CEU employs lexical order for intra-reaction statements, the execution
 is still deterministic, and \code{y} always becomes \code{4} (\code{(1+1)*2}).
 %
@@ -459,8 +459,7 @@ deterministic semantics of the language.
     %caption={Accesses to \code{x} are never concurrent.},
     caption={\,},
 ]
-input void A;
-input void B;
+input void A, B;
 var int x = 1;
 par/and do
     await A;
@@ -482,7 +481,6 @@ end
     caption={\,},
 ]
 input void A;
-|\C{(empty line)}|
 var int y = 1;
 par/and do
     await A;
@@ -627,7 +625,7 @@ hours, minutes, etc.
 }, such as timeout watchdogs and periodic sensor readings~\cite{esterel.delays}.
 %
 \CEU supports wall-clock timers through the \code{await}
-statement~\cite{ceu.tecs17}, as illustrated in Listing~\ref{lst.timers}.
+statement~\cite{ceu.tecs17}, as illustrated in Listing~\ref{lst.timers.a}.
 The \code{await} blocks the current running trail for the specified amount of
 time (ln~2,4).
 
