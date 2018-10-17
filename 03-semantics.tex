@@ -6,36 +6,21 @@ called \emph{basic \CEU}.  Although simpler than the full language presented
 in Section~\ref{sec.ceu}, basic \CEU is expressive enough to capture all the
 essential characteristics of full \CEU, in particular, the stack-based
 execution of internal events.  Once basic \CEU is defined, the more
-elaborate constructs of full \CEU can be easily defined on top of it, as we
-will discuss shortly.
+elaborate constructs of full \CEU can be defined on top of it, as we will
+discuss shortly.
 
 The statements of basic \CEU are presented in Figure~\ref{fig.sem.syntax}.
 In the figure, the metavariables~$v$ (ln~2), $e$ (ln~3--5, 10), and~$n$
 (ln~15--16) range over variable identifiers, event identifiers, and
 integers.  The metavariable~$\vars$ (ln~1) denotes zero or more variable
 identifiers.  The metavariable~$\stmt$ (ln~1, 7--13, 17--19) denotes a
-statement, i.e., any of the basic \CEU statements listed in
-Figure~\ref{fig.sem.syntax}---compound statements are constructed
-inductively from simpler statements.  Finally, the metavariable $\expr$
-(ln~2, 7) denotes an expression.
+statement, i.e., any of the statements of
+Figure~\ref{fig.sem.syntax}---complex statements are defined recursively in
+terms of simpler statements.  Finally, the metavariable $\expr$ (ln~2, 7)
+denotes an expression.
 
-% \fs{Tem como colocar linhas e indicá-las no texto? É chato ficar
-% procurando as definições...}
-
-% \fs{Acho que deixar mais claro que stmt é uma definição recursiva.}
-
-% \fs{\code{canrun} dá uma idéia de que já pode executar, pensei em
-% \code{runat}.}
-
-% \fs{Outra mudança que eu também faria é \code{or} -> \code{paror} e
-% \code{and} -> \code{parand}. As vezes me condunde durante a leitura.}
-
-\gl{Mudei ``canrun'' para ``wait'', ao invés de ``runat''.  Só porque
-  ``@runat'' já tem um ``at'' no início.  Frescura, eu sei.  Se não gostar é
-  só mudar no header.}
-
-\gl{Outra opção para o basic, seria usar o mesmo estilo do full mas colocar
-  um $\upbeta$ no final, e.g.,
+\gl{Outra opção para o basic seria usar o mesmo estilo do full mas colocar
+  um $\upbeta$ no final.  E.g.,
   \lstinline[mathescape=true,keywords={block}]|block$_\upbeta$ ...|,
   \lstinline[mathescape=true,keywords={set}]|set$_\upbeta$ x:=y|,
   \lstinline[mathescape=true,keywords={seq}]|seq$_\upbeta$ x; y|,
@@ -43,31 +28,34 @@ inductively from simpler statements.  Finally, the metavariable $\expr$
   \lstinline[mathescape=true]|...par/and$_\upbeta$...|.  Assim daria para
   usar $\CEU_\upbeta$ (basic) e \CEU (full).}
 
+\gl{Que tal ``local'' ao invés de ``block''?  Já que ``block'' também
+  significa bloquear.}
+
 \begin{figure}[ht!]
 \begingroup
 \setlength{\jot}{0pt}
 \def\N#1{\mathllap{\text{\scriptsize{#1}}\hspace{1em}}}
 \begin{empheq}[box=\fbox]{alignat*=3}
-  \N1&\hskip4pt&&\ceu{\Block{\vars\ \stmt}}
-                                       &\quad&\text{\it declaration block}\\
-  \N2&&&\ceu{v\coloneqq\expr}          &&\text{\it assignment statement}\\
-  \N3&&&\ceu{\AwaitExt(e)}             &&\text{\it await external event}\\
-  \N4&&&\ceu{\AwaitInt(e)}             &&\text{\it await internal event}\\
-  \N5&&&\ceu{\EmitInt(e)}              &&\text{\it emit internal event}\\
-  \N6&&&\ceu{\Break}                   &&\text{\it loop escape}\\
-  \N7&&&\ceu{\IfElse{\expr}{\stmt_1}{\stmt_2}} &&\text{\it conditional}\\
-  \N8&&&\ceu{\stmt_1\,;\,\stmt_2}      &&\text{\it sequence}\\
-  \N9&&&\ceu{\Loop \stmt}              &&\text{\it infinite loop}\\
-  \N{10}&&&\ceu{\Every{e}\,\stmt}      &&\text{\it event iteration}\\
-  \N{11}&&&\ceu{\stmt_1\ParAnd\stmt_2} &&\text{\it par/and statement}\\
-  \N{12}&&&\ceu{\stmt_2\ParOr\stmt_2}  &&\text{\it par/or statement}\\
-  \N{13}&&&\ceu{\Fin\stmt}             &&\text{\it finalization statement}\\
-  \N{14}&&&\ceu{\Nop}                  &&\text{\it dummy statement}\\
-  \N{15}&&&\ceu{\Wait(n)}             &&\text{\it wait for stack level~$n$}\\
-  \N{16}&&&\ceu{\Restore(n)}           &&\text{\it restore environment}\\
-  \N{17}&&&\ceu{\stmt_1\AtLoop\stmt_2} &&\text{\it unwinded loop}\\
-  \N{18}&&&\ceu{\stmt_1\AtParAnd\stmt_2}  &&\text{\it unwinded par/and}\\
-  \N{19}&&&\ceu{\stmt_1\AtParOr\stmt_2}   &&\text{\it unwinded par/or}
+     \N1&\hskip4pt&&\ceu{\Block{\vars\ \stmt}}
+                                    &\quad&\text{\it declaration block}\\
+     \N2&&&\ceu{v\coloneqq\expr}         &&\text{\it assignment statement}\\
+     \N3&&&\ceu{\AwaitExt(e)}            &&\text{\it await external event}\\
+     \N4&&&\ceu{\AwaitInt(e)}            &&\text{\it await internal event}\\
+     \N5&&&\ceu{\EmitInt(e)}             &&\text{\it emit internal event}\\
+     \N6&&&\ceu{\Break}                  &&\text{\it loop escape}\\
+     \N7&&&\ceu{\IfElse{\expr}{\stmt_1}{\stmt_2}} &&\text{\it conditional}\\
+     \N8&&&\ceu{\stmt_1\,;\,\stmt_2}     &&\text{\it sequence}\\
+     \N9&&&\ceu{\Loop \stmt}             &&\text{\it infinite loop}\\
+  \N{10}&&&\ceu{\Every{e}\,\stmt}        &&\text{\it event iteration}\\
+  \N{11}&&&\ceu{\stmt_1\ParAnd\stmt_2}   &&\text{\it par/and statement}\\
+  \N{12}&&&\ceu{\stmt_2\ParOr\stmt_2}    &&\text{\it par/or statement}\\
+  \N{13}&&&\ceu{\Fin\stmt}               &&\text{\it finalization statement}\\
+  \N{14}&&&\ceu{\Nop}                    &&\text{\it dummy statement}\\
+  \N{15}&&&\ceu{\RunAt(n)}               &&\text{\it run at stack level~$n$}\\
+  \N{16}&&&\ceu{\Restore(n)}             &&\text{\it restore environment}\\
+  \N{17}&&&\ceu{\stmt_1\AtLoop\stmt_2}   &&\text{\it unwinded loop}\\
+  \N{18}&&&\ceu{\stmt_1\AtParAnd\stmt_2} &&\text{\it unwinded par/and}\\
+  \N{19}&&&\ceu{\stmt_1\AtParOr\stmt_2}  &&\text{\it unwinded par/or}
 \end{empheq}
 \endgroup
 \caption{The statements of basic \CEU.}
@@ -83,9 +71,9 @@ nonzero value means true while zero means false.
 
 We distinguish between three kinds of basic \CEU statements.  First, there
 are those statements which are common in imperative languages and behave as
-usual, namely, blocks, assignments, conditionals, sequences, loops, and breaks.
-The $\ceu{\Block}$ statement in the basic \CEU introduces its local variables
-at once in a list of identifiers.
+usual, namely, blocks, assignments, conditionals, sequences, loops, and
+breaks.  The $\ceu{\Block}$ statement of basic \CEU introduces its local
+variables at once in a list of identifiers.
 
 The statements of the second kind are those which are specific to \CEU.
 These are the statements~$\ceu{\AwaitExt}$, $\ceu{\AwaitInt}$,
@@ -97,10 +85,10 @@ counterparts in full \CEU.  We defer a precise description of their behavior
 and entailed properties to Section~\ref{sec.sem.opsem}.
 
 Finally, the statements of the third kind are the remaining ones, namely,
-$\ceu{\Nop}$, $\ceu{\Wait}$, $\ceu{\Restore}$, $\ceu{\AtLoop}$,
-$\ceu{\AtAnd}$, and~$\ceu{\AtOr}$.  These are hidden statements used by the
-interpreter to encode in the program's text information about its execution.
-We will have more to say about these \texttt{@}-statements in
+$\ceu{\Nop}$, $\ceu{\RunAt}$, $\ceu{\Restore}$, $\ceu{\AtLoop}$,
+$\ceu{\AtParAnd}$, and~$\ceu{\AtParOr}$.  These are hidden statements used
+by the interpreter to encode in the program's text information about its
+execution.  We will have more to say about these \texttt{@}-statements in
 Section~\ref{sec.sem.opsem}.  Before that, however, we need to present the
 syntactical restrictions of basic \CEU and discuss the mapping of full \CEU
 programs into basic \CEU programs.
@@ -110,35 +98,42 @@ programs into basic \CEU programs.
 
 The syntax of basic \CEU shown in Figure~\ref{fig.sem.syntax} can be seen as
 a schema for generating programs.  Not all programs generated by this schema
-are valid though.  To be considered a valid basic \CEU program, the
-generated program must also satisfy the following restrictions.
+are well-formed though.  To be considered a \emph{well-formed} basic \CEU
+program, the generated program must satisfy the following restrictions:
 \begin{enumerate}
-\item If a statement of the form~$\ceu{\Break}$ occurs in the program, then
-  it occurs inside the body of some~$\ceu{\Loop}$ statement.
-\item If a statement of the form~$\ceu{\Loop{\stmt}}$ occurs in the program,
-  then all execution paths within~$\stmt$ contain an occurrence of a
-  matching $\ceu{\Break}$ statement or an~$\ceu{\AwaitExt}$ statement or
-  an~$\ceu{\Every}$ statement.
-\item If a statement of the form~$\ceu{\Every{e}\,{\stmt}}$
-  or~$\ceu{\Fin{\stmt}}$ occurs in the program, then~$\stmt$ does not
-  contain occurrences of $\ceu{\Loop}$, $\ceu{\Break}$, $\ceu{\AwaitExt}$,
-  $\ceu{\AwaitInt}$, $\ceu{\Every}$, or~$\ceu{\Fin}$.
+\item\label{sec.sem.restrictions.1} If variable~$v$ occurs in an expression
+  or assignment statement of the program, then this occurrence happens in
+  the body of a~$\ceu{\Block}$ that declares~$v$.
+\item\label{sec.sem.restrictions.2} If a~$\ceu{\Break}$ occurs in the
+  program, then this occurrence happens in the body of a~$\ceu{\Loop}$.
+\item\label{sec.sem.restrictions.3} If a statement of the
+  form~$\ceu{\Loop{\stmt}}$ occurs in the program, then all execution paths
+  within~$\stmt$ contain a matching~$\ceu{\Break}$ or an~$\ceu{\AwaitExt}$
+  or an~$\ceu{\Every}$.
+\item\label{sec.sem.restrictions.4} If a statement of the
+  form~$\ceu{\Every{e}\,{\stmt}}$ or~$\ceu{\Fin{\stmt}}$ occurs in the
+  program, then~$\stmt$ does not contain occurrences of $\ceu{\Loop}$,
+  $\ceu{\Break}$, $\ceu{\AwaitExt}$, $\ceu{\AwaitInt}$, $\ceu{\Every}$,
+  or~$\ceu{\Fin}$.
 \end{enumerate}
 
 \fs{Também não faz sentido eles terem parand e paror (mas acho que nao afeta
   as provas).}
 
-\gl{Nas provas essas restrições viram o assumption de que~$\nst[*]$ reduz o
-  corpo do every/fin para nop.  Não adicionei parand/or na restrição porque
-  de fato não precisa, mas fique à vontade para adicionar.}
+\gl{Não adicionei parand/or na restrição porque de fato não precisa, mas
+  fique à vontade para adicionar.}
 
-The purpose of the first restriction is to ensure that every~$\ceu{\Break}$
-has a parent~$\ceu{\Loop}$.  The purpose of the second restriction is to
-ensure that the program does not have an infinite loop with a body that runs
-in zero time.  And the purpose of the third restriction is to ensure that
-the body of $\ceu{\Every}$ and~$\ceu{\Fin}$ always execute to completion
-within the same reaction.  Similar restrictions exist in full \CEU, as
-discussed in Section~\ref{sec.ceu}.
+Restrictions~\ref{sec.sem.restrictions.1} and~\ref{sec.sem.restrictions.2}
+prevent the use of undeclared variables or orphan~$\ceu{\Break}$'s.
+Restriction~\ref{sec.sem.restrictions.3} ensures that the program does not
+have an infinite loop with a body that runs in zero time (which violates the
+synchronous hypothesis).  And restriction~\ref{sec.sem.restrictions.4}
+ensures that the body of $\ceu{\Every}$ and~$\ceu{\Fin}$ statements always
+execute to completion within the same reaction.  Similar restrictions exist
+in full \CEU, as discussed in Section~\ref{sec.ceu}.
+
+From now on, whenever we speak of a basic \CEU program we mean a well-formed
+basic \CEU program.
 
 \fs{A restrição do fin não é por ser blocking point, pelo contrário.  Uma
   vez que ele começa a executar, ele tem que terminar na mesma reação pois a
@@ -153,23 +148,6 @@ discussed in Section~\ref{sec.ceu}.
 
 \gl{Veja se agora está OK.}
 
-% The~$\ceu{\Mem(id)}$ primitive represents a read or write to the memory
-% location identified by~$id$.\footnotemark\
-% 
-% As the challenging parts of \CEU reside on its control structures, we are
-% not concerned here with a precise semantics for side effects, but only
-% with their occurrences in programs.
-% 
-% The special notation $nop$ is used to represent an innocuous $mem$
-% expression (it can be thought as a synonym for $mem(\epsilon)$, where
-% $\epsilon$ is an unused identifier).
-% 
-% \footnotetext{Although the same symbol~$\ceu{\Id}$ is used in their
-%   definition, $\ceu{\Mem}$, $\ceu{\AwaitExt}$, $\ceu{\AwaitInt}$
-%   and~$\ceu{\EmitInt}$ do not share identifiers: any identifier is either a
-%   variable, an external event, or an internal event.}
-
-%\subsection{Concrete Language Mapping}
 \subsection{From Full \CEU to Basic \CEU}
 \label{sec.sem.concrete}
 
@@ -187,21 +165,10 @@ the extra features of full \CEU are implemented in basic \CEU.
 
 \gl{Veja se está melhor.}
 
-% \texttt{@}-statements of basic \CEU are not considered in
-
-% Although the abstract syntax presented in Figure~\ref{fig.sem.syntax} is
-% similar to the concrete language in Listing~\ref{lst.syntax}, there are
-% some significant mismatches between \CEU and the formal semantics that
-% require some clarification.
-
-% Also note that the \texttt{@}-statements do not exist in the concrete
-% language and are results of expansions in the transition rules to be
-% presented in Section~\ref{sec.sem.opsem}.
-
 \subsubsection{\code{await} and \code{emit}}
 
 The \code{await} and \code{emit} primitives of full \CEU are slightly more
-complex than those of basic \CEU: they support communication of values
+complex than those of basic \CEU, as they support communication of values
 between them.
 
 Figure~\ref{lst.await_emit} shows a translation that adds a variable to hold
@@ -266,7 +233,7 @@ end
 \label{lst.await_emit}
 \end{figure}
 
-\subsubsection{First-class timers}
+\subsubsection{First-Class Timers}
 
 To add support for first-class timers to basic \CEU , we introduce a
 \code{TIMER} input event, which notifies the passage of time, and two global
@@ -274,7 +241,7 @@ variables: \code{timer\_} which holds the elapsed time, and \code{delta\_}
 which holds the residual time, initially set to 0.
 
 Listing~\ref{lst.TIMER.b} shows the basic \CEU program resulting from the
-translation of the two timers shown in Listing~\ref{lst.TIMER.a} (ln~1,11).
+translation of the two timers shown in Listing~\ref{lst.TIMER.a} (ln~1--11).
 A timer first adds a (possibly) negative delta from the time it should await
 (ln~1).  Then, it enters in a loop that awakes on every occurrence of
 \code{TIMER} (ln~7) and decrements the time it should await (ln~8).  Each
@@ -333,24 +300,24 @@ var int tot_ = 1000 + delta_;
 
 \subsubsection{Finalization}
 
-\begin{comment}
-Finally, a ``\code{finalize $A$ with $B$ end; $C$}'' in the concrete
-language is equivalent to ``\ceu{A;\;((\Fin{B})\ \Or\ C)}'' in the abstract
-language.  In the concrete language, $A$ and~$C$ execute in sequence, and
-the finalization code~$B$ is implicitly suspended waiting for~$C$
-to terminate.  In the abstract language, ``$\ceu{\Fin B}$'' suspends forever
-when reached (it is an awaiting statement that never awakes).  Hence, we
-need an explicit \code{or} to execute~$C$ in parallel, whose termination
-aborts ``$\ceu{\Fin B}$'', which finally causes~$B$ to execute (by the
-semantic rules below).
-\end{comment}
+% \begin{comment}
+% Finally, a ``\code{finalize $A$ with $B$ end; $C$}'' in the concrete
+% language is equivalent to ``\ceu{A;\;((\Fin{B})\ \Or\ C)}'' in the abstract
+% language.  In the concrete language, $A$ and~$C$ execute in sequence, and
+% the finalization code~$B$ is implicitly suspended waiting for~$C$
+% to terminate.  In the abstract language, ``$\ceu{\Fin B}$'' suspends forever
+% when reached (it is an awaiting statement that never awakes).  Hence, we
+% need an explicit \code{or} to execute~$C$ in parallel, whose termination
+% aborts ``$\ceu{\Fin B}$'', which finally causes~$B$ to execute (by the
+% semantic rules below).
+% \end{comment}
 
 The biggest mismatch between full \CEU and basic \CEU is in their support
 for finalization, i.e., between the statements \code{finalize} of full \CEU
 and $\ceu{\Fin}$ of basic \CEU.
 %
 Listing~\ref{3.lst.fin.a} shows a full \CEU program containing an explicit
-block (ln~1,8) that executes the statements in \code{<A>} (ln~3) immediately
+block (ln~1--8) that executes the statements in \code{<A>} (ln~3) immediately
 followed by \code{<C>} (ln~7), and unconditionally executes \code{<B>}
 (ln~5) when the block terminates or aborts.
 %
@@ -411,7 +378,7 @@ Our goal here is twofold.  First, we want to define a function~$\reaction$
 that describes precisely the operation steps taken by the interpreter to
 compute a single reaction to an external input.  Second, we want to establish
 (prove) some properties of this function.  In particular, we want to establish
-that
+that:
 \begin{enumerate}
 \item $\reaction$ is indeed a function: the same program will always react
   in the same way to a same external event (i.e., reactions are
@@ -430,15 +397,15 @@ while it is computing a reaction.  A snapshot of this internal state is
 called a \emph{description}, denoted~$\delta$, and consists of a
 quadruple~$\<\stmt,n,e,\theta>$ where
 \begin{itemize}
-\item $\stmt$ is a valid basic \CEU program;
+\item $\stmt$ is a well-formed basic \CEU program;
 \item $n$ is a nonnegative integer, called the \emph{stack level};
 \item $e$ is an event identifier or the empty identifier~$\nil$;
   and
-\item $\theta$ is a memory environment.
+\item $\theta$ is a memory.
 \end{itemize}
 
 We will detail the precise meaning and purpose of the components of the
-description in due course.  The important thing for now is that the steps
+description in due course.  For now, the important thing is that the steps
 taken by the interpreter to compute a reaction can be viewed as transitions
 between descriptions.  The transitions are dictated by rules hardcoded in
 the interpreter.  Each rule establishes that when the interpreter is in a
@@ -454,30 +421,29 @@ We call the description on the left-hand side of the symbol~$\trans$ the
 After transitioning to a modified description, the interpreter repeats the
 rule-evaluation/transition process, and continues to do so until a final
 description is reached.  This final description, called an \emph{irreducible
-  description}, embodies the result of the whole computation.
+  description}, embodies the result of the reaction.
 
-A full \emph{reaction} is thus defined as a series of the transitions of the
-form
+A full \emph{reaction} is thus defined as a sequence of the transitions of
+the form
 \[
   \delta_0\trans\delta_1\trans\cdots\trans\delta_f.
 \]
-The initial description~$\delta_0$ is of the form~$\<\stmt_0,0,e,\theta_0>$
-and contains the three inputs of the reaction: the text of the program at
-the beginning of the reaction ($\stmt_0$), the event~$e$ to which this
-program must react, and the memory environment~$\theta_0$ which holds the
-values of the variables used in~$\stmt_0$ at the beginning of the reaction.
-The final description~$\delta_f$ is of the form~$\<stmt_f,0,\nil,\theta_f>$
-and contains the two outputs of the reaction: the text of the program at the
-end of the reaction ($\stmt_f$) and the values of the variables used
-in~$\stmt_f$ at the end of the reaction.  This possibly modified
-program~$\stmt_f$ and memory environment~$\theta_f$ will be used by the
-interpreter as inputs in an eventual subsequent reaction.
+The initial description~$\delta_0=\<\stmt_0,0,e,\theta_0>$ contains the
+three inputs of the reaction: the text of the program at the beginning of
+the reaction ($\stmt_0$), the event~$e$ to which the program must react, and
+the memory~$\theta_0$ which holds the values of the variables used
+in~$\stmt_0$ at the beginning of the reaction.  The final
+description~$\delta_f=\<stmt_f,0,\nil,\theta_f>$ contains the two outputs of
+the reaction: the text of the program at the end of the reaction ($\stmt_f$)
+and the values of the variables used in~$\stmt_f$ at the end of the
+reaction.  The output program~$\stmt_f$ and memory environment~$\theta_f$
+will be used by the interpreter as inputs in the next reaction.
 
-We will write~$\delta_0\trans[i]\delta_f$ to indicate that $\delta_0$ leads
-to~$\delta_f$ after exactly~$i$ number of transitions, and we will
+We write~$\delta_0\trans[i]\delta_f$ to indicate that $\delta_0$ leads
+to~$\delta_f$ after exactly~$i$ transitions, and we
 write~$\delta_0\trans[*]\delta_f$ to indicate that it does so after an
 unspecified but finite number of transitions.  Using this notation, we can
-define function~$\reaction$ (one of our goals) as follows:
+define function~$\reaction$ (the first part of our goal) as follows:
 \[
   \reaction(\stmt_0,\theta_0,e)=\<\stmt_f,\theta_f>
 \]
@@ -487,179 +453,179 @@ if, and only if,
 \]
 where~$\<\stmt_f,0,\nil,\theta_f>$ is an irreducible description.  Under
 this definition, $\reaction$ will be deterministic, terminating, and
-memory-bounded if relation~$\trans[*]$ happens to be
-so.  That this is the case is a consequence of the way transitions are
-defined, as we will see in Section~\ref{sec.proofs}.  Before that, however,
-we need to give the exact rules for transitions.  We distinguish between two
-types of transitions: \emph{outermost transitions} $\out$ and \emph{nested
-  transitions} $\nst$\,.
+memory-bounded (the second part of goal) if relation~$\trans[*]$ happens to
+be so.  That this is the case is a consequence of the way transitions are
+defined, as we will see in Section~\ref{sec.proofs}.
 
-\strut\gl{Parei aqui.}
 \strut\fs{Parei aqui também.}
-\def\JOT{.8\jot}
 
-% We now proceed to give the rules for possible the transitions.  We
-% distinguish between two types of transitions: \emph{outermost transitions}
-% $\out$ and \emph{nested transitions} $\nst$\,.
+The next two sections, Sections~\ref{sec.sem.outermost}
+and~\ref{sec.sem.nested}, give the rules for transitions.  There are two
+types of transitions: \emph{outermost transitions} $\out$ and \emph{nested
+  transitions} $\nst$.  Both are defined by rules of the form
+\[
+  \AxiomC{\strut condition$_1$}
+  \AxiomC{\strut condition$_2$}
+  \AxiomC{$\cdots$}
+  \AxiomC{\strut condition$_n$}
+  \QuaternaryInfC{$\delta\trans\delta'$}
+  \DisplayProof
+\]
+which establish that a transition~$\delta\trans\delta'$ shall take place if
+condition$_1$, condition$_2$, \dots, and condition$_n$ are all true.  If the
+number of conditions is zero, then the line is omitted and the rule is
+called an axiom.
 
-% The operational semantics is describes how a basic \CEU\ program reacts to
-% a single external input event, i.e., how starting from this input event
-% the program advances its state until all its trails are blocked waiting
-% for a another input event.
-% %%
-% The formalism we use here is that of small-step operational
-% semantics~\cite{Plotkin-G-D-1981} in which the meaning of programs is
-% defined in terms of transitions of an abstract machine.  Each transition
-% transforms a triple consisting of a program~$p$, a stack level~$n$, and an
-% emitted event~$e$ into a possibly different triple, i.e.,
-% \[
-%   \<p,n,e>\trans\<p',n',e'>\,,
-% \]
-% where~$p,p'\in\P$ are abstract-language programs, $n,n'\in\N$ are
-% non-negative integers representing the current stack level,
-% and~$e,e'\in\E\cup\{\nil\}$ are the events emitted before and after the
-% transition (both possibly being the empty event~$\nil$).
-% %$\E$ is a set of primitive events.
-
-% We refer to the triples on the left-hand and right-hand sides of
-% symbol~$\trans$ as \emph{descriptions} (denoted~$\delta$).  The
-% description on the left of~$\trans$ is called the \emph{input
-% description}, the one on its right is called the \emph{output
-% description}.
-
-% At the beginning of a reaction to an input event~$id$, the input
-% description is initialized with stack level~0 ($n=0$) and with the
-% externally emitted event~$e=\ceu{\Id}$.  At the end of a reaction, after
-% an arbitrary but finite number of transitions, the last output description
-% will block with a possibly modified program~$p'$ at stack level~0 and no
-% event emitted\footnote{We write~$\trans[i]$ to mean~$i$ transitions in
-% sequence, and we write~$\trans[*]$ to mean a finite (possibly zero) number
-% of transitions in sequence.}:
-% \[
-%   \<p,0,e>\mathbin{\trans[*]}\<p',0,\nil>\,.
-% \]
-
-% We now proceed to give the rules for possible the transitions.  We
-% distinguish between two types of transitions:  \emph{outermost transitions}
-% $\out$ and \emph{nested transitions} $\nst$\,.
-
-\subsubsection{Outermost Transitions}
+\subsection{Outermost Transitions}
+\label{sec.sem.outermost}
 
 The rules \R{push} and \R{pop} for~$\out$ transitions are non-recursive
 definitions that apply to the program as a whole.  These are the only rules
-that manipulate the stack level.
+that manipulate the stack level---the component of descriptions that
+determines the order of execution of internal reactions.
+%%
+\begin{spreadlines}{\rulejot}
 \begin{gather*}
   \AxiomC{$e\ne\nil$}
-  \UnaryInfC{$\<p,n,e>\out\<\bcast(p,e),n+1,\nil>$}
+  \UnaryInfC{$\<\stmt,n,e,\theta>\out\<\bcast(\stmt,e),n+1,\nil,\theta>$}
   \DisplayProof
-  \Rtag{push}\\[1.2\jot]
+  \Rtag{push}\\
   %%
   \AxiomC{$n>0$}
-  \AxiomC{$p=\ceu{\Nop} \vee p=\ceu{\Break} \vee \isblocked(p,n)$}
-  \BinaryInfC{$\<p,n,\nil>\out\<p,n-1,\nil>$}
-  \DisplayProof
+  \AxiomC{$\stmt=\ceu{\Nop}\lor\isblocked(\stmt,n)$}
+  \BinaryInfC{$\<\stmt,n,\nil,\theta>\out\<\stmt,n-1,\nil,\theta>$}
   \Rtag{pop}
+  \DisplayProof
 \end{gather*}
-
-%-
-% { \setlength{\jot}{20pt}
-% \begin{eqnarray*}
-% & \frac
-%     { \DS e \neq \epsilon }
-% %   -----------------------------------------------------------
-%     { \DS \LL p,n,e \RR \OUT \LL bcast(p),n+1,\epsilon \RR }
-%     & \textbf{(push)}   \\
-% %%%
-% & \frac
-%     { \DS n>0, \2 ((p=@nop) \vee isblocked(n,p)) }
-% %   -----------------------------------------------------------
-%     { \DS \LL p,n,\epsilon \RR \OUT \LL p,n-1,\epsilon \RR }
-%     & \textbf{(pop)}    \\
-% %%%
-% %& \LL p,0,\epsilon \RR \1\xrightarrow\1 \bot
-%     %& \textbf{(end)}    %\\
-% \end{eqnarray*}
-% }
-%-
+\end{spreadlines}
 
 Rule \R{push} can be applied whenever there is a nonempty event in the input
-description,
-and instantly broadcasts the event to the program, which means
-    (i)~awaking any active $\ceu{\AwaitExt}$ or $\ceu{\AwaitInt}$ statements
-    (see $\bcast$ in
-        Figure~\ref{fig.bcast}),
-    (ii)~creating a nested reaction by increasing the stack level, and, at the same time,
-    (iii)~consuming the event ($e$ becomes~$\nil$).
-%
-Rule \R{push} is the only rule that matches an
-emitted event and also immediately consumes it.
+description; it instantly broadcasts the event to the program, which means it:
+\begin{enumerate*}[label=(\roman*)]
+\item awakes any active $\ceu{\AwaitExt}$ or $\ceu{\AwaitInt}$ statements in
+  the program (see $\bcast$ in Figure~\ref{fig.bcast});
+\item creates a nested reaction by increasing the stack level; and
+\item consumes the event ($e$ becomes~$\nil$).
+\end{enumerate*}
+Rule \R{push} is the only rule that matches (and consumes) a nonempty event
+in the input description.
 
-Rule \R{pop} decreases the stack level by one and can only be applied if the
-program is blocked (see $\isblocked$
-in Figure~\ref{fig.isblocked}) or terminated ($p=\ceu{\Nop}$ or $p=\ceu{\Break}$).
-This condition ensures that an $\ceu{\EmitInt}$ only resumes after its internal
-reaction completes and blocks in the current stack level.
+Rule \R{pop} simply decreases the stack level by one; it can only be applied
+if the program is blocked (see $\isblocked$ in Figure~\ref{fig.isblocked})
+or terminated ($\stmt=\ceu{\Nop}$).  This condition ensures that an
+$\ceu{\EmitInt}$ only resumes after its internal reaction completes and
+blocks at the current stack level.
 
-At the beginning of a reaction, an external event is emitted, which
-triggers rule \R{push}, immediately raising the stack level
-to~1.
-At the end of the reaction, the program will block or terminate and
-successive applications of
-rule~\R{pop} will lead to a description with this
-same program at stack level~0.
+At the beginning of a reaction, an external event is emitted, which triggers
+rule \R{push}, immediately raising the stack level to~1.  At the end of the
+reaction, the program will block or terminate and successive applications of
+rule~\R{pop} will lead to a description with this same program at stack
+level~0.
 
-\subsubsection{Nested Transitions}
+\subsection{Nested Transitions}
+\label{sec.sem.nested}
 
-The~$\nst$ rules are recursive definitions of the form
+All~$\nst$ transitions have the general form
 \[
-\<p,n,\nil>\nst\<p',n,e>.
+\<\stmt,n,\nil,\theta>\nst\<\stmt',n,e,\theta'>.
 \]
-%
-%-
-% \begin{align*}
-% \LL p, n,\epsilon \RR &\NST
-% \LL p',n,e        \RR
-%     & \textbf{(rule-inner)}
-% \end{align*}
-%-
-%
-Nested transitions do not affect the stack level and never have an emitted
-event as a precondition.  The distinction between~$\out$ and~$\nst$ prevents
-rules \R{push} and \R{pop} from matching and, consequently, from
+That is, nested transitions do not affect the stack level and never have an
+emitted event as a precondition.  The distinction between~$\out$ and~$\nst$
+prevents rules \R{push} and \R{pop} from matching and, consequently, from
 inadvertently modifying the current stack level before the nested reaction
 is complete.
 
-A complete reaction consists of a series of transitions% of the form
+A complete reaction is a sequence of transitions
+%%
 \begin{align*}
-  \<p,0,e_\ext>\outpush\<p_1,1,\nil>
+  \<\stmt_0,0,e_\ext,\theta_0>\outpush
   \Big[\null\nst[*]\null\out\null\Big]\!\!\ast
-  \null\nst[*]\null\outpop\<p',0,\nil>\,,
+  \null\nst[*]\null\outpop\<\stmt_f,0,\nil,\theta_f>.
 \end{align*}
-%
-%-
-% \begin{align*}
-% a) &\5\5
-%     \LL p,0,ext \RR
-%         \1\xrightarrow[out]{push}\1
-%     \LL q,1,\epsilon \RR
-% \\
-% b) &\5\5 \1[ \1\xrightarrow[in]{*}\1
-%     \LL r,i,e \RR
-%         \1\xrightarrow[out]\1
-%     \LL s,j,\epsilon \RR \1]*
-% \\
-% c) &\5\5 \1\xrightarrow[in]{*}\1
-%     \LL t,k,\epsilon \RR
-%         \1\xrightarrow[out]{pop}\1
-%     \LL u,0,\epsilon \RR
-% \end{align*}
-%-
-%
+%%
 First, a~$\outpush$ starts a nested reaction at level~1.  Then, a series of
 alternations between zero or more~$\nst$ transitions (nested reactions) and
 a single~$\out$ transition (stack operation) takes place.  Finally, a
 last~$\outpop$ transition decrements the stack level to~0 and terminates the
 reaction.
+
+We now give the rules for nested transitions.  Since none of these rules
+affect the stack level, we will omit it.  Thus, in this section, we will
+write descriptions as triples~$\<\stmt,e,\theta>$ with the tacit
+understanding that there is a hidden stack level~$n$ between the
+components~$\stmt$ and~$e$.
+
+\subsubsection*{Variable declaration}
+
+Rule~\R{block} introduces a new block of variables and rule~\R{restore}
+makes a previously introduced block go out of scope.
+
+\begin{align*}
+  &\<\ceu{\Block{\vars\,\stmt}},\nil,\theta>\\
+  &\qquad\nst\<\ceu{\stmt\,;\,\Restore(\left|\theta\right|)},\nil,
+    \memdcl(\theta,\vars)>
+    \Rtag{block}\\[\rulejot]
+  &\<\ceu{\Restore(m)},\nil,\theta>
+    \nst\<\ceu{\Nop},\nil,\memrst(\theta,m)>
+    \Rtag{restore}
+\end{align*}
+
+Both rules, \R{block} and \R{restore}, act on the input memory~$\theta$.  A
+\emph{memory} is a stack of environments~$[E_1,\dots,E_k]$ where each
+environment~$E_i$ consists of a set of bindings, i.e., pairs of the
+form~$(v,n)$, which bind a variable~$v$ to an integer value~$n$.  For
+instance, the memory
+\[
+  \big[\{(v_1,1),(v_2,\bot)\},\,\{(v_1,0)\}\big]
+\]
+has two environments: $E_1=\{(v_1,1),(v_2,\bot)\}$ (top-of-stack)
+and~$E_2=\{(v_1,0)\}$.  This memory tells us that, at some point,
+variable~$v_1$ was declared and set to~0, and that later, in a nested scope,
+$v_1$ was re-declared (shadowing the previous declaration) and $v_2$ was
+declared for the first time.  In the nested scope, which corresponds to the
+most recent environment~$E_1$, variable~$v_1$ was set to~1 but~$v_2$
+remained undefined---hence its value~$\bot$ (\emph{undefined}).
+
+We use the following functions to manipulate memories (all of them return a
+modified memory):
+\begin{align*}
+  \memdcl(\theta,v_1,,\dots,v_n)
+  &=\{(v_1,\bot),\dots,(v_n,\bot)\}\mathbin{:}\theta\\
+  %%
+  \memrst(\theta,n)
+  &=\text{pops $\left|\theta\right|-n$ elements from~$\theta$}\\
+  %% 
+  \memset(E:\theta,v,n)
+  &=\begin{cases}
+    ((E-\{(v,n')\})\cup(v,n)):\theta &\text{if~$(v,n')\in{E}$}\\
+    \memset(\theta,v,n)              &\text{otherwise}
+  \end{cases}
+  %% 
+  % \memget(E:\theta,v)
+  % &=\begin{cases}
+  %   n                 &\text{if $(v,n)\in{E}$}\\
+  %   \memget(\theta,v) &\text{otherwise}
+  % \end{cases}
+\end{align*}
+%%
+where~`$:$' denotes the list constructor operator and~$\left|\theta\right|$
+denotes the length of~$\theta$.  Function~$\memdcl$ declares...
+
+Back to the rules,...
+
+\gl{TODO: Terminar essa seção.}
+
+\subsubsection*{Variable assignment}
+
+\subsubsection*{Emit}
+
+\subsubsection*{Conditionals}
+
+\subsubsection*{Sequences and loops}
+
+\subsubsection*{Parallel-and and parallel-or}
+
+\def\JOT{.8\jot}
 
 The~$\nst$ rules for atoms are defined as follows:
 \begingroup
@@ -1192,6 +1158,25 @@ and will eventually resume in the current reaction (see rule \R{pop}).
 \label{fig.isblocked}
 \label{fig.clear}
 \end{figure}
+
+\subsection{Example}
+
+\gl{TODO: Usar essa descrição como introdução para o exemplo.}
+
+A complete reaction is a sequence of transitions:
+%%
+\begin{align*}
+  \<\stmt_0,0,e_\ext,\theta_0>\outpush
+  \Big[\null\nst[*]\null\out\null\Big]\!\!\ast
+  \null\nst[*]\null\outpop\<\stmt_f,0,\nil,\theta_f>.
+\end{align*}
+%%
+First, a~$\outpush$ starts a nested reaction at level~1.  Then, a series of
+alternations between zero or more~$\nst$ transitions (nested reactions) and
+a single~$\out$ transition (stack operation) takes place.  Finally, a
+last~$\outpop$ transition decrements the stack level to~0 and terminates the
+reaction.
+
 
 %-
 % {\small
