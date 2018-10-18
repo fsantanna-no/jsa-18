@@ -52,7 +52,7 @@ denotes an expression.
   \N{13}&&&\ceu{\Fin\stmt}               &&\text{\it finalization statement}\\
   \N{14}&&&\ceu{\Nop}                    &&\text{\it dummy statement}\\
   \N{15}&&&\ceu{\RunAt(n)}               &&\text{\it run at stack level~$n$}\\
-  \N{16}&&&\ceu{\Restore(n)}             &&\text{\it restore environment}\\
+  \N{16}&&&\ceu{\Rest(n)}                &&\text{\it restore environment}\\
   \N{17}&&&\ceu{\stmt_1\AtLoop\stmt_2}   &&\text{\it unwinded loop}\\
   \N{18}&&&\ceu{\stmt_1\AtParAnd\stmt_2} &&\text{\it unwinded par/and}\\
   \N{19}&&&\ceu{\stmt_1\AtParOr\stmt_2}  &&\text{\it unwinded par/or}
@@ -85,7 +85,7 @@ the statement~$\ceu{\Fin}$, which defines a finalization block.  These basic
 properties to Section~\ref{sec.sem.opsem}.
 
 Finally, the statements of the third kind are the remaining ones, namely,
-$\ceu{\Nop}$, $\ceu{\RunAt}$, $\ceu{\Restore}$, $\ceu{\AtLoop}$,
+$\ceu{\Nop}$, $\ceu{\RunAt}$, $\ceu{\Rest}$, $\ceu{\AtLoop}$,
 $\ceu{\AtParAnd}$, and~$\ceu{\AtParOr}$.  These are hidden statements used
 by the interpreter to encode in the program's text information about its
 execution.  We will have more to say about these \texttt{@}-statements in
@@ -483,7 +483,6 @@ definitions that apply to the program as a whole.  These are the only rules
 that manipulate the stack level---the component of descriptions that
 determines the order of execution of internal reactions.
 %%
-\begin{spreadlines}{\rulejot}
 \begin{gather*}
   \AxiomC{$e\ne\nil$}
   \UnaryInfC{$\<\stmt,n,e,\theta>\out\<\bcast(\stmt,e),n+1,\nil,\theta>$}
@@ -491,35 +490,35 @@ determines the order of execution of internal reactions.
   \Rtag{push}\\
   %%
   \AxiomC{$n>0$}
-  \AxiomC{$\stmt=\ceu{\Nop}\lor\isblocked(\stmt,n)$}
+  \AxiomC{$\stmt=\ceu{\Nop}\lor\isblk(\stmt,n)$}
   \BinaryInfC{$\<\stmt,n,\nil,\theta>\out\<\stmt,n-1,\nil,\theta>$}
   \Rtag{pop}
   \DisplayProof
 \end{gather*}
-\end{spreadlines}
 
 Rule \R{push} can be applied whenever there is a nonempty event in the input
 description; it instantly broadcasts the event to the program, which means it:
 \begin{enumerate*}[label=(\roman*)]
-\item awakes any active $\ceu{\AwaitExt}$ or $\ceu{\AwaitInt}$ statements in
-  the program (see $\bcast$ in Figure~\ref{fig.bcast});
+\item awakes (and consumes) any active $\ceu{\AwaitExt}$ or
+  $\ceu{\AwaitInt}$ statements in the program (see $\bcast$ in
+  Figure~\ref{fig.bcast});
 \item creates a nested reaction by increasing the stack level; and
-\item consumes the event ($e$ becomes~$\nil$).
+\item consumes the input event ($e$ becomes~$\nil$).
 \end{enumerate*}
-Rule \R{push} is the only rule that matches (and consumes) a nonempty event
-in the input description.
+Rule \R{push} is the only rule that matches a nonempty event in the input
+description.
 
 Rule \R{pop} simply decreases the stack level by one; it can only be applied
-if the program is blocked (see $\isblocked$ in Figure~\ref{fig.isblocked})
-or terminated ($\stmt=\ceu{\Nop}$).  This condition ensures that an
+if the program is blocked (see $\isblk$ in Figure~\ref{fig.isblocked}) or
+terminated ($\stmt=\ceu{\Nop}$).  This condition ensures that an
 $\ceu{\EmitInt}$ only resumes after its internal reaction completes and
 blocks at the current stack level.
 
 At the beginning of a reaction, an external event is emitted, which triggers
 rule \R{push}, immediately raising the stack level to~1.  At the end of the
 reaction, the program will block or terminate and successive applications of
-rule~\R{pop} will lead to a description with this same program at stack
-level~0.
+rule~\R{pop} will lead to an irreducible description with this same program
+at stack level~0.
 
 \subsection{Nested Transitions}
 \label{sec.sem.nested}
@@ -531,7 +530,7 @@ The~$\nst$ transitions have the general form
 They do not affect the stack level and never have an emitted event as a
 precondition.  The distinction between~$\out$ and~$\nst$ prevents rules
 \R{push} and \R{pop} from matching and, consequently, from inadvertently
-modifying the current stack level before the nested reaction is complete.
+modifying the stack level before the nested reaction is over.
 
 A complete reaction is a sequence of transitions
 %%
@@ -561,20 +560,26 @@ introduces a new block of declarations; \R{restore}, which makes a
 previously introduced block go out of scope; and \R{assign}, which evaluates
 an expression and assigns the resulting value to a variable.
 %%
-\begin{align*}
-  &\<\ceu{\Block{\vars\,\stmt}},\nil,\theta>\\[-\jot]
-  &\qquad\null\nst\<\ceu{\stmt\,;\,\Restore(\left|\theta\right|)},\nil,
-    \memdecl(\theta,\vars)>
-    \Rtag{block}\\[\rulejot]
-    %%
-  &\<\ceu{\Restore(n)},\nil,\theta>\\[-\jot]
-  &\qquad\null\nst\<\ceu{\Nop},\nil,\memrest(\theta,n)>
-    \Rtag{restore}\\[\rulejot]
-    %%
-  &\<\ceu{v\coloneqq{\expr}},\nil,\theta>\\[-\jot]
-  &\qquad\null\nst\<\ceu{\Nop},\nil,\memupdt(\theta,v,\eval(\theta,\expr))>
-    \Rtag{assign}
-\end{align*}
+\begin{gather*}
+  \<\ceu{\Block{\vars\,\stmt}},\nil,\theta>
+  \nst\<\ceu{\stmt;\Rest(\left|\theta\right|)},\nil,\memdecl(\theta,\vars)>
+  \Rtag{block}\\
+  %%
+  \<\ceu{\Rest(n)},\nil,\theta>
+  \nst\<\ceu{\Nop},\nil,\memrest(\theta,n)>
+  \Rtag{restore}\\
+  %%
+  \<\ceu{v\coloneqq{\expr}},\nil,\theta>
+  \nst\<\ceu{\Nop},\nil,\memupdt(\theta,v,\eval(\theta,\expr))>
+  \Rtag{assign}
+\end{gather*}
+
+\gl{Desisti de alinhar as regras e fazê-las caber nas colunas (missão
+  impossível).  Estou pensando em mover todas as regras nst para uma figura
+  separada abrangendo duas colunas, e alinhá-las lá talvez reduzindo a
+  fonte.  Antes disso, porém, prefiro terminar o texto.  Se der tempo eu
+  faço isso.  Se não der, submetemos do jeito que está (desalinhado mas
+  correto) e resolvemos depois.  O que acha?}
 
 The three rules, \R{block}, \R{restore}, and~\R{assign}, act on the input
 memory~$\theta$.  A \emph{memory} is a stack of environments
@@ -627,17 +632,17 @@ to the integer~$n$ in the most recent environment where~$v$ occurs.
 
 Back to the rules, \R{block} transforms a statement of the form
 $\ceu{\Block{\vars\,\stmt}}$ into a sequence
-$\ceu{\stmt;\Restore(\left|\theta\right|)}$ and pushes onto~$\theta$ a new
+$\ceu{\stmt;\Rest(\left|\theta\right|)}$ and pushes onto~$\theta$ a new
 environment declaring all variables in~$\vars$.  The idea is that
 after~$\stmt$ executes and the block goes out of scope, the memory is
-restored to its original length by the subsequent $\ceu{\Restore}$ statement
+restored to its original length by the subsequent $\ceu{\Rest}$ statement
 (rule~\R{restore}), which effectively removes any environments introduced by
 the block and its body.
 
-Rule~\R{assign} transforms a~$\ceu{v\coloneqq\expr}$ into a $\ceu{\Nop}$
-(the dummy statement) and performs the assignment.  That is, it
-evaluates~$\expr$ to an integer~$n$ and assigns it to variable~$v$ in the
-most recent environment where~$v$ was declared.
+Rule~\R{assign} transforms~$\ceu{v\coloneqq\expr}$ into $\ceu{\Nop}$ (the
+dummy statement) and performs the assignment.  That is, it evaluates~$\expr$
+to an integer~$n$ and assigns~$n$ to variable~$v$ in the most recent
+environment where~$v$ was declared.
 
 Expression evaluation is carried out by function~$\memeval$.  For
 simplicity, we assume that~$\memeval$ always returns an integer.  In
@@ -646,47 +651,41 @@ variable or division by zero, will cause the interpreter to abort.
 
 \subsubsection*{Emissions}
 
-%%The~$\nst$ rules for event emission are defined as follows:
-\begin{spreadlines}{\rulejot}
-\begin{align*}
+\begin{gather*}
   \<\ceu{\EmitInt(e)},n,\nil,\theta>
-  &\nst\<\ceu{\RunAt(n)},n,e,\theta>\Rtag{emit-int}\\
+  \nst\<\ceu{\RunAt(n)},n,e,\theta>\Rtag{emit-int}\\
   %%
   \<\ceu{\RunAt(n)},n,\nil,\theta>
-  &\nst\<\ceu{\Nop},n,\nil,\theta>\Rtag{run-at}
-\end{align*}
-\end{spreadlines}
+  \nst\<\ceu{\Nop},n,\nil,\theta>\Rtag{run-at}
+\end{gather*}
 
-By rule \R{emit-int}, an $\ceu{\EmitInt(e)}$ generates an internal event $e$
-and becomes a $\ceu{\RunAt(n)}$, which can only resume at stack level~$n$.
-This is so because rule \R{run-at} applies only if the integer~$n$ in the
-$\ceu{\RunAt(n)}$ statement is equal to the stack level.  Since every~$\nst$
-rule expects the input event to be empty, an application of \R{emit-int}
-leads immediately to an application of \R{push} at the outer level, creating
-a new level~$n+1$ on the stack.  With this new stack level, the resulting
-$\ceu{\RunAt}(n)$ itself cannot transition yet, providing the desired
-stack-based semantics for internal events.
+An $\ceu{\EmitInt(e)}$ generates event $e$ and becomes a $\ceu{\RunAt(n)}$
+statement (rule \R{emit-int}); this $\ceu{\RunAt(n)}$ statement only resumes
+at stack level~$n$ (rule \R{run-at}).
+
+Since every~$\nst$ rule expects the input event to be empty, an application
+of \R{emit-int} leads immediately to an application of \R{push} at the outer
+level, creating a new level~$n+1$ on the stack.  With this new stack level,
+the $\ceu{\RunAt}(n)$ resulting from the $\ceu{\EmitInt(e)}$ can only
+transition after future applications of~\R{pop} put the stack level back
+in~$n$.  This interplay between \R{emit-int}, \R{push}, \R{pop}, and
+\R{run-at} provides the desired stack-based semantics for internal events.
 
 \subsubsection*{Conditionals}
 
-%%The $\nst$ rules for conditionals are the following:
-\begin{spreadlines}{\rulejot}
-\begin{align*}
-  &\AxiomC{$\eval(\theta,\expr)\ne0$}
-  \UnaryInfC{\stackanchor
-    {$\<\ceu{\IfElse{\expr}{\stmt_1}{\stmt_2}},\nil,\theta>$}
-    {\qquad$\null\nst\<\stmt_1,\nil,\theta>$}}
+\begin{gather*}
+  \AxiomC{$\eval(\theta,\expr)\ne0$}
+  \UnaryInfC{$\<\ceu{\IfElse{\expr}{\stmt_1}{\stmt_2}},\nil,\theta>
+    \nst\<\stmt_1,\nil,\theta>$}
   \DisplayProof
   \Rtag{if-true}\\
   %%
-  &\AxiomC{$\eval(\theta,\expr)=0$}
-  \UnaryInfC{\stackanchor
-    {$\<\ceu{\IfElse{\expr}{\stmt_1}{\stmt_2}},\nil,\theta>$}
-    {\qquad$\null\nst\<\stmt_2,\nil,\theta>$}}
+  \AxiomC{$\eval(\theta,\expr)=0$}
+  \UnaryInfC{$\<\ceu{\IfElse{\expr}{\stmt_1}{\stmt_2}},\nil,\theta>
+    \nst\<\stmt_2,\nil,\theta>$}
   \DisplayProof
   \Rtag{if-false}
-\end{align*}
-\end{spreadlines}
+\end{gather*}
 
 Rules \R{if-true} and \R{if-false} transform a conditional statement into
 its if-part ($\stmt_1$) or else-part ($\stmt_2$) depending on the value to
@@ -698,7 +697,6 @@ contents of the input memory in a way that affects the control flow.
 
 \subsubsection*{Sequences}
 
-\begin{spreadlines}{\rulejot}
 \begin{gather*}
   \<\ceu{\Nop;\stmt_2},\nil,\theta>
   \nst\<\stmt_2,\nil,\theta>
@@ -713,91 +711,79 @@ contents of the input memory in a way that affects the control flow.
   \DisplayProof
   \Rtag{seq-adv}
 \end{gather*}
-\end{spreadlines}
 
 A sequence whose first part is terminated ($\ceu{\Nop}$) becomes its second
 part (rule \R{seq-nop}).  A sequence whose first part is a~$\ceu{\Break}$,
 propagates the~$\ceu{\Break}$ by dropping its second part (rule
-\R{seq-brk}).  Finally, a sequence whose first part ($\stmt_1$) is neither
-$\ceu{\Nop}$ nor~$\ceu{\Break}$ advances to the sequence
-($\stmt_1';\stmt_2)$, event ($e$), and memory ($\theta'$) resulting from
-advancing just its first part (rule \R{seq-adv}).
+\R{seq-brk}).  Finally, a sequence whose first part is neither $\ceu{\Nop}$
+nor~$\ceu{\Break}$ advances to the sequence, event, and memory resulting
+from advancing just its first part (rule \R{seq-adv}).
 
 \subsubsection*{Loops}
 
-\begin{align*}
-  &\begin{aligned}[t]
-    &\<\ceu{\Loop{\stmt}},\nil,\theta>\\[-\jot]
-    &\qquad\null\nst\<\ceu{(\stmt\AtLoop{\stmt});
-      \Restore({\left|\theta\right|})},\nil,\theta>
-  \end{aligned}
-  \Rtag{loop-expd}\\[\rulejot]
+\begin{gather*}
+  \<\ceu{\Loop{\stmt}},\nil,\theta>
+  \nst\<\ceu{(\stmt\AtLoop{\stmt});
+    \Rest({\left|\theta\right|})},\nil,\theta>
+  \Rtag{loop-expd}\\
   %% 
-  &\begin{aligned}[b]
-    &\<\ceu{\Nop\AtLoop{\stmt_2}},\nil,\theta>\\[-\jot]
-    &\qquad\null\nst\<\ceu{\Loop{\stmt_2}},\nil,\theta>
-  \end{aligned}
-  \Rtag{loop-nop}\\[\rulejot]
+  \<\ceu{\Nop\AtLoop{\stmt_2}},\nil,\theta>
+  \nst\<\ceu{\Loop{\stmt_2}},\nil,\theta>
+  \Rtag{loop-nop}\\
   %%
-  &\begin{aligned}[b]
-    &\<\ceu{\Break\AtLoop{\stmt_2}},\nil,\theta>\\[-\jot]
-    &\qquad\null\nst\<\ceu{\Nop},\nil,\theta>
-  \end{aligned}
- \Rtag{loop-brk}\\[\rulejot]
-  %% 
-  &\AxiomC{$\<\stmt_1,\nil,\theta>\nst\<\stmt_1',e,\theta'>$}
-  \UnaryInfC{\stackanchor
-    {$\<\ceu{\stmt_1\AtLoop{\stmt_2}},\nil,\theta>$}
-    {$\qquad\null\nst\<\ceu{\stmt_1'\AtLoop{\stmt_2}},e,\theta'>$}}
+  \<\ceu{\Break\AtLoop{\stmt_2}},\nil,\theta>
+  \nst\<\ceu{\Nop},\nil,\theta>
+  \Rtag{loop-brk}\\
+  %%
+  \AxiomC{$\<\stmt_1,\nil,\theta>\nst\<\stmt_1',e,\theta'>$}
+  \UnaryInfC{$\<\ceu{\stmt_1\AtLoop{\stmt_2}},\nil,\theta>
+    \nst\<\ceu{\stmt_1'\AtLoop{\stmt_2}},e,\theta'>$}
   \DisplayProof
   \Rtag{loop-adv}
-\end{align*}
+\end{gather*}
 
 When the interpreter encounters a $\ceu{\Loop}$, it expands its body in
-sequence with itself (the saved body) followed by a $\ceu{\Restore}$
-statement (rule \R{loop-expd}).  The $\ceu{\Restore}$ ensures that if the
-loop is terminated by a $\ceu{\Break}$, then any environments introduced by
-the loop are popped from the memory.
+sequence with the loop itself followed by a $\ceu{\Rest}$ statement (rule
+\R{loop-expd}).  The $\ceu{\Rest}$ statement ensures that if the loop is
+terminated by a $\ceu{\Break}$, any environments introduced by the loop are
+popped from the memory.
 
 The remaining rules for loops are similar to those for sequences but use
 ``\texttt{@}'' as separators to bind the current code of the loop to its
-saved body.  Rules \R{loop-nop} and \R{loop-adv} are analogous to rules
+next iteration.  Rules \R{loop-nop} and \R{loop-adv} are analogous to rules
 \R{seq-nop} and \R{seq-adv}.  They advance the current code of the loop
 until it becomes a~$\ceu{\Nop}$.  When this happens the loop is restarted
-(\R{seq-nop}).  (Note that if we had used ``\texttt{;}'' as a separator in
-loops, rules \R{loop-brk} and \R{seq-brk} would conflict.)  Rule
+(\R{seq-nop}).  Note that if we had used ``\texttt{;}'' as a separator in
+loops, rules \R{loop-brk} and \R{seq-brk} would conflict.  Finally, rule
 \R{loop-brk} escapes the enclosing loop, transforming everything into
 a~$\ceu{\Nop}$.
 
-\subsubsection*{Par/and and par/or compositions}
+\strut\gl{Até aqui está estável (não mexo mais antes da sua revisão).}
 
-\gl{Parei aqui.}
+\subsubsection*{Par/and and par/or compositions}
 
 \begin{align*}
   &\begin{aligned}[b]
     &\<\ceu{\stmt_1\And{\stmt_2}},n,\nil,\theta>\\[-1\jot]
     &\qquad\null\nst\<\ceu{\stmt_1\AtAnd(\RunAt(n);\stmt_2)},n,\nil,\theta>
   \end{aligned}
-  \Rtag{and-expd}\\[\rulejot]
+  \Rtag{and-expd}\\
   %%
   &\begin{aligned}[b]
     &\<\ceu{\stmt_1\Or{\stmt_2}},n,\nil,\theta>\\[-1\jot]
     &\qquad\null\nst\<\ceu{(\stmt_1\AtOr(\RunAt(n);\stmt_2));
-      \Restore(\left|\theta\right|)},n,\nil,\theta>
+      \Rest(\left|\theta\right|)},n,\nil,\theta>
   \end{aligned}
   \Rtag{or-expd}
 \end{align*}
-
-\gl{TODO: Expd \& restore.}
 
 The rules for~$\ceu{\And}$ and~$\ceu{\Or}$ compositions ensure that their
 left branch always transition before their right branch.
 
 \begin{align*}
   &\AxiomC{$\<\stmt_1,\nil,\theta>\nst\<\stmt_1',e,\theta'>$}
-  \UnaryInfC{\stackanchor
-    {$\<\ceu{\stmt_1\AtAnd{\stmt_2}},\nil,\theta>$}
-    {$\qquad\null\nst\<\ceu{\stmt_1'\AtAnd{\stmt_2}},e,\theta'>$}}
+  \UnaryInfC{$\<\ceu{\stmt_1\AtAnd{\stmt_2}},\nil,\theta>
+    \nst\<\ceu{\stmt_1'\AtAnd{\stmt_2}},e,\theta'>$}
   \DisplayProof
   \Rtag{and-adv1}\\
   %%

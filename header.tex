@@ -26,10 +26,6 @@
 \def\defaultHypSeparation{\hspace*{.85em}}
 \def\proofSkipAmount{\relax}
 
-\usepackage{stackengine}        % for breaking long lines in proof trees
-\strutshortanchors{F}
-\def\stackalignment{l}
-
 % Enumerations.
 \usepackage[inline]{enumitem}
 \newlist{enumerate:a}{enumerate}{4}
@@ -43,12 +39,6 @@
 \setlist[case]{itemsep=1ex,leftmargin=\parindent,labelindent=\parindent,
 labelwidth=*,align=case,label*=.\arabic*}
 \setlist[case,1]{label=\arabic*,leftmargin=0pt,labelindent=0pt}
-
-% Values for \jot.
-\newlength{\savedjot}
-\setlength{\savedjot}{\jot}
-\newlength{\rulejot}
-\setlength{\rulejot}{2\savedjot}
 
 % Notes
 \usepackage[textsize=footnotesize]{todonotes}
@@ -95,8 +85,8 @@ labelwidth=*,align=case,label*=.\arabic*}
 \def\@int{\mathit{int}}
 \def\@ext{\mathit{ext}}
 \let\ext\@ext
-\def\@ceuop#1{\mathop{\relax{\texttt{#1}}}}%
-\def\@ceubin#1{\mathbin{\relax{\texttt{#1}}}}%
+\def\@ceuop#1{\mathop{\relax{\small\texttt{#1}}}}%
+\def\@ceubin#1{\mathbin{\relax{\small\texttt{#1}}}}%
 \def\ceu{\protect\@ceu}
 \def\@ceu#1{%
   \bgroup
@@ -119,7 +109,7 @@ labelwidth=*,align=case,label*=.\arabic*}
   \def\Nop{\@ceuop{@nop}}%
   \def\CanRun{\@ceuop{@canrun}}%    to be removed
   \def\RunAt{\@ceuop{@runat}}%
-  \def\Restore{\@ceuop{@restore}}%
+  \def\Rest{\@ceuop{@rest}}%
   \def\AtLoop{\@ceuop{@loop}}%
   \def\AtAnd{\@ceubin{@and}}%       to be removed
   \def\AtOr{\@ceubin{@or}}%         to be removed
@@ -141,6 +131,7 @@ labelwidth=*,align=case,label*=.\arabic*}
 \newcommand*\vars{\mathit{vars}}
 
 % Functions.
+\newcommand*\isblk{\mathop{\mathit{isblk}}}
 \newcommand*\memdecl{\mathop{\mathit{decl}}}
 \newcommand*\memeval{\mathop{\mathit{eval}}}
 \newcommand*\memrest{\mathop{\mathit{rest}}}
