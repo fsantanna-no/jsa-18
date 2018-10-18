@@ -1,4 +1,4 @@
-\section{Formal Semantics of~\CEU}
+\section{Formal Semantics of \CEU}
 \label{sec.sem}
 
 We now introduce and formalize the semantics of a reduced version of \CEU,
@@ -165,7 +165,7 @@ the extra features of full \CEU are implemented in basic \CEU.
 
 \gl{Veja se está melhor.}
 
-\subsubsection{\code{await} and \code{emit}}
+\subsubsection*{Await and emit}
 
 The \code{await} and \code{emit} primitives of full \CEU are slightly more
 complex than those of basic \CEU, as they support communication of values
@@ -233,7 +233,7 @@ end
 \label{lst.await_emit}
 \end{figure}
 
-\subsubsection{First-Class Timers}
+\subsubsection*{First-class timers}
 
 To add support for first-class timers to basic \CEU , we introduce a
 \code{TIMER} input event, which notifies the passage of time, and two global
@@ -298,7 +298,7 @@ var int tot_ = 1000 + delta_;
 \label{lst.TIMER}
 \end{figure}
 
-\subsubsection{Finalization}
+\subsubsection*{Finalization}
 
 % \begin{comment}
 % Finally, a ``\code{finalize $A$ with $B$ end; $C$}'' in the concrete
@@ -435,8 +435,8 @@ in~$\stmt_0$ at the beginning of the reaction.  The final
 description~$\delta_f=\<stmt_f,0,\nil,\theta_f>$ contains the two outputs of
 the reaction: the text of the program at the end of the reaction ($\stmt_f$)
 and the values of the variables used in~$\stmt_f$ at the end of the
-reaction.  The output program~$\stmt_f$ and memory environment~$\theta_f$
-will be used by the interpreter as inputs in the next reaction.
+reaction.  The output program~$\stmt_f$ and memory~$\theta_f$ will be used
+by the interpreter as inputs in the next reaction.
 
 We write~$\delta_0\trans[i]\delta_f$ to indicate that $\delta_0$ leads
 to~$\delta_f$ after exactly~$i$ transitions, and we
@@ -1137,7 +1137,7 @@ and will eventually resume in the current reaction (see rule \R{pop}).
 \label{fig.clear}
 \end{figure}
 
-\subsection{Example}
+\subsection{A Complete Example}
 
 \gl{TODO: Reação usando as regras.}
 
