@@ -76,13 +76,13 @@ breaks.  The $\ceu{\Block}$ statement of basic \CEU introduces its local
 variables at once in a list of identifiers.
 
 The statements of the second kind are those which are specific to \CEU.
-These are the statements~$\ceu{\AwaitExt}$, $\ceu{\AwaitInt}$,
-$\ceu{\EmitInt}$, and~$\ceu{\Every}$, which deal with events, the
-statements~$\ceu{\ParAnd}$ and~$\ceu{\ParOr}$, which define parallel
-compositions, and the statement~$\ceu{\Fin}$, which defines a finalization
-block.  These basic \CEU statements are more or less equivalent to their
-counterparts in full \CEU.  We defer a precise description of their behavior
-and entailed properties to Section~\ref{sec.sem.opsem}.
+These are the statements $\ceu{\AwaitExt}$, $\ceu{\AwaitInt}$,
+$\ceu{\EmitInt}$, and $\ceu{\Every}$, which deal with events, the statements
+$\ceu{\ParAnd}$ and~$\ceu{\ParOr}$, which define parallel compositions, and
+the statement~$\ceu{\Fin}$, which defines a finalization block.  These basic
+\CEU statements are more or less equivalent to their counterparts in full
+\CEU.  We defer a precise description of their behavior and entailed
+properties to Section~\ref{sec.sem.opsem}.
 
 Finally, the statements of the third kind are the remaining ones, namely,
 $\ceu{\Nop}$, $\ceu{\RunAt}$, $\ceu{\Restore}$, $\ceu{\AtLoop}$,
@@ -373,12 +373,12 @@ end
 \subsection{Operational Semantics}
 \label{sec.sem.opsem}
 
-We now proceed to formalize the operation of the basic \CEU interpreter.
-Our goal here is twofold.  First, we want to define a function~$\reaction$
-that describes precisely the operation steps taken by the interpreter to
-compute a single reaction to an external input.  Second, we want to establish
-(prove) some properties of this function.  In particular, we want to establish
-that:
+We proceed to formalize the operation of the basic \CEU interpreter.  Our
+goal here is twofold.  First, we want to define a function~$\reaction$ that
+describes precisely the operation steps taken by the interpreter to compute
+a single reaction to an external event.  Second, we want to establish
+(prove) some properties of this function.  In particular, we want to
+establish that:
 \begin{enumerate}
 \item $\reaction$ is indeed a function: the same program will always react
   in the same way to a same external event (i.e., reactions are
@@ -390,15 +390,14 @@ that:
   the input program (i.e., reactions are memory-bounded).
 \end{enumerate}
 
-We will define $\reaction$ using a set of rules for an
-small-step operational semantics~\cite{Plotkin-G-D-1981}.  These rules
-dictate how the internal state of the basic \CEU interpreter progresses
-while it is computing a reaction.  A snapshot of this internal state is
-called a \emph{description}, denoted~$\delta$, and consists of a
-quadruple~$\<\stmt,n,e,\theta>$ where
+We will define $\reaction$ using a set of rules for a small-step operational
+semantics~\cite{Plotkin-G-D-1981}.  These rules dictate how the internal
+state of the basic \CEU interpreter progresses while it is computing a
+reaction.  A snapshot of this internal state is called a \emph{description},
+denoted~$\delta$, and consists of a quadruple~$\<\stmt,n,e,\theta>$ where
 \begin{itemize}
 \item $\stmt$ is a well-formed basic \CEU program;
-\item $n$ is a nonnegative integer, called the \emph{stack level};
+\item $n$ is a nonnegative integer, called the stack level;
 \item $e$ is an event identifier or the empty identifier~$\nil$;
   and
 \item $\theta$ is a memory.
@@ -525,22 +524,21 @@ level~0.
 \subsection{Nested Transitions}
 \label{sec.sem.nested}
 
-All~$\nst$ transitions have the general form
+The~$\nst$ transitions have the general form
 \[
 \<\stmt,n,\nil,\theta>\nst\<\stmt',n,e,\theta'>.
 \]
-That is, nested transitions do not affect the stack level and never have an
-emitted event as a precondition.  The distinction between~$\out$ and~$\nst$
-prevents rules \R{push} and \R{pop} from matching and, consequently, from
-inadvertently modifying the current stack level before the nested reaction
-is complete.
+They do not affect the stack level and never have an emitted event as a
+precondition.  The distinction between~$\out$ and~$\nst$ prevents rules
+\R{push} and \R{pop} from matching and, consequently, from inadvertently
+modifying the current stack level before the nested reaction is complete.
 
 A complete reaction is a sequence of transitions
 %%
 \begin{align*}
   \<\stmt_0,0,e_\ext,\theta_0>\outpush
-  \Big[\null\nst[*]\null\out\null\Big]\!\!\ast
-  \null\nst[*]\null\outpop\<\stmt_f,0,\nil,\theta_f>.
+  {\Big[{\nst[*]}{\out}\Big]{*}}
+  \null\mathbin{\nst[*]\outpop}\<\stmt_f,0,\nil,\theta_f>.
 \end{align*}
 %%
 First, a~$\outpush$ starts a nested reaction at level~1.  Then, a series of
@@ -549,302 +547,276 @@ a single~$\out$ transition (stack operation) takes place.  Finally, a
 last~$\outpop$ transition decrements the stack level to~0 and terminates the
 reaction.
 
-We now give the rules for nested transitions.  Since none of these rules
-affect the stack level, we will omit it.  Thus, in this section, we will
-write descriptions as triples~$\<\stmt,e,\theta>$ with the tacit
-understanding that there is a hidden stack level~$n$ between the
+We now give the rules for nested transitions.  Since these rules do not
+affect the stack level, whenever convenient, we will omit the stack level in
+the their definition.  Thus, in this section, we will sometimes write
+descriptions as triples~$\<\stmt,e,\theta>$ with the tacit understanding
+that there is a hidden integer for the stack level between the
 components~$\stmt$ and~$e$.
 
-\subsubsection*{Variable declaration}
+\subsubsection*{Declarations and assignments}
 
-Rule~\R{block} introduces a new block of variables and rule~\R{restore}
-makes a previously introduced block go out of scope.
-
+There are three $\nst$ rules for dealing with variables: \R{block}, which
+introduces a new block of declarations; \R{restore}, which makes a
+previously introduced block go out of scope; and \R{assign}, which evaluates
+an expression and assigns the resulting value to a variable.
+%%
 \begin{align*}
-  &\<\ceu{\Block{\vars\,\stmt}},\nil,\theta>\\
-  &\qquad\nst\<\ceu{\stmt\,;\,\Restore(\left|\theta\right|)},\nil,
-    \memdcl(\theta,\vars)>
+  &\<\ceu{\Block{\vars\,\stmt}},\nil,\theta>\\[-\jot]
+  &\qquad\null\nst\<\ceu{\stmt\,;\,\Restore(\left|\theta\right|)},\nil,
+    \memdecl(\theta,\vars)>
     \Rtag{block}\\[\rulejot]
-  &\<\ceu{\Restore(m)},\nil,\theta>
-    \nst\<\ceu{\Nop},\nil,\memrst(\theta,m)>
-    \Rtag{restore}
+    %%
+  &\<\ceu{\Restore(n)},\nil,\theta>\\[-\jot]
+  &\qquad\null\nst\<\ceu{\Nop},\nil,\memrest(\theta,n)>
+    \Rtag{restore}\\[\rulejot]
+    %%
+  &\<\ceu{v\coloneqq{\expr}},\nil,\theta>\\[-\jot]
+  &\qquad\null\nst\<\ceu{\Nop},\nil,\memupdt(\theta,v,\eval(\theta,\expr))>
+    \Rtag{assign}
 \end{align*}
 
-Both rules, \R{block} and \R{restore}, act on the input memory~$\theta$.  A
-\emph{memory} is a stack of environments~$[E_1,\dots,E_k]$ where each
-environment~$E_i$ consists of a set of bindings, i.e., pairs of the
-form~$(v,n)$, which bind a variable~$v$ to an integer value~$n$.  For
-instance, the memory
+The three rules, \R{block}, \R{restore}, and~\R{assign}, act on the input
+memory~$\theta$.  A \emph{memory} is a stack of environments
+$[E_1,\dots,E_k]$ where each environment~$E_i$ is a set of bindings, i.e.,
+pairs of the form~$(v,n)$ which associate a variable~$v$ to an integer
+value~$n$.  For instance, the memory
 \[
   \big[\{(v_1,1),(v_2,\bot)\},\,\{(v_1,0)\}\big]
 \]
 has two environments: $E_1=\{(v_1,1),(v_2,\bot)\}$ (top-of-stack)
 and~$E_2=\{(v_1,0)\}$.  This memory tells us that, at some point,
 variable~$v_1$ was declared and set to~0, and that later, in a nested scope,
-$v_1$ was re-declared (shadowing the previous declaration) and $v_2$ was
-declared for the first time.  In the nested scope, which corresponds to the
-most recent environment~$E_1$, variable~$v_1$ was set to~1 but~$v_2$
-remained undefined---hence its value~$\bot$ (\emph{undefined}).
+$v_1$ was re-declared (shadowing the previous declaration) and~$v_2$ was
+declared for the first time.  Still in the nested scope, which corresponds
+to the most recent environment~$E_1$, variable~$v_1$ was set to~1 but~$v_2$
+remained undefined, hence its value~$\bot$ (\emph{undefined}).
 
 We use the following functions to manipulate memories (all of them return a
 modified memory):
 \begin{align*}
-  \memdcl(\theta,v_1,,\dots,v_n)
-  &=\{(v_1,\bot),\dots,(v_n,\bot)\}\mathbin{:}\theta\\
+  \memdecl(\theta,v_1,,\dots,v_n)
+  &=\{(v_1,\bot),\dots,(v_n,\bot)\}:\theta\\
   %%
-  \memrst(\theta,n)
+  \memrest(\theta,n)
   &=\text{pops $\left|\theta\right|-n$ elements from~$\theta$}\\
-  %% 
-  \memset(E:\theta,v,n)
+  %%
+  \memupdt(E{:}\theta,v,n)
   &=\begin{cases}
-    ((E-\{(v,n')\})\cup(v,n)):\theta &\text{if~$(v,n')\in{E}$}\\
-    \memset(\theta,v,n)              &\text{otherwise}
+    (E-\{(v,n')\})\cup\{(v,n)\}:\theta &\text{if~$(v,n')\in{E}$}\\
+    \memupdt(\theta,v,n)                &\text{otherwise}
   \end{cases}
-  %% 
-  % \memget(E:\theta,v)
-  % &=\begin{cases}
-  %   n                 &\text{if $(v,n)\in{E}$}\\
-  %   \memget(\theta,v) &\text{otherwise}
-  % \end{cases}
 \end{align*}
 %%
-where~`$:$' denotes the list constructor operator and~$\left|\theta\right|$
-denotes the length of~$\theta$.  Function~$\memdcl$ declares...
+The colon ($:$) stands for the list constructor operator---thus $E{:}\theta$
+denotes the stack obtained by pushing~$E$
+onto~$\theta$---and~$\left|\theta\right|$ stands for the length of
+stack~$\theta$.
 
-Back to the rules,...
+Function~$\memdecl$ pushes onto stack~$\theta$ a new environment in which
+variables~$v_1$, \dots, $v_n$ are declared but not initialized.
+Function~$\memrest$ restores stack~$\theta$ to index~$n$, dropping any
+environments above this index.  And function~$\memupdt$ binds variable~$v$
+to the integer~$n$ in the most recent environment where~$v$ occurs.
 
-\gl{TODO: Terminar essa seção.}
+Back to the rules, \R{block} transforms a statement of the form
+$\ceu{\Block{\vars\,\stmt}}$ into a sequence
+$\ceu{\stmt;\Restore(\left|\theta\right|)}$ and pushes onto~$\theta$ a new
+environment declaring all variables in~$\vars$.  The idea is that
+after~$\stmt$ executes and the block goes out of scope, the memory is
+restored to its original length by the subsequent $\ceu{\Restore}$ statement
+(rule~\R{restore}), which effectively removes any environments introduced by
+the block and its body.
 
-\subsubsection*{Variable assignment}
+Rule~\R{assign} transforms a~$\ceu{v\coloneqq\expr}$ into a $\ceu{\Nop}$
+(the dummy statement) and performs the assignment.  That is, it
+evaluates~$\expr$ to an integer~$n$ and assigns it to variable~$v$ in the
+most recent environment where~$v$ was declared.
 
-\subsubsection*{Emit}
+Expression evaluation is carried out by function~$\memeval$.  For
+simplicity, we assume that~$\memeval$ always returns an integer.  In
+practice, any error in the evaluation, such as access to an uninitialized
+variable or division by zero, will cause the interpreter to abort.
+
+\subsubsection*{Emissions}
+
+%%The~$\nst$ rules for event emission are defined as follows:
+\begin{spreadlines}{\rulejot}
+\begin{align*}
+  \<\ceu{\EmitInt(e)},n,\nil,\theta>
+  &\nst\<\ceu{\RunAt(n)},n,e,\theta>\Rtag{emit-int}\\
+  %%
+  \<\ceu{\RunAt(n)},n,\nil,\theta>
+  &\nst\<\ceu{\Nop},n,\nil,\theta>\Rtag{run-at}
+\end{align*}
+\end{spreadlines}
+
+By rule \R{emit-int}, an $\ceu{\EmitInt(e)}$ generates an internal event $e$
+and becomes a $\ceu{\RunAt(n)}$, which can only resume at stack level~$n$.
+This is so because rule \R{run-at} applies only if the integer~$n$ in the
+$\ceu{\RunAt(n)}$ statement is equal to the stack level.  Since every~$\nst$
+rule expects the input event to be empty, an application of \R{emit-int}
+leads immediately to an application of \R{push} at the outer level, creating
+a new level~$n+1$ on the stack.  With this new stack level, the resulting
+$\ceu{\RunAt}(n)$ itself cannot transition yet, providing the desired
+stack-based semantics for internal events.
 
 \subsubsection*{Conditionals}
 
-\subsubsection*{Sequences and loops}
-
-\subsubsection*{Parallel-and and parallel-or}
-
-\def\JOT{.8\jot}
-
-The~$\nst$ rules for atoms are defined as follows:
-\begingroup
-\def\JOT{-.1\jot}
+%%The $\nst$ rules for conditionals are the following:
+\begin{spreadlines}{\rulejot}
 \begin{align*}
-  \<\ceu{\Mem(\Id)},n,\nil>
-  &\nst\<\ceu{\Nop},n,\nil>\Rtag{mem}\\[\JOT]
+  &\AxiomC{$\eval(\theta,\expr)\ne0$}
+  \UnaryInfC{\stackanchor
+    {$\<\ceu{\IfElse{\expr}{\stmt_1}{\stmt_2}},\nil,\theta>$}
+    {\qquad$\null\nst\<\stmt_1,\nil,\theta>$}}
+  \DisplayProof
+  \Rtag{if-true}\\
   %%
-  \<\ceu{\EmitInt(\Id)},n,\nil>
-  &\nst\<\ceu{\CanRun(n)},n,\ceu{\Id}>\Rtag{emit-int}\\[\JOT]
-  %%
-  \<\ceu{\CanRun(n)},n,\nil>
-  &\nst\<\ceu{\Nop},n,\nil>\Rtag{can-run}
+  &\AxiomC{$\eval(\theta,\expr)=0$}
+  \UnaryInfC{\stackanchor
+    {$\<\ceu{\IfElse{\expr}{\stmt_1}{\stmt_2}},\nil,\theta>$}
+    {\qquad$\null\nst\<\stmt_2,\nil,\theta>$}}
+  \DisplayProof
+  \Rtag{if-false}
 \end{align*}
-\endgroup
+\end{spreadlines}
 
-%-
-% { \setlength{\jot}{20pt}
-% \begin{align*}
-% \LL mem(id), n, \epsilon \RR &\NST
-% \LL @nop, n, \epsilon \RR
-%     & \textbf{(mem)}        \\
-% %%%
-% \LL emit(id), n, \epsilon \RR &\NST
-% \LL @canrun(n), n, id \RR
-%     & \textbf{(emitInt)}    \\
-% %%%
-% \LL @canrun(n), n, \epsilon \RR &\NST
-% \LL @nop, n, \epsilon \RR
-%     & \textbf{(canrun)}     \\
-% \end{align*}
-% }
-%-
+Rules \R{if-true} and \R{if-false} transform a conditional statement into
+its if-part ($\stmt_1$) or else-part ($\stmt_2$) depending on the value to
+which the associated expression ($\expr$) evaluates in the current memory.
+If it evaluates to a nonzero value, then \R{if-true} applies and the
+conditional becomes~$\stmt_1$; otherwise, \R{if-false} applies and the
+conditional becomes~$\stmt_2$.  These are the only rules that use the
+contents of the input memory in a way that affects the control flow.
 
-A $\ceu{\Mem}$ operation becomes a $\ceu{\Nop}$ which indicates the memory
-access (rule \R{mem}).
-An $\ceu{\EmitInt(id)}$ generates an event $\ceu{\Id}$ and becomes a
-$\ceu{\CanRun(n)}$ which can only resume at level~$n$ (rule \R{emit-int}).
-Since all~$\nst$ rules can only be applied if $e=\nil$, an $\ceu{\EmitInt}$
-inevitably causes rule \R{push} to execute at the outer level, creating a new
-level~$n+1$ on the stack.
-Also, with the new stack level, the resulting $\ceu{\CanRun}(n)$ itself cannot
-transition yet (rule~\R{can-run}), providing the desired stack-based semantics for
-internal events.
+\subsubsection*{Sequences}
 
-The rules for conditionals and sequences are the following:
-\vskip-.6\baselineskip
-\begingroup
-\def\JOT{-.1\jot}
+\begin{spreadlines}{\rulejot}
 \begin{gather*}
-  \AxiomC{$\eval(\ceu{\Mem(\Id)})$}
-  \UnaryInfC{$\<\ceu{\IfElse{\Mem(\Id)}{p}{q}},n,\nil>\nst\<p,n,\nil>$}
-  \DisplayProof
-  \Rtag{if-true}\\[\JOT]
+  \<\ceu{\Nop;\stmt_2},\nil,\theta>
+  \nst\<\stmt_2,\nil,\theta>
+  \Rtag{seq-nop}\\
   %%
-  \AxiomC{$\lnot\eval(\ceu{\Mem(\Id)})$}
-  \UnaryInfC{$\<\ceu{\IfElse{\Mem(\Id)}{p}{q}},n,\nil>\nst\<q,n,\nil>$}
-  \DisplayProof
-  \Rtag{if-false}\\[\JOT]
+  \<\ceu{\Break;\stmt_2},\nil,\theta>
+  \nst\<\ceu{\Break},\nil,\theta>\Rtag{seq-brk}\\
   %%
-  \AxiomC{$\<p,n,\nil>\nst\<p',n,e>$}
-  \UnaryInfC{$\<\ceu{p\,;\,q},n,\nil>\nst\<\ceu{p';\,q},n,e>$}
+  \AxiomC{$\<\stmt_1,\nil,\theta>\nst\<\stmt_1',e,\theta'>$}
+  \UnaryInfC{$\<\ceu{\stmt_1;\stmt_2},\nil,\theta>
+    \nst\<\ceu{\stmt_1';\stmt_2},e,\theta'>$}
   \DisplayProof
-  \Rtag{seq-adv}\\[\JOT]
-  \<\ceu{\Nop;\,q},n,\nil>\nst\<q,n,\nil>\Rtag{seq-nop}\\[\JOT]
-  %%
-  \<\ceu{\Break;\,q},n,\nil>\nst\<\ceu{\Break},n,\nil>\Rtag{seq-brk}
+  \Rtag{seq-adv}
 \end{gather*}
-\endgroup
-% \begin{align*}
-%   \<\ceu{\Nop;\,q},n,\nil>&\nst\<q,n,\nil>\Rtag{seq-nop}\\[\JOT]
-%   %%
-%   \<\ceu{\Break;\,q},n,\nil>&\nst\<\ceu{\Break},n,\nil>\Rtag{seq-brk}
-% \end{align*}
+\end{spreadlines}
 
-%-
-% { \setlength{\jot}{20pt}
-% \begin{eqnarray*}
-% & \frac
-%     { \DS val(id) \neq 0 }
-% %   -----------------------------------------------------------
-%     { \DS \LL (if~mem(id)~then~p~else~q),n,\epsilon \RR \NST
-%           \LL p, n, \epsilon \RR }
-%     & \textbf{(if-true)}       \\
-% %%%
-% & \frac
-%     { \DS val(id,n) = 0 }
-% %   -----------------------------------------------------------
-%     { \DS \LL (if~mem(id)~then~p~else~q),n,\epsilon \RR \NST
-%           \LL q,n,\epsilon \RR }
-%     & \textbf{(if-false)}       \\
-% %%%
-% & \frac
-%     { \DS \LL p,n,\epsilon \RR \NST \LL p',n,e \RR }
-% %   -----------------------------------------------------------
-%     { \DS \LL (p~;~q), n, \epsilon \RR \NST \LL (p'~;~q), n, e \RR }
-%     & \textbf{(seq-adv)}      \\
-% %%%
-% & \LL (@nop~;~q),n,\epsilon \RR \NST  \LL q,n,\epsilon \RR
-%     & \textbf{(seq-nop)}      \\
-% %%%
-% & \LL (break~;~q),n,\epsilon \RR \NST \LL break,n,\epsilon \RR
-%     & \textbf{(seq-brk)}
-% \end{eqnarray*}
-% }
-%-
+A sequence whose first part is terminated ($\ceu{\Nop}$) becomes its second
+part (rule \R{seq-nop}).  A sequence whose first part is a~$\ceu{\Break}$,
+propagates the~$\ceu{\Break}$ by dropping its second part (rule
+\R{seq-brk}).  Finally, a sequence whose first part ($\stmt_1$) is neither
+$\ceu{\Nop}$ nor~$\ceu{\Break}$ advances to the sequence
+($\stmt_1';\stmt_2)$, event ($e$), and memory ($\theta'$) resulting from
+advancing just its first part (rule \R{seq-adv}).
 
-Rules \R{if-true} and \R{if-false} are the only rules that use~$\ceu{\Mem}$
-in a way that affects the control flow.
-%
-Function~$\eval$ evaluates a~$\ceu{\Mem}$ expression to a boolean value.
-%
-%Although the value here is arbitrary, it is unique in a reaction, because a
-%given expression can execute only once within it (remember that $loops$ must
-%contain $awaits$ which, from rule \textbf{await}, cannot awake in the same
-%reaction they are reached).
-%For all other rules, we omit these values (e.g., \textbf{seq-nop}).
+\subsubsection*{Loops}
 
-%As determined for nested rules, compound expressions also can only have
-%$\epsilon$ as a precondition and they never modify $n$.
-%However, they can still emit an event to nest another reaction.
-%For instance, in rule \textbf{seq-adv}, if the sub-expression $p$ emits event
-%$e$, the whole composition also emits $e$.
-%However, rules \textbf{push} and \textbf{pop} can only match at the outermost
-%level.
-
-The rules for loops are similar to those for sequences, but use ``\code{@}''
-as separators to bind breaks to their enclosing loops:
 \begin{align*}
-  \<\ceu{\Loop{p}},n,\nil>
-  &\nst\<\ceu{p\AtLoop{p}},n,\nil>\Rtag{loop-expd}\\[\JOT]
+  &\begin{aligned}[t]
+    &\<\ceu{\Loop{\stmt}},\nil,\theta>\\[-\jot]
+    &\qquad\null\nst\<\ceu{(\stmt\AtLoop{\stmt});
+      \Restore({\left|\theta\right|})},\nil,\theta>
+  \end{aligned}
+  \Rtag{loop-expd}\\[\rulejot]
+  %% 
+  &\begin{aligned}[b]
+    &\<\ceu{\Nop\AtLoop{\stmt_2}},\nil,\theta>\\[-\jot]
+    &\qquad\null\nst\<\ceu{\Loop{\stmt_2}},\nil,\theta>
+  \end{aligned}
+  \Rtag{loop-nop}\\[\rulejot]
   %%
-  &\hskip-6.35em
-  \AxiomC{$\<q,n,\nil>\nst\<q',n,e>$}
-  \UnaryInfC{$\<\ceu{q\AtLoop{p}},n,\nil>\nst\<\ceu{q'\AtLoop{p}},n,e>$}
+  &\begin{aligned}[b]
+    &\<\ceu{\Break\AtLoop{\stmt_2}},\nil,\theta>\\[-\jot]
+    &\qquad\null\nst\<\ceu{\Nop},\nil,\theta>
+  \end{aligned}
+ \Rtag{loop-brk}\\[\rulejot]
+  %% 
+  &\AxiomC{$\<\stmt_1,\nil,\theta>\nst\<\stmt_1',e,\theta'>$}
+  \UnaryInfC{\stackanchor
+    {$\<\ceu{\stmt_1\AtLoop{\stmt_2}},\nil,\theta>$}
+    {$\qquad\null\nst\<\ceu{\stmt_1'\AtLoop{\stmt_2}},e,\theta'>$}}
   \DisplayProof
-  \Rtag{loop-adv}\\[\JOT]
-  %%
-  \<\ceu{\Nop\AtLoop{p}},n,\nil>
-  &\nst\<\ceu{\Loop{p}},n,\nil>\Rtag{loop-nop}\\[\JOT]
-  %%
-  \<\ceu{\Break\AtLoop{p}},n,\nil>
-  &\nst\<\ceu{\Nop},n,\nil>\Rtag{loop-brk}
+  \Rtag{loop-adv}
 \end{align*}
 
-%-
-% %
-% { \setlength{\jot}{20pt}
-% \begin{eqnarray*}
-% & \LL (loop~p),n,\epsilon \RR \NST \LL (p~@loop~p), n, \epsilon \RR
-%     & \textbf{(loop-expd)}       \\
-% %%%
-% & \frac
-%     { \DS \LL p,n,\epsilon \RR \NST \LL p',n,e \RR }
-% % -----------------------------------------------------------
-%     { \DS \LL (p~@loop~q),n,\epsilon \RR \NST \LL (p'~@loop~q), n, e \RR }
-%     & \textbf{(loop-adv)}    \\
-% %%%
-% & \LL (@nop~@loop~p), n, \epsilon \RR \NST \LL (loop~p), n, \epsilon \RR
-%     & \textbf{(loop-nop)}    \\
-% %%%
-% & \LL (break~@loop~p), n, \epsilon \RR \NST \LL @nop, n, \epsilon \RR
-%     & \textbf{(loop-brk)}
-% \end{eqnarray*}
-% }
-%-
+When the interpreter encounters a $\ceu{\Loop}$, it expands its body in
+sequence with itself (the saved body) followed by a $\ceu{\Restore}$
+statement (rule \R{loop-expd}).  The $\ceu{\Restore}$ ensures that if the
+loop is terminated by a $\ceu{\Break}$, then any environments introduced by
+the loop are popped from the memory.
 
-When a program encounters a $\ceu{\Loop}$, it first expands its body in sequence with
-itself (rule \R{loop-expd}).
-Rules \R{loop-adv} and \R{loop-nop} are similar to rules
-\R{seq-adv} and \R{seq-nop}, advancing the loop until a~$\ceu{\Nop}$ is reached.
-However, what follows the loop is the loop itself (rule \R{loop-nop}).
-Note that if we used ``\code{;}'' as a separator in loops, rules
-\R{loop-brk} and \R{seq-brk} would conflict.
-%
-Rule \R{loop-brk} escapes the enclosing loop, transforming everything into
+The remaining rules for loops are similar to those for sequences but use
+``\texttt{@}'' as separators to bind the current code of the loop to its
+saved body.  Rules \R{loop-nop} and \R{loop-adv} are analogous to rules
+\R{seq-nop} and \R{seq-adv}.  They advance the current code of the loop
+until it becomes a~$\ceu{\Nop}$.  When this happens the loop is restarted
+(\R{seq-nop}).  (Note that if we had used ``\texttt{;}'' as a separator in
+loops, rules \R{loop-brk} and \R{seq-brk} would conflict.)  Rule
+\R{loop-brk} escapes the enclosing loop, transforming everything into
 a~$\ceu{\Nop}$.
-%Rule \textbf{loop-brk} escapes the enclosing loop, transforming everything
-%into a $clear(p)$.
-%We cannot simply transform the loop into a $nop$ because its body may be a
-%parallel composition containing finalization blocks.
+
+\subsubsection*{Par/and and par/or compositions}
+
+\gl{Parei aqui.}
+
+\begin{align*}
+  &\begin{aligned}[b]
+    &\<\ceu{\stmt_1\And{\stmt_2}},n,\nil,\theta>\\[-1\jot]
+    &\qquad\null\nst\<\ceu{\stmt_1\AtAnd(\RunAt(n);\stmt_2)},n,\nil,\theta>
+  \end{aligned}
+  \Rtag{and-expd}\\[\rulejot]
+  %%
+  &\begin{aligned}[b]
+    &\<\ceu{\stmt_1\Or{\stmt_2}},n,\nil,\theta>\\[-1\jot]
+    &\qquad\null\nst\<\ceu{(\stmt_1\AtOr(\RunAt(n);\stmt_2));
+      \Restore(\left|\theta\right|)},n,\nil,\theta>
+  \end{aligned}
+  \Rtag{or-expd}
+\end{align*}
+
+\gl{TODO: Expd \& restore.}
 
 The rules for~$\ceu{\And}$ and~$\ceu{\Or}$ compositions ensure that their
-left branch always transition before their right
-branch:
-%%
-\begin{gather*}
-  \hskip-.9em
-  \<\ceu{p\And{q}},n,\nil>
-  \nst\<\ceu{p\AtAnd(\CanRun(n);q)},n,\nil>
-  \Rtag{and-expd}\\[\JOT]
-  %%
-  \AxiomC{$\<p,n,\nil>\nst\<p',n,e>$}
-  \UnaryInfC{$\<\ceu{p\AtAnd{q}},n,\nil>\nst\<\ceu{p'\AtAnd{q}},n,e>$}
+left branch always transition before their right branch.
+
+\begin{align*}
+  &\AxiomC{$\<\stmt_1,\nil,\theta>\nst\<\stmt_1',e,\theta'>$}
+  \UnaryInfC{\stackanchor
+    {$\<\ceu{\stmt_1\AtAnd{\stmt_2}},\nil,\theta>$}
+    {$\qquad\null\nst\<\ceu{\stmt_1'\AtAnd{\stmt_2}},e,\theta'>$}}
   \DisplayProof
-  \Rtag{and-adv1}\\[\JOT]
+  \Rtag{and-adv1}\\
   %%
-  \AxiomC{$\isblocked(p,n)$}
-  \AxiomC{$\<q,n,\nil>\nst\<q',n,e>$}
-  \BinaryInfC{$\<\ceu{p\AtAnd{q}},n,\nil>\nst\<\ceu{p\AtAnd{q'}},n,e>$}
+  &\AxiomC{$\isblocked(\stmt_1,n)$}
+  \AxiomC{$\<\stmt_2,n,\nil,\theta'>\nst\<\stmt_2',n,e,\theta'>$}
+  \BinaryInfC{$\<\ceu{\stmt_1\AtAnd{\stmt_2}},n,\nil,\theta>
+    \nst\<\ceu{\stmt_1\AtAnd{\stmt_2'}},n,e,\theta'>$}
   \DisplayProof
-  \Rtag{and-adv2}\\[1.2\jot]
-% \end{gather*}
-% \begin{gather*}
-  \<\ceu{p\Or{q}},n,\nil>
-  \nst\<\ceu{p\AtOr(\CanRun(n);q)},n,\nil>
-  \Rtag{or-expd}\\[\JOT]
-  %%
-  \AxiomC{$\<p,n,\nil>\nst\<p',n,e>$}
+  \Rtag{and-adv2}
+\end{align*}
+
+\begin{align*}
+  &\AxiomC{$\<p,n,\nil>\nst\<p',n,e>$}
   \UnaryInfC{$\<\ceu{p\AtOr{q}},n,\nil>\nst\<\ceu{p'\AtOr{q}},n,e>$}
   \DisplayProof
-  \Rtag{or-adv1}\\[\JOT]
+  \Rtag{or-adv1}\\
   %%
-  \AxiomC{$\isblocked(p,n)$}
+  &\AxiomC{$\isblocked(p,n)$}
   \AxiomC{$\<q,n,\nil>\nst\<q',n,e>$}
   \BinaryInfC{$\<\ceu{p\AtOr{q}},n,\nil>\nst\<\ceu{p\AtOr{q'}},n,e>$}
   \DisplayProof
   \Rtag{or-adv2}
-\end{gather*}
+\end{align*}
+
+\def\JOT{.8\jot}
 
 %-
 % { \setlength{\jot}{20pt}
@@ -1161,22 +1133,7 @@ and will eventually resume in the current reaction (see rule \R{pop}).
 
 \subsection{Example}
 
-\gl{TODO: Usar essa descrição como introdução para o exemplo.}
-
-A complete reaction is a sequence of transitions:
-%%
-\begin{align*}
-  \<\stmt_0,0,e_\ext,\theta_0>\outpush
-  \Big[\null\nst[*]\null\out\null\Big]\!\!\ast
-  \null\nst[*]\null\outpop\<\stmt_f,0,\nil,\theta_f>.
-\end{align*}
-%%
-First, a~$\outpush$ starts a nested reaction at level~1.  Then, a series of
-alternations between zero or more~$\nst$ transitions (nested reactions) and
-a single~$\out$ transition (stack operation) takes place.  Finally, a
-last~$\outpop$ transition decrements the stack level to~0 and terminates the
-reaction.
-
+\gl{TODO: Reação usando as regras.}
 
 %-
 % {\small
