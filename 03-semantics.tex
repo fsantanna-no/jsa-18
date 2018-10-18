@@ -603,8 +603,14 @@ modified memory):
   %%
   \memupdt(E{:}\theta,v,n)
   &=\begin{cases}
-    (E-\{(v,n')\})\cup\{(v,n)\}:\theta &\text{if~$(v,n')\in{E}$}\\
-    \memupdt(\theta,v,n)                &\text{otherwise}
+    \begin{aligned}[b]
+      &((E-\{(v,n')\})\\
+      &\quad\null\cup\{(v,n)\}):\theta
+    \end{aligned}
+    &\text{if~$(v,n')\in{E}$}\\
+    %%
+    \memupdt(\theta,v,n)
+    &\text{otherwise}
   \end{cases}
 \end{align*}
 %%
