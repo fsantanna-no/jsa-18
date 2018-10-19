@@ -27,9 +27,11 @@ denotes an expression.
   \lstinline[mathescape=true]|if$_\upbeta$...then...else...|,
   \lstinline[mathescape=true]|...par/and$_\upbeta$...|.  Assim daria para
   usar $\CEU_\upbeta$ (basic) e \CEU (full).}
+\fs{Acho que está bom assim como está.}
 
 \gl{Que tal ``local'' ao invés de ``block''?  Já que ``block'' também
   significa bloquear.}
+\fs{Melhor sim. Acho que ``locals'' ou ``scope'' fica mais claro.}
 
 \begin{figure}[ht!]
 \begingroup
@@ -117,12 +119,6 @@ program, the generated program must satisfy the following restrictions:
   or~$\ceu{\Fin}$.
 \end{enumerate}
 
-\fs{Também não faz sentido eles terem parand e paror (mas acho que nao afeta
-  as provas).}
-
-\gl{Não adicionei parand/or na restrição porque de fato não precisa, mas
-  fique à vontade para adicionar.}
-
 Restrictions~\ref{sec.sem.restrictions.1} and~\ref{sec.sem.restrictions.2}
 prevent the use of undeclared variables or orphan~$\ceu{\Break}$'s.
 Restriction~\ref{sec.sem.restrictions.3} ensures that the program does not
@@ -135,35 +131,14 @@ in full \CEU, as discussed in Section~\ref{sec.ceu}.
 From now on, whenever we speak of a basic \CEU program we mean a well-formed
 basic \CEU program.
 
-\fs{A restrição do fin não é por ser blocking point, pelo contrário.  Uma
-  vez que ele começa a executar, ele tem que terminar na mesma reação pois a
-  trilha tem que morrer pro programa continuar.}
-
-\fs{A restrição do every também não tem a ver com ser blocking point. O
-  bloco do every também precisa terminar na mesma reação pro every não
-  perder eventos.}
-
-\fs{A única restrição que tem a ver com safe blocking point é não poder ter
-  break dentro de every.}
-
-\gl{Veja se agora está OK.}
-
 \subsection{From Full \CEU to Basic \CEU}
 \label{sec.sem.concrete}
 
-Most statements of full \CEU are also present in basic \CEU.  These shared
-statements, however, are not exactly equivalent.  It is sometimes the case
+Most statements of full \CEU are also present in basic \CEU.  These statements
+in common, however, are not exactly equivalent.  It is sometimes the case
 that a statement full \CEU (say~\code{await}) has more features than its
 basic \CEU counterpart ($\ceu{\AwaitInt}$).  In this section, we discuss how
 the extra features of full \CEU are implemented in basic \CEU.
-
-\fs{Não gostei desse parágrafo. (1) foco duplo no @-stmt que é óbvio que
-  está fora da comparação. (2) "It is often the case" dá a impressão que
-  temos 100 casos, quando na verdade são casos claros e enumeráveis. (3) o
-  \code{finalize} está sim presente como \code{fin} mas com diferenças
-  notáveis.}
-
-\gl{Veja se está melhor.}
 
 \subsubsection*{Await and emit}
 
@@ -456,8 +431,6 @@ memory-bounded (the second part of goal) if relation~$\trans[*]$ happens to
 be so.  That this is the case is a consequence of the way transitions are
 defined, as we will see in Section~\ref{sec.proofs}.
 
-\strut\fs{Parei aqui também.}
-
 The next two sections, Sections~\ref{sec.sem.outermost}
 and~\ref{sec.sem.nested}, give the rules for transitions.  There are two
 types of transitions: \emph{outermost transitions} $\out$ and \emph{nested
@@ -580,6 +553,7 @@ an expression and assigns the resulting value to a variable.
   fonte.  Antes disso, porém, prefiro terminar o texto.  Se der tempo eu
   faço isso.  Se não der, submetemos do jeito que está (desalinhado mas
   correto) e resolvemos depois.  O que acha?}
+\fs{OK. Isso é muito chato mesmo, veja o que for mais fácil.}
 
 The three rules, \R{block}, \R{restore}, and~\R{assign}, act on the input
 memory~$\theta$.  A \emph{memory} is a stack of environments
@@ -596,6 +570,9 @@ $v_1$ was re-declared (shadowing the previous declaration) and~$v_2$ was
 declared for the first time.  Still in the nested scope, which corresponds
 to the most recent environment~$E_1$, variable~$v_1$ was set to~1 but~$v_2$
 remained undefined, hence its value~$\bot$ (\emph{undefined}).
+
+\strut\fs{A definição de Env está ligeiramente diferente da implementação, mas
+          imagino que você esteja ciente (se sim, ignore esse comentário).}
 
 We use the following functions to manipulate memories (all of them return a
 modified memory):
@@ -759,6 +736,7 @@ loops, rules \R{loop-brk} and \R{seq-brk} would conflict.  Finally, rule
 a~$\ceu{\Nop}$.
 
 \strut\gl{Até aqui está estável (não mexo mais antes da sua revisão).}
+\strut\fs{Cheguei até aqui.}
 
 \subsubsection*{Par/and and par/or compositions}
 
