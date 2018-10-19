@@ -123,7 +123,6 @@ labelwidth=*,align=case,label*=.\arabic*}
 % Math.
 \def\<#1>{\langle#1\rangle}
 \let\nil\varepsilon
-\newcommand*{\doubleplus}{\mathbin{+\mkern-7mu+}}
 
 % Metavariables.
 \newcommand*\expr{\mathit{expr}}
@@ -131,6 +130,8 @@ labelwidth=*,align=case,label*=.\arabic*}
 \newcommand*\vars{\mathit{vars}}
 
 % Functions.
+\newcommand*\bcast{\mathop{\mathit{bcast}}}
+\newcommand*\clear{\mathop{\mathit{clear}}}
 \newcommand*\isblk{\mathop{\mathit{isblk}}}
 \newcommand*\memdecl{\mathop{\mathit{decl}}}
 \newcommand*\memeval{\mathop{\mathit{eval}}}
@@ -150,9 +151,6 @@ labelwidth=*,align=case,label*=.\arabic*}
 \let\op\operatorname
 \newcommand{\opi}[1]{\op{\mathit{#1}}}
 %%
-\def\eval{\opi{eval}}
-\def\bcast{\opi{bcast}}
-\def\clear{\opi{clear}}
 \def\isblockedext{\opi{isblocked}_\@ext}
 \def\isblocked{\opi{isblocked}}
 \def\pot{\opi{pot}}
