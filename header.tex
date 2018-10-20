@@ -5,6 +5,7 @@
 \usepackage{thmtools}
 \usepackage{empheq}
 \usepackage{xspace}
+\usepackage[normalem]{ulem}
 
 % Diagrams.
 \usepackage{tikz}
@@ -90,7 +91,7 @@ labelwidth=*,align=case,label*=.\arabic*}
 \def\ceu{\protect\@ceu}
 \def\@ceu#1{%
   \bgroup
-  \def\Block{\@ceuop{block}}%
+  \def\Locals{\@ceuop{locals}}%
   \def\Var{\@ceuop{var}}%
   \def\Id{\mathit{id}}%
   \def\Mem{\@ceuop{mem}}%
@@ -109,7 +110,7 @@ labelwidth=*,align=case,label*=.\arabic*}
   \def\Nop{\@ceuop{@nop}}%
   \def\CanRun{\@ceuop{@canrun}}%    to be removed
   \def\RunAt{\@ceuop{@runat}}%
-  \def\Rest{\@ceuop{@rest}}%
+  \def\Restore{\@ceuop{@restore}}%
   \def\AtLoop{\@ceuop{@loop}}%
   \def\AtAnd{\@ceubin{@and}}%       to be removed
   \def\AtOr{\@ceubin{@or}}%         to be removed

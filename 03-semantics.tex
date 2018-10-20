@@ -19,27 +19,13 @@ Figure~\ref{fig.sem.syntax}---complex statements are defined recursively in
 terms of simpler statements.  Finally, the metavariable $\expr$ (ln~2, 7)
 denotes an expression.
 
-\gl{Outra opção para o basic seria usar o mesmo estilo do full mas colocar
-  um $\upbeta$ no final.  E.g.,
-  \lstinline[mathescape=true,keywords={block}]|block$_\upbeta$ ...|,
-  \lstinline[mathescape=true,keywords={set}]|set$_\upbeta$ x:=y|,
-  \lstinline[mathescape=true,keywords={seq}]|seq$_\upbeta$ x; y|,
-  \lstinline[mathescape=true]|if$_\upbeta$...then...else...|,
-  \lstinline[mathescape=true]|...par/and$_\upbeta$...|.  Assim daria para
-  usar $\CEU_\upbeta$ (basic) e \CEU (full).}
-\fs{Acho que está bom assim como está.}
-
-\gl{Que tal ``local'' ao invés de ``block''?  Já que ``block'' também
-  significa bloquear.}
-\fs{Melhor sim. Acho que ``locals'' ou ``scope'' fica mais claro.}
-
 \begin{figure}[ht!]
 \begingroup
 \setlength{\jot}{0pt}
 \def\N#1{\mathllap{\text{\scriptsize{#1}}\hspace{1em}}}
 \begin{empheq}[box=\fbox]{alignat*=3}
-     \N1&\hskip4pt&&\ceu{\Block{\vars\ \stmt}}
-                                    &\quad&\text{\it declaration block}\\
+     \N1&\hskip4pt&&\ceu{\Locals{\vars\ \stmt}}
+                                    &\quad&\text{\it variable declaration}\\
      \N2&&&\ceu{v\coloneqq\expr}         &&\text{\it assignment statement}\\
      \N3&&&\ceu{\AwaitExt(e)}            &&\text{\it await external event}\\
      \N4&&&\ceu{\AwaitInt(e)}            &&\text{\it await internal event}\\
@@ -54,7 +40,7 @@ denotes an expression.
   \N{13}&&&\ceu{\Fin\stmt}               &&\text{\it finalization statement}\\
   \N{14}&&&\ceu{\Nop}                    &&\text{\it dummy statement}\\
   \N{15}&&&\ceu{\RunAt(n)}               &&\text{\it run at stack level~$n$}\\
-  \N{16}&&&\ceu{\Rest(n)}                &&\text{\it restore environment}\\
+  \N{16}&&&\ceu{\Restore(n)}             &&\text{\it restore environment}\\
   \N{17}&&&\ceu{\stmt_1\AtLoop\stmt_2}   &&\text{\it unwinded loop}\\
   \N{18}&&&\ceu{\stmt_1\AtParAnd\stmt_2} &&\text{\it unwinded par/and}\\
   \N{19}&&&\ceu{\stmt_1\AtParOr\stmt_2}  &&\text{\it unwinded par/or}
@@ -73,9 +59,9 @@ nonzero value means true while zero means false.
 
 We distinguish between three kinds of basic \CEU statements.  First, there
 are those statements which are common in imperative languages and behave as
-usual, namely, blocks, assignments, conditionals, sequences, loops, and
-breaks.  The $\ceu{\Block}$ statement of basic \CEU introduces its local
-variables at once in a list of identifiers.
+usual, namely, declarations, assignments, conditionals, sequences, loops,
+and breaks.  The $\ceu{\Locals}$ statement of basic \CEU introduces its
+local variables at once in a list of identifiers.
 
 The statements of the second kind are those which are specific to \CEU.
 These are the statements $\ceu{\AwaitExt}$, $\ceu{\AwaitInt}$,
@@ -87,7 +73,7 @@ the statement~$\ceu{\Fin}$, which defines a finalization block.  These basic
 properties to Section~\ref{sec.sem.opsem}.
 
 Finally, the statements of the third kind are the remaining ones, namely,
-$\ceu{\Nop}$, $\ceu{\RunAt}$, $\ceu{\Rest}$, $\ceu{\AtLoop}$,
+$\ceu{\Nop}$, $\ceu{\RunAt}$, $\ceu{\Restore}$, $\ceu{\AtLoop}$,
 $\ceu{\AtParAnd}$, and $\ceu{\AtParOr}$.  These are hidden internal
 statements used by the interpreter to encode in the program's text
 information about its execution.  We will have more to say about these
@@ -105,7 +91,7 @@ program, the generated program must satisfy the following restrictions:
 \begin{enumerate}
 \item\label{sec.sem.restrictions.1} If variable~$v$ occurs in an expression
   or assignment statement of the program, then this occurrence happens in
-  the body of a~$\ceu{\Block}$ that declares~$v$.
+  the body of a~$\ceu{\Locals}$ statement that declares~$v$.
 \item\label{sec.sem.restrictions.2} If a~$\ceu{\Break}$ occurs in the
   program, then this occurrence happens in the body of a~$\ceu{\Loop}$.
 \item\label{sec.sem.restrictions.3} If a statement of the
@@ -136,7 +122,7 @@ basic \CEU program.
 
 Most statements of full \CEU are also present in basic \CEU.  These statements
 in common, however, are not exactly equivalent.  It is sometimes the case
-that a statement full \CEU (say~\code{await}) has more features than its
+that a statement of full \CEU (say~\code{await}) has more features than its
 basic \CEU counterpart ($\ceu{\AwaitInt}$).  In this section, we discuss how
 the extra features of full \CEU are implemented in basic \CEU.
 
@@ -505,7 +491,7 @@ precondition.  The distinction between~$\out$ and~$\nst$ prevents rules
 \R{push} and \R{pop} from matching and, consequently, from inadvertently
 modifying the stack level before the nested reaction is over.
 
-A complete reaction is a sequence of transitions
+A full reaction is a sequence of transitions
 %%
 \begin{align*}
   \<\stmt_0,0,e_\ext,\theta_0>\outpush
@@ -528,17 +514,17 @@ components~$\stmt$ and~$e$.
 
 \subsubsection*{Declarations and assignments}
 
-There are three $\nst$ rules for dealing with variables: \R{block}, which
+There are three $\nst$ rules for dealing with variables: \R{locals}, which
 introduces a new block of declarations; \R{restore}, which makes a
 previously introduced block go out of scope; and \R{assign}, which evaluates
 an expression and assigns the resulting value to a variable.
 %%
 \begin{gather*}
-  \<\ceu{\Block{\vars\,\stmt}},\nil,\theta>
-  \nst\<\ceu{\stmt;\Rest(\left|\theta\right|)},\nil,\memdecl(\theta,\vars)>
-  \Rtag{block}\\
+  \<\ceu{\Locals{\vars\,\stmt}},\nil,\theta>
+  \nst\<\ceu{\stmt;\Restore(\left|\theta\right|)},\nil,\memdecl(\theta,\vars)>
+  \Rtag{locals}\\
   %%
-  \<\ceu{\Rest(n)},\nil,\theta>
+  \<\ceu{\Restore(n)},\nil,\theta>
   \nst\<\ceu{\Nop},\nil,\memrest(\theta,n)>
   \Rtag{restore}\\
   %%
@@ -547,15 +533,7 @@ an expression and assigns the resulting value to a variable.
   \Rtag{assign}
 \end{gather*}
 
-\gl{Desisti de alinhar as regras e fazê-las caber nas colunas (missão
-  impossível).  Estou pensando em mover todas as regras nst para uma figura
-  separada abrangendo duas colunas, e alinhá-las lá talvez reduzindo a
-  fonte.  Antes disso, porém, prefiro terminar o texto.  Se der tempo eu
-  faço isso.  Se não der, submetemos do jeito que está (desalinhado mas
-  correto) e resolvemos depois.  O que acha?}
-\fs{OK. Isso é muito chato mesmo, veja o que for mais fácil.}
-
-The three rules, \R{block}, \R{restore}, and~\R{assign}, act on the input
+The three rules, \R{locals}, \R{restore}, and~\R{assign}, act on the input
 memory~$\theta$.  A \emph{memory} is a stack of environments
 $[E_1,\dots,E_k]$ where each environment~$E_i$ is a set of bindings, i.e.,
 pairs of the form~$(v,n)$ which associate a variable~$v$ to an integer
@@ -572,7 +550,11 @@ to the most recent environment~$E_1$, variable~$v_1$ was set to~1 but~$v_2$
 remained undefined, hence its value~$\bot$ (\emph{undefined}).
 
 \strut\fs{A definição de Env está ligeiramente diferente da implementação, mas
-          imagino que você esteja ciente (se sim, ignore esse comentário).}
+  imagino que você esteja ciente (se sim, ignore esse comentário).}
+
+\gl{Estou ciente.  É só porque é menos coisa para explicar.  A menos do
+  histórico elas são equivalentes.  Se no futuro precisar do histórico, eu
+  substituo ``conjunto'' por ``lista''.}
 
 We use the following functions to manipulate memories (all of them return a
 modified memory):
@@ -607,14 +589,14 @@ Function~$\memrest$ restores stack~$\theta$ to index~$n$, dropping any
 environments above this index.  And function~$\memupdt$ binds variable~$v$
 to the integer~$n$ in the most recent environment where~$v$ occurs.
 
-Back to the rules, \R{block} transforms a statement of the form
-$\ceu{\Block{\vars\,\stmt}}$ into a sequence
-$\ceu{\stmt;\Rest(\left|\theta\right|)}$ and pushes onto~$\theta$ a new
+Back to the rules, \R{locals} transforms a statement of the form
+$\ceu{\Locals{\vars\,\stmt}}$ into a sequence
+$\ceu{\stmt;\Restore(\left|\theta\right|)}$ and pushes onto~$\theta$ a new
 environment declaring all variables in~$\vars$.  The idea is that
-after~$\stmt$ executes and the block goes out of scope, the memory is
-restored to its original length by the subsequent $\ceu{\Rest}$ statement
-(rule~\R{restore}), which effectively removes any environments introduced by
-the block and its body.
+after~$\stmt$ executes and the $\ceu{\Locals}$ block goes out of scope, the
+memory is restored to its original length by the subsequent $\ceu{\Restore}$
+statement (rule~\R{restore}), which effectively removes any environments
+introduced by the $\ceu{\Locals}$ block and its body.
 
 Rule~\R{assign} transforms~$\ceu{v\coloneqq\expr}$ into $\ceu{\Nop}$ (the
 dummy statement) and performs the assignment.  That is, it evaluates~$\expr$
@@ -670,7 +652,7 @@ which the associated expression ($\expr$) evaluates in the current memory.
 If it evaluates to a nonzero value, then \R{if-true} applies and the
 conditional becomes~$\stmt_1$; otherwise, \R{if-false} applies and the
 conditional becomes~$\stmt_2$.  These are the only rules that use the
-contents of the input memory in a way that affects the control flow.
+contents of the memory in a way that affects the control flow.
 
 \subsubsection*{Sequences}
 
@@ -692,7 +674,7 @@ contents of the input memory in a way that affects the control flow.
 A sequence whose first part is terminated ($\ceu{\Nop}$) becomes its second
 part (rule \R{seq-nop}).  A sequence whose first part is a~$\ceu{\Break}$,
 propagates the~$\ceu{\Break}$ by dropping its second part (rule
-\R{seq-brk}).  Finally, a sequence whose first part is neither $\ceu{\Nop}$
+\R{seq-brk}).  And a sequence whose first part is neither $\ceu{\Nop}$
 nor~$\ceu{\Break}$ advances to the sequence, event, and memory resulting
 from advancing just its first part (rule \R{seq-adv}).
 
@@ -701,9 +683,9 @@ from advancing just its first part (rule \R{seq-adv}).
 \begin{gather*}
   \<\ceu{\Loop{\stmt}},\nil,\theta>
   \nst\<\ceu{(\stmt\AtLoop{\stmt});
-    \Rest({\left|\theta\right|})},\nil,\theta>
+    \Restore({\left|\theta\right|})},\nil,\theta>
   \Rtag{loop-expd}\\
-  %% 
+  %%
   \<\ceu{\Nop\AtLoop{\stmt_2}},\nil,\theta>
   \nst\<\ceu{\Loop{\stmt_2}},\nil,\theta>
   \Rtag{loop-nop}\\
@@ -720,8 +702,8 @@ from advancing just its first part (rule \R{seq-adv}).
 \end{gather*}
 
 When the interpreter encounters a $\ceu{\Loop}$, it expands its body in
-sequence with the loop itself followed by a $\ceu{\Rest}$ statement (rule
-\R{loop-expd}).  The $\ceu{\Rest}$ statement ensures that, if the loop is
+sequence with the loop itself followed by a $\ceu{\Restore}$ statement (rule
+\R{loop-expd}).  The $\ceu{\Restore}$ statement ensures that, if the loop is
 terminated by a $\ceu{\Break}$, any environments introduced by the loop are
 popped from the memory.
 
@@ -730,12 +712,11 @@ The remaining rules for loops are similar to those for sequences but use
 next iteration.  Rules \R{loop-nop} and \R{loop-adv} are analogous to rules
 \R{seq-nop} and \R{seq-adv}.  They advance the current code of the loop
 until it becomes a~$\ceu{\Nop}$.  When this happens the loop is restarted
-(\R{seq-nop}).  Note that if we had used ``\texttt{;}'' as a separator in
-loops, rules \R{loop-brk} and \R{seq-brk} would conflict.  Finally, rule
+(\R{seq-nop}).  (Note that if we had used ``\texttt{;}'' as a separator in
+loops, rules \R{loop-brk} and \R{seq-brk} would conflict.)  Finally, rule
 \R{loop-brk} escapes the enclosing loop, transforming everything into
 a~$\ceu{\Nop}$.
 
-\strut\gl{Até aqui está estável (não mexo mais antes da sua revisão).}
 \strut\fs{Cheguei até aqui.}
 
 \subsubsection*{Par/and and par/or compositions}
@@ -750,7 +731,7 @@ a~$\ceu{\Nop}$.
   \begin{split}
     &\<\ceu{\stmt_1\ParOr{\stmt_2}},n,\nil,\theta>\\
     &\qquad\null\nst\<\ceu{(\stmt_1\AtParOr(\RunAt(n);\stmt_2));
-      \Rest(\left|\theta\right|)},n,\nil,\theta>
+      \Restore(\left|\theta\right|)},n,\nil,\theta>
   \end{split}
   \Rtag{par/or-expd}
 \end{gather*}
@@ -763,28 +744,28 @@ right-hand side of the compositions to ensure that any
 reachable~$\ceu{\EmitInt}$ on the left-hand side executes to completion
 before the right-hand side starts.
 
-Rule~\R{par/or-expd} also appends a $\ceu{\Rest}$ to the resulting
+Rule~\R{par/or-expd} also appends a $\ceu{\Restore}$ to the resulting
 $\ceu{\AtParOr}$.  This ensures that old environments left by an aborted
-side get cleaned up after the $\ceu{\AtParOr}$ terminates.  This is not
+side are cleaned up when the $\ceu{\AtParOr}$ terminates.  This is not
 necessary in rule \R{par/and-expd} because a $\ceu{\ParAnd}$ terminates only
 after \emph{both} of its sides terminate, i.e., both sides will always run
-to completion, making any declared block go out of scope.  But the same is
-not true for $\ceu{\ParOr}$, which terminates when \emph{any} of its sides
-terminates.
+to completion, making any $\ceu{\Locals}$ block go out of scope.  But the
+same is not true for $\ceu{\ParOr}$, which terminates when \emph{any} of its
+sides terminates.
 
 There are twelve rules for advancing the sides of the
-internal~$\ceu{\AtParAnd}$ and~$\ceu{\AtParOr}$ statements.  These rules can
-be divided into three groups:
+internal~$\ceu{\AtParAnd}$ and~$\ceu{\AtParOr}$ statements.  Each of these
+rules ensures that the left-hand side always advances before the right-hand
+side.  That is, in each rule the right-hand side is advanced only when the
+left-hand side is blocked.  The twelve rules are divided into three groups:
 \begin{enumerate*}[label=(\roman*)]
 \item those that apply when one of the sides is $\ceu{\Nop}$;
 \item those that apply when one of the sides is $\ceu{\Break}$; and
 \item those that apply when neither side is $\ceu{\Nop}$ or $\ceu{\Break}$.
 \end{enumerate*}
-All of the rules ensure that the left-hand side advances before the
-right-hand side.
 
-We begin by presenting the rules of the third group, which are simpler, as
-they do not involve the termination of one of the sides.
+We begin by presenting the rules of the last group, which do not involve the
+termination of one of the sides.
 %%
 \begin{gather*}
   \AxiomC{$\<\stmt_1,n,\nil,\theta>\nst\<\stmt_1',n,e,\theta'>$}
@@ -822,7 +803,7 @@ side.  Rules~\R{par/and-adv2} and \R{par/or-adv2} are similar, but they act
 on the right-hand side and match only when the left-hand side is blocked.
 
 The next rules apply whenever one of the sides of the $\ceu{\AtParAnd}$ or
-$\ceu{\AtParOr}$ terminates (becomes $\ceu{\Nop}$).
+$\ceu{\AtParOr}$ terminates (becomes a $\ceu{\Nop}$).
 %%
 \begin{gather*}
   \<\ceu{{\Nop}\AtParAnd{\stmt_2}},n,\nil,\theta>
@@ -860,12 +841,12 @@ aborted side executes just before the composition itself terminates.
 (As there are no transition rules for~$\ceu{\Fin}$ statements, once reached,
 a $\ceu{\Fin}$ halts and will only be consumed if its trail is aborted.  At
 this moment, its body will execute as a result of the~$\clear$ call.  Note
-that the syntactic restrictions presented in
-Section~\ref{sec.sem.restrictions} ensure that the body of a~$\ceu{\Fin}$
-statement always execute within a reaction.)
+that the syntactic restrictions of Section~\ref{sec.sem.restrictions} ensure
+that the body of a~$\ceu{\Fin}$ statement always execute within the same
+reaction.)
 
 Finally, a~$\ceu{\Break}$ in one of the sides of a $\ceu{\AtParAnd}$ or
-$\ceu{\AtParOr}$ escapes the matching~$\ceu{\Loop}$ and properly aborts the
+$\ceu{\AtParOr}$ escapes the enclosing~$\ceu{\Loop}$ and properly aborts the
 other side with the~$\clear$ call:
 %%
 \begin{gather*}
@@ -926,7 +907,7 @@ other side with the~$\clear$ call:
       \end{split}\\
       %%
       bcast(\_,e)
-      &=\_\quad\text{\emph{(otherwise)}}\\
+      &=\_\quad\text{\emph{(otherwise)}}\\[4\jot]
       %%
       %%-
       \shortintertext{\llap{(ii)~}Predicate~$\isblk$:}
@@ -960,7 +941,7 @@ other side with the~$\clear$ call:
       &=\isblk(\stmt_1,n)\land\isblk(\stmt_2,n)\\
       %%
       \isblk(\_,n)
-      &=\mathit{false}\quad\text{\emph{(otherwise)}}\\
+      &=\mathit{false}\quad\text{\emph{(otherwise)}}\\[4\jot]
       %%
       %%-
       \shortintertext{\llap{(iii)~}Function~$\clear$:}
@@ -1026,76 +1007,181 @@ other side with the~$\clear$ call:
 
 \subsection{Using the Rules to Compute Reactions}
 
-We conclude the description of the rules for~$\out$ and~$\nst$ transitions
-with an example of their application in the computation of a series of
-reactions.
+We conclude the discussion of the rules for~$\out$ and~$\nst$ transitions
+with an example of their application in the computation of reactions.
+
+\begingroup
+\newcommand*{\led}{\mathit{led}}
+\newcommand*\evtboot{e_{\mathit{boot}}}
+\newcommand*\evtbttn{e_{\mathit{bttn}}}
+\newcommand*\evtrecv{e_{\mathit{recv}}}
 
 Consider the the following basic \CEU program:
 \begin{align*}
-  &\ceu{\Block{\ell}}\\
-  &\quad\ceu{\big(\AwaitExt(e_{\text{bttn}})\big)\enspace\ParOr\enspace}
+  &\ceu{\Locals{\,\led}}\\
+  &\quad\ceu{\big(\AwaitExt(\evtbttn)\big)\enspace\ParOr\enspace}
   \begin{aligned}[t]
-    \big(\ceu{\Loop}\enspace
-    &\ceu{\ell\coloneqq1;\AwaitExt(e_{\text{recv}})};\\
-    &\ceu{\ell\coloneqq0;\AwaitExt(e_{\text{recv}})}\big)
+    \big(&\ceu{\Loop}\enspace
+    \begin{aligned}[t]
+      (&\ceu{\led\coloneqq1;\AwaitExt(\evtrecv)};\\
+       &\ceu{\led\coloneqq0;\AwaitExt(\evtrecv)});\\
+    \end{aligned}\\
+    &\ceu{\Fin\,{\led\coloneqq0}}\big)
   \end{aligned}
 \end{align*}
-This program is the basic \CEU version of the full \CEU program of
+This is simplified basic \CEU version of the full \CEU program presented in
 Listing~\ref{lst.ceu}.  As its full \CEU counterpart, this program toggles a
-LED whenever a radio packet (event~$e_{\text{recv}}$) is received,
-terminating on a button press (event~$e_{\text{bttn}}$) always with the LED
-off---the state of the led is represented by variable~$\ell$.
-%%
-We will compute four reactions of this program in series.  First, to the
-bootstrap event~$e_{\text{boot}}$, i.e., the bootstrap reaction, and then to
-the sequence of external events~$e_{\text{recv}}$, $e_{\text{recv}}$,
-and~$e_{\text{bttn}}$.
+LED whenever a radio packet (event~$\evtrecv$) is received, terminating on a
+button press (event~$\evtbttn$) always with the LED off---the state of the
+led is represented by variable~$\led$.
+
+We will compute three reactions of the above program.  First, to the
+bootstrap event~$\evtboot$ (the bootstrap reaction) and then to the sequence
+of external events~$\evtrecv$ and~$\evtbttn$.  We will execute the reactions
+in series, which means that the outputs of a reaction become inputs of the
+next reaction.
+
+\newcommand*\ddd{\mathmakebox[1em][c]{.\hfil.\hfil.}}
+\newcommand*\TRANS[2][]{\xrightarrow[#1]{\text{#2}}}
 
 The bootstrap reaction starts with a description
 \[
-  \<\ceu{\Block{\ell}\ldots}\,,0,e_\text{boot},[]>,
+  \delta_0=\<\ceu{\Locals{\led}\,\ddd}\,,0,e_\text{boot},[]>,
 \]
-where~$\ceu{\Block{\ell}\ldots}$ is the original program, $e_\text{boot}$ is
-the bootstrap event, and~$[]$ is the empty memory, and proceeds as follows:
+where~$\ceu{\Locals{\led}\,\ddd}$ is the original program, $e_\text{boot}$
+is the bootstrap event, and~$[]$ is the empty memory, and proceeds as
+follows:\footnote{In the $\nst$ transitions we underline the part of the
+  statement matched by the rule.  In case the rule is recursive, we
+  underline only the part matched by the basis of the recursion---the
+  axiom---and write the name of this axiom in parentheses below the arrow
+  representing the transition.}
+  
 \begin{align*}
-  \xrightarrow[\mathit{out}]{\text{push}}\null&
-    \<\ceu{\Block{\ell}\ldots}\,,1,\nil,[]>\\
-    %% 
-  \xrightarrow{\text{block}}\null&
-    \<\ceu{(\ldots)\ParOr(\ldots);\Rest(0)},1,\nil,[\{(\ell,\bot)\}]>\\
-    %% 
-  \shortintertext{(continuing, but showing only the code transformations)}
-  \xrightarrow{\text{par/or-expd}}\null&
-    \ceu{(\ldots)\AtParOr(\RunAt(1);\ldots);\Rest(1);\Rest(0)}\\
-    %% 
-  \xrightarrow{\text{run-at}}\null&
-    \ceu{(\ldots)\AtParOr(\Nop;\ldots);\Rest(1);\Rest(0)}\\
+  \delta_0\TRANS{push}\null&
+    \<\ceu{\uline{\Locals{\led}\,\ddd}}\,,1,\nil,[]>\\
     %%
-  \xrightarrow{\text{par/or-adv2}}\null&
-    \ceu{(\ldots)\AtParOr(\ell\coloneqq1;\ldots);\Rest(1);\Rest(0)}\\
+  \TRANS{locals}\null&
+    \<\ceu{\uline{(\ddd)\ParOr(\ddd)};\Restore(0)},1,\nil,[\{(\led,\bot)\}]>\\
+    %%
+  \TRANS{par/or-expd}\null&
+    \begin{aligned}[t]
+      \langle&\ceu{(\ddd)\AtParOr(\uline{\RunAt(1)};\Loop\,\ddd);}\\[-\jot]
+             &\ceu{\Restore(1);\Restore(0)},1,\nil,[\{(\led,\bot)\}]\rangle\\
+    \end{aligned}\\
+    %%
+  \TRANS[\text{(run-at)}]{par/or-adv2}\null&
+    \begin{aligned}[t]
+      \langle&\ceu{(\ddd)\AtParOr(\uline{\Nop;\Loop\,\ddd});}\\[-\jot]
+             &\ceu{\Restore(1);\Restore(0)},1,\nil,[\{(\led,\bot)\}]\rangle\\
+    \end{aligned}\\
+    %%
+  \TRANS[\text{(seq-nop)}]{par/or-adv2}\null&
+    \begin{aligned}[t]
+      \langle&\ceu{(\ddd)\AtParOr(\uline{\Loop\,\ddd});}\\[-\jot]
+             &\ceu{\Restore(1);\Restore(0)},1,\nil,[\{(\led,\bot)\}]\rangle\\
+    \end{aligned}\\
+    %%
+  \TRANS[\text{(loop-expd)}]{par/or-adv2}\null&
+    \begin{aligned}[t]
+      \langle&\ceu{(\ddd)\AtParOr
+               (\uline{\led\coloneqq1};\ddd\AtLoop\ddd;\Restore(1);\ddd);}\\[-\jot]
+             &\ceu{\Restore(1);\Restore(0)},1,\nil,[\{(\led,\bot)\}]\rangle\\
+    \end{aligned}\\
     %% 
-  \shortintertext{(the next transition makes~$\theta=[\{(\ell,1)\}]$)}
-  \xrightarrow{\text{par/or-adv2}}\null&
-    \ceu{(\ldots)\AtParOr(\AwaitExt(e_{\text{recv}});\ldots);\Rest(1);\Rest(0)}\\
-    %% 
-  \shortintertext{(both sides are blocked;
-  the next transition ends the reaction)}
-  \xrightarrow[\mathit{out}]{\text{pop}}\null&
-    \ceu{(\ldots)\AtParOr(\AwaitExt(e_{\text{recv}});\ldots);\Rest(1);\Rest(0)}
+  \TRANS[\text{(assign)}]{par/or-adv2}\null&
+    \begin{aligned}[t]
+      \langle&\ceu{(\ddd)\AtParOr
+               (\uline{\Nop;\ddd\AtLoop\ddd;\Restore(1);\ddd)};}\\[-\jot]
+             &\ceu{\Restore(1);\Restore(0)},1,\nil,[\{(\led,1)\}]\rangle\\
+    \end{aligned}\\
+    %%
+  \TRANS[\text{(seq-nop)}]{par/or-adv2}\null&
+    \begin{aligned}[t]
+      \langle&\ceu{(\ddd)\AtParOr(\AwaitExt(\evtrecv);\ddd}\\[-\jot]
+             &\ceu{\AtLoop\ddd;\Restore(1);\ddd);}\\[-\jot]
+             &\ceu{\Restore(1);\Restore(0)},1,\nil,[\{(\led,1)\}]\rangle\\
+    \end{aligned}\\
+  \shortintertext{(both sides are now blocked and
+    the next transition ends the reaction)}
+  \TRANS{pop}\null&
+    \begin{aligned}[t]
+      \langle&\ceu{(\ddd)\AtParOr(\AwaitExt(\evtrecv);\ddd}\\[-\jot]
+             &\ceu{\AtLoop\ddd;\Restore(1);\ddd);}\\[-\jot]
+             &\ceu{\Restore(1);\Restore(0)},0,\nil,[\{(\led,1)\}]\rangle\\
+    \end{aligned}
 \end{align*}
 
-So, the bootstrap reaction terminates in a memory where variable~$\ell$ is
+So, the bootstrap reaction terminates in a memory where variable~$\led$ is
 set to~$1$ with both sides of the $\ceu{\AtParOr}$ blocked
-on~$\ceu{\AwaitExt}$ statements.  This is a general property of reactions.
-That is, every reaction eventually blocks in~$\ceu{\AwaitExt}$,
+on~$\ceu{\AwaitExt}$ statements: the left-hand side waiting on~$\evtbttn$
+and the right hand-side waiting on~$\evtrecv$.  This is a general property
+of reactions.  Every reaction eventually blocks in~$\ceu{\AwaitExt}$,
 $\ceu{\AwaitInt}$, $\ceu{\Every}$, $\ceu{\Fin}$, and~$\ceu{\RunAt}$
-statements in parallel trails.  If no trail is blocked in a~$\ceu{\RunAt}$,
-then the program can no longer advance and the reaction is terminated.
+statements in parallel trails.  If none of these trails is blocked in
+a~$\ceu{\RunAt}$, then the program can no longer advance and the reaction is
+terminated.
 
-Here is the second reaction of our example:
+The second reaction is a reaction to event~$\evtrecv$.  It starts with the
+description produced by the previous reaction but with~$\nil$ replaced
+by~$\evtrecv$, i.e.,
+\begin{align*}
+  \langle&\ceu{(\ddd)\AtParOr
+           (\AwaitExt(\evtrecv);\ddd\AtLoop\ddd;\Restore(1);\ddd);}\\[-\jot]
+         &\ceu{\Restore(1);\Restore(0)},0,\evtrecv,[\{(\led,1)\}]\rangle,
+\end{align*}
+and after four transitions results in:
+\begin{align*}
+  \langle&\ceu{(\ddd)\AtParOr
+           (\AwaitExt(\evtrecv)\AtLoop\ddd;\Restore(1);\ddd);}\\[-\jot]
+         &\ceu{\Restore(1);\Restore(0)},0,\nil,[\{(\led,0)\}]\rangle.
+\end{align*}
 
-\gl{TODO: Abreviar as próximas.}
-\gl{Parei aqui.}
+The third and final reaction is a reaction to event~$\evtbttn$.  It starts
+with the description
+\begin{align*}
+  \langle&\ceu{\AwaitExt(\evtbttn)\AtParOr
+           (\AwaitExt(\evtrecv)\AtLoop\ddd;\Restore(1);\ddd);}\\[-\jot]
+         &\ceu{\Restore(1);\Restore(0)},0,\evtbttn,[\{(\led,0)\}]\rangle.
+\end{align*}
+and proceeds as follows:
+\begin{align*}
+  \TRANS{push}\null&
+    \begin{aligned}[t]
+      \langle&\ceu{\uline{\Nop}\AtParOr\,\null(\AwaitExt(\evtrecv)}\\[-\jot]
+             &\ceu{\AtLoop\ddd;\Restore(1);\ddd);}\\[-\jot]
+             &\ceu{\Restore(1);\Restore(0)},1,\nil,[\{(\led,0)\}]\rangle
+    \end{aligned}\\
+    %%
+  \shortintertext{(the next transition terminates the $\ceu{\AtParOr}$
+    and aborts its right-hand side; ``$\led\coloneqq0$'' is
+    the result of the call to~$\clear$)}
+  \TRANS{par/or-nop1}\null&
+    \<\ceu{\uline{\led\coloneqq0};\Restore(1);\Restore(0)},
+    1,\nil,[\{(\led,0)\}]>\\
+    %%
+  \TRANS[\text{(assign)}]{seq-adv}\null&
+    \<\ceu{\uline{\Nop};\Restore(1);\Restore(0)},1,\nil,[\{(\led,0)\}]>\\
+    %%
+  \TRANS{seq-nop}\null&
+    \<\ceu{\uline{\Restore(1)};\Restore(0)},1,\nil,[\{(\led,0)\}]>\\
+    %%
+  \TRANS[\text{(restore)}]{seq-adv}\null&
+    \<\ceu{\uline{\Nop};\Restore(0)},1,\nil,[\{(\led,0)\}]>\\
+    %%
+  \TRANS{seq-nop}\null&
+    \<\ceu{\uline{\Restore(0)}},1,\nil,[\{(\led,0)\}]>\\
+    %%
+  \TRANS{restore}\null&
+    \<\ceu{\uline{\Nop}},1,\nil,[]>\\
+    %%
+  \TRANS{pop}\null&
+    \<\ceu{\uline{\Nop}},0,\nil,[]>
+\end{align*}
+
+After the third reaction the program is terminated (a single $\ceu{\Nop}$)
+and no longer responds to the environment.
+
+\endgroup
 
 %%% Local Variables:
 %%% mode: latex
