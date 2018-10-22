@@ -108,7 +108,7 @@ program, the generated program must satisfy the following restrictions:
 Restrictions~\ref{sec.sem.restrictions.1} and~\ref{sec.sem.restrictions.2}
 prevent the use of undeclared variables or orphan~$\ceu{\Break}$'s.
 Restriction~\ref{sec.sem.restrictions.3} ensures that the program does not
-have an infinite loop with a body that runs in zero time (which violates the
+have an infinite loop with a body that runs in zero time (which would violate the
 synchronous hypothesis).  And restriction~\ref{sec.sem.restrictions.4}
 ensures that the body of $\ceu{\Every}$ and~$\ceu{\Fin}$ statements always
 execute to completion within the same reaction.  Similar restrictions exist
@@ -198,8 +198,8 @@ end
 
 To add support for first-class timers to basic \CEU , we introduce a
 \code{TIMER} input event, which notifies the passage of time, and two global
-variables: \code{timer\_} which holds the elapsed time, and \code{delta\_}
-which holds the residual time, initially set to 0.
+variables: \code{timer\_}, which holds the elapsed time, and \code{delta\_},
+which holds the residual time (initially set to 0).
 
 Listing~\ref{lst.TIMER.b} shows the basic \CEU program resulting from the
 translation of the two timers shown in Listing~\ref{lst.TIMER.a} (ln~1--11).
@@ -491,7 +491,7 @@ precondition.  The distinction between~$\out$ and~$\nst$ prevents rules
 \R{push} and \R{pop} from matching and, consequently, from inadvertently
 modifying the stack level before the nested reaction is over.
 
-A full reaction is a sequence of transitions
+A full reaction follows the pattern
 %%
 \begin{align*}
   \<\stmt_0,0,e_\ext,\theta_0>\outpush
@@ -501,9 +501,9 @@ A full reaction is a sequence of transitions
 %%
 First, a~$\outpush$ starts a nested reaction at level~1.  Then, a series of
 alternations between zero or more~$\nst$ transitions (nested reactions) and
-a single~$\out$ transition (stack operation) takes place.  Finally, a
-last~$\outpop$ transition decrements the stack level to~0 and terminates the
-reaction.
+a single~$\out$ transition (stack operation) takes place.  Finally, zero or
+more $\nst$ transitions followed by a last~$\outpop$ transition, which
+decrements the stack level to~0, terminates the reaction.
 
 We now give the rules for nested transitions.  Since these rules do not
 affect the stack level, whenever convenient, we will omit the stack level in
@@ -703,7 +703,7 @@ from advancing just its first part (rule \R{seq-adv}).
 
 When the interpreter encounters a $\ceu{\Loop}$, it expands its body in
 sequence with the loop itself followed by a $\ceu{\Restore}$ statement (rule
-\R{loop-expd}).  The $\ceu{\Restore}$ statement ensures that, if the loop is
+\R{loop-expd}).  The $\ceu{\Restore}$ statement ensures that if the loop is
 terminated by a $\ceu{\Break}$, any environments introduced by the loop are
 popped from the memory.
 
@@ -836,7 +836,7 @@ composition terminates and~$\clear$ is called to finalize the aborted side
 The~$\clear$ function (see Figure~\ref{fig.clear}) returns the statement
 resulting from sequencing the body of all active~$\ceu{\Fin}$ statements in
 the aborted side.  This way all finalization code associated with the
-aborted side executes just before the composition itself terminates.
+aborted side executes immediately after the composition terminates.
 
 (As there are no transition rules for~$\ceu{\Fin}$ statements, once reached,
 a $\ceu{\Fin}$ halts and will only be consumed if its trail is aborted.  At
@@ -846,8 +846,8 @@ that the body of a~$\ceu{\Fin}$ statement always execute within the same
 reaction.)
 
 Finally, a~$\ceu{\Break}$ in one of the sides of a $\ceu{\AtParAnd}$ or
-$\ceu{\AtParOr}$ escapes the enclosing~$\ceu{\Loop}$ and properly aborts the
-other side with the~$\clear$ call:
+$\ceu{\AtParOr}$ is propagated, terminating the composition and properly
+aborting the other side with a~$\clear$ call:
 %%
 \begin{gather*}
   \<\ceu{{\Break}\AtParAnd{\stmt_2}},n,\nil,\theta>
@@ -1019,14 +1019,14 @@ with an example of their application in the computation of reactions.
 Consider the the following basic \CEU program:
 \begin{align*}
   &\ceu{\Locals{\,\led}}\\
-  &\quad\ceu{\big(\AwaitExt(\evtbttn)\big)\enspace\ParOr\enspace}
+  &\quad\ceu{\Big(\AwaitExt(\evtbttn)\Big)\enspace\ParOr\enspace}
   \begin{aligned}[t]
-    \big(&\ceu{\Loop}\enspace
+    \Big(&\ceu{\Loop}\enspace
     \begin{aligned}[t]
-      (&\ceu{\led\coloneqq1;\AwaitExt(\evtrecv)};\\
-       &\ceu{\led\coloneqq0;\AwaitExt(\evtrecv)});\\
+      \big(&\ceu{\led\coloneqq1;\AwaitExt(\evtrecv)};\\
+       &\ceu{\led\coloneqq0;\AwaitExt(\evtrecv)}\big);\\
     \end{aligned}\\
-    &\ceu{\Fin\,{\led\coloneqq0}}\big)
+    &\ceu{\Fin\,{\led\coloneqq0}}\Big)
   \end{aligned}
 \end{align*}
 This is simplified basic \CEU version of the full \CEU program presented in
@@ -1036,10 +1036,10 @@ button press (event~$\evtbttn$) always with the LED off---the state of the
 led is represented by variable~$\led$.
 
 We will compute three reactions of the above program.  First, to the
-bootstrap event~$\evtboot$ (the bootstrap reaction) and then to the sequence
-of external events~$\evtrecv$ and~$\evtbttn$.  We will execute the reactions
-in series, which means that the outputs of a reaction become inputs of the
-next reaction.
+bootstrap event~$\evtboot$ (the bootstrap reaction) and then to the external
+events~$\evtrecv$ and~$\evtbttn$.  We will execute the reactions in series,
+which means that the outputs of a reaction will become inputs of the next
+reaction.
 
 \newcommand*\ddd{\mathmakebox[1em][c]{.\hfil.\hfil.}}
 \newcommand*\TRANS[2][]{\xrightarrow[#1]{\text{#2}}}
@@ -1055,7 +1055,8 @@ follows:\footnote{In the $\nst$ transitions we underline the part of the
   underline only the part matched by the basis of the recursion---the
   axiom---and write the name of this axiom in parentheses below the arrow
   representing the transition.}
-  
+
+\clearpage% <-- temporary
 \begin{align*}
   \delta_0\TRANS{push}\null&
     \<\ceu{\uline{\Locals{\led}\,\ddd}}\,,1,\nil,[]>\\
@@ -1114,25 +1115,28 @@ follows:\footnote{In the $\nst$ transitions we underline the part of the
 So, the bootstrap reaction terminates in a memory where variable~$\led$ is
 set to~$1$ with both sides of the $\ceu{\AtParOr}$ blocked
 on~$\ceu{\AwaitExt}$ statements: the left-hand side waiting on~$\evtbttn$
-and the right hand-side waiting on~$\evtrecv$.  This is a general property
-of reactions.  Every reaction eventually blocks in~$\ceu{\AwaitExt}$,
-$\ceu{\AwaitInt}$, $\ceu{\Every}$, $\ceu{\Fin}$, and~$\ceu{\RunAt}$
-statements in parallel trails.  If none of these trails is blocked in
-a~$\ceu{\RunAt}$, then the program can no longer advance and the reaction is
-terminated.
+and the right hand-side waiting on~$\evtrecv$.
+
+(This is a general property of reactions.  Every reaction eventually blocks
+in~$\ceu{\AwaitExt}$, $\ceu{\AwaitInt}$, $\ceu{\Every}$, $\ceu{\Fin}$,
+or~$\ceu{\RunAt}$ statements in parallel trails.  If none of these trails is
+blocked in a~$\ceu{\RunAt}$, then the program can no longer advance and the
+reaction is terminated.)
 
 The second reaction is a reaction to event~$\evtrecv$.  It starts with the
 description produced by the previous reaction but with~$\nil$ replaced
 by~$\evtrecv$, i.e.,
 \begin{align*}
   \langle&\ceu{(\ddd)\AtParOr
-           (\AwaitExt(\evtrecv);\ddd\AtLoop\ddd;\Restore(1);\ddd);}\\[-\jot]
+           (\AwaitExt(\evtrecv);\ddd}\\[-\jot]
+         &\ceu{\AtLoop\ddd;\Restore(1);\ddd);}\\[-\jot]
          &\ceu{\Restore(1);\Restore(0)},0,\evtrecv,[\{(\led,1)\}]\rangle,
 \end{align*}
 and after four transitions results in:
 \begin{align*}
   \langle&\ceu{(\ddd)\AtParOr
-           (\AwaitExt(\evtrecv)\AtLoop\ddd;\Restore(1);\ddd);}\\[-\jot]
+           (\AwaitExt(\evtrecv)}\\[-\jot]
+         &\ceu{\AtLoop\ddd;\Restore(1);\ddd);}\\[-\jot]
          &\ceu{\Restore(1);\Restore(0)},0,\nil,[\{(\led,0)\}]\rangle.
 \end{align*}
 
@@ -1140,7 +1144,8 @@ The third and final reaction is a reaction to event~$\evtbttn$.  It starts
 with the description
 \begin{align*}
   \langle&\ceu{\AwaitExt(\evtbttn)\AtParOr
-           (\AwaitExt(\evtrecv)\AtLoop\ddd;\Restore(1);\ddd);}\\[-\jot]
+           (\AwaitExt(\evtrecv)}\\[-1\jot]
+         &\ceu{\AtLoop\ddd;\Restore(1);\ddd);}\\[-\jot]
          &\ceu{\Restore(1);\Restore(0)},0,\evtbttn,[\{(\led,0)\}]\rangle.
 \end{align*}
 and proceeds as follows:
@@ -1178,8 +1183,8 @@ and proceeds as follows:
     \<\ceu{\uline{\Nop}},0,\nil,[]>
 \end{align*}
 
-After the third reaction the program is terminated (a single $\ceu{\Nop}$)
-and no longer responds to the environment.
+After the third reaction the program is terminated (consists of a single
+$\ceu{\Nop}$) and no longer responds to the environment.
 
 \endgroup
 
