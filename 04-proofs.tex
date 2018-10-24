@@ -1,9 +1,32 @@
-\section{Properties of \CEU Programs}
+\section{Properties of \CEU Reactions}
 \label{sec.proofs}
 
-\gl{Agora estou mexendo nesta seção apenas.}
+In this section, we state and prove three properties of \CEU reactions.
+First, that reactions are deterministic (Section~\ref{sec.proofs.det}).
+Second, that they always produce a result and terminate
+(Section~\ref{sec.proofs.term}). And third, that the maximum amount of
+memory they consume never exceeds a fixed threshold which depends solely on
+their inputs (Section~\ref{sec.proofs.bound}).
+
+These three properties are actually properties of transitions and are
+inherited by reactions.  Recall that reactions are formally defined in terms
+of transitions as follows:
+\begin{align*}
+  &\reaction(\stmt_0,\theta_0,e)=\<\stmt_f,\theta_f>\\
+  &\quad\text{iff}\quad
+    \<\stmt_0,0,e,\theta_0>\trans[*]\<\stmt_f,0,\nil,\theta_f>.
+\end{align*}
+In words, a basic \CEU program~$\stmt_0$ in a memory~$\theta_0$ when fed
+with the external event~$e$ will react to a modified program~$\stmt_f$ and
+memory~$\theta_f$ if (and only if) a finite (possibly zero) number of
+transitions transforms the description~$\<\stmt_0,0,e,\theta_0>$ into
+$\<\stmt_f,0,\nil,\theta_f>$.
+
+So, from this definition, \emph{reaction} will be deterministic,
+terminating, and memory bounded, if relation~$\trans[*]$ is so.
 
 \subsection{Deterministic Execution}
+\label{sec.proofs.det}
 
 Transitions~$\out$ and~$\nst$ are defined in such a way that given an input
 description either no rule is applicable or exactly one of them can be
@@ -107,6 +130,7 @@ behave deterministically.
 % reasoning for rule \textbf{pop} above.
 
 \subsection{Terminating Reactions}
+\label{sec.proofs.term}
 
 We now turn to the problem of termination.  We want to show that any
 sufficiently long sequence of applications of arbitrary transition rules
@@ -459,6 +483,7 @@ final result of the reaction.
 \end{proof}
 
 \subsection{Memory Boundedness}
+\label{sec.proofs.bound}
 
 As \CEU has no mechanism for heap allocation, unbounded iteration, or
 general recursion, the maximum memory usage of a given \CEU program is
