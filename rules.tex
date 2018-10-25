@@ -1,0 +1,267 @@
+\begin{figure*}[t]
+  \small
+  \setlength{\extrarowheight}{.9em}
+  \newlength{\lblwd}
+  \setlength{\lblwd}{5em}
+  \newsavebox{\txtbox}
+  \newsavebox{\lblbox}
+  \newsavebox{\rulebox}
+  \newcommand*\RULE[2]{%
+    % debugging:
+    % \setlength{\fboxsep}{0pt}%
+    % \savebox{\lblbox}{\framebox{\strut{\Rlabel{#1}}}}%
+    % \sbox{\rulebox}{\framebox{\strut{#2}}}%
+    \savebox{\lblbox}{\strut{\Rlabel{#1}}}%
+    \sbox{\rulebox}{\strut{#2}}%
+    \ifdim\wd\lblbox>5em
+    \strut\rlap{\usebox{\lblbox}}\vskip0pt%
+    \else
+    \usebox{\lblbox}%
+    \fi
+    \hfil
+    \ifdim\ht\rulebox>\ht\lblbox
+    \raisebox{-.5\ht\rulebox-.5\dp\rulebox}{\usebox{\rulebox}}%
+    \else
+    \usebox{\rulebox}%
+    \fi
+    \ignorespaces
+  }
+  %%
+  \begin{tabularx}{\textwidth}{|XX|}
+    \hline
+    %% ---------------------------------------------------------------------
+    \hfil\emph{Outermost transitions} & \hfil\emph{Emissions}\\
+    %%
+    \RULE{push}{%
+      \AxiomC{\strut$e\ne\nil$}%
+      \UnaryInfC{\strut$\<\stmt,\ell,e,\theta>%
+        \out\<\bcast(\stmt,e),\ell+1,\nil,\theta>$}%
+      \bottomAlignProof
+      \DisplayProof}
+    %%
+    &\RULE{emit-int}{%
+      $\<\ceu{\EmitInt(e)},\ell,\nil,\theta>
+      \nst\<\ceu{\RunAt(\ell)},\ell,e,\theta>$}\\
+    %% ---------------------------------------------------------------------
+    \RULE{pop}{%
+      \AxiomC{\strut$\ell>0$}%
+      \AxiomC{\strut$\stmt=\ceu{\Nop}\lor\isblk(\stmt,n)$}%
+      \BinaryInfC{\strut$\<\stmt,\ell,\nil,\theta>%
+        \out\<\stmt,\ell-1,\nil,\theta>$}%
+      \bottomAlignProof
+      \DisplayProof}
+    %%
+    &\RULE{run-at}{%
+      \AxiomC{\strut$\ell'=\ell$}
+      \UnaryInfC{\strut$\<\ceu{\RunAt(\ell')},\ell,\nil,\theta>
+      \nst\<\ceu{\Nop},\ell,\nil,\theta>$}
+      \bottomAlignProof
+      \DisplayProof}\\
+    %% --------------------------------------------------------------------
+    \hfil\emph{Assignments \& conditionals} & \hfil\emph{Sequences}\\
+    %%
+    \RULE{assign}{%
+      $\<\ceu{v\coloneqq{\expr}},\nil,\theta>
+      \nst\<\ceu{\Nop},\nil,\memupdt(\theta,v,\memeval(\theta,\expr))>$}
+    %%
+    &\RULE{seq-nop}{%
+      $\<\ceu{\Nop;\stmt_2},\nil,\theta>\nst\<\stmt_2,\nil,\theta>$}\\
+    %%
+    \RULE{if-true}{%
+      \AxiomC{\strut$\memeval(\theta,\expr)\ne0$}
+      \UnaryInfC{\strut$\<\ceu{\IfElse{\expr}{\stmt_1}{\stmt_2}},\nil,\theta>
+        \nst\<\stmt_1,\nil,\theta>$}
+      \bottomAlignProof
+      \DisplayProof}
+    %%
+    &\RULE{seq-brk}{%
+      $\<\ceu{\Break;\stmt_2},\nil,\theta>
+      \nst\<\ceu{\Break},\nil,\theta>$}\\
+    %%
+    \RULE{if-false}{%
+      \AxiomC{\strut$\memeval(\theta,\expr)=0$}
+      \UnaryInfC{\strut$\<\ceu{\IfElse{\expr}{\stmt_1}{\stmt_2}},\nil,\theta>
+        \nst\<\stmt_2,\nil,\theta>$}
+      \bottomAlignProof
+      \DisplayProof}
+    %%
+    &\RULE{seq-adv}{%
+      \AxiomC{\strut$\<\stmt_1,\nil,\theta>\nst\<\stmt_1',e,\theta'>$}
+      \UnaryInfC{\strut$\<\ceu{\stmt_1;\stmt_2},\nil,\theta>
+        \nst\<\ceu{\stmt_1';\stmt_2},e,\theta'>$}
+      \bottomAlignProof
+      \DisplayProof}\\
+    %% ---------------------------------------------------------------------
+    \hfil\emph{Variable declarations} & \hfil\emph{Loops}\\
+    %%
+    \RULE{var-expd}{%
+      $\<\ceu{\Var{v\,\stmt}},\nil,\theta>
+      \nst\<\ceu{\AtVar{v\,\bot\,\stmt}},\nil,\theta>$}
+    %%
+    &\RULE{loop-expd}{%
+      $\<\ceu{\Loop{\stmt}},\nil,\theta>
+      \nst\<\ceu{\stmt\AtLoop{\stmt}},\nil,\theta>$}\\
+    %% ---------------------------------------------------------------------
+    \RULE{var-nop}{%
+      $\<\ceu{\AtVar{v\,n\,\Nop}},\nil,\theta>
+      \nst\<\ceu{\Nop},\nil,\theta>$}
+    %%
+    &\RULE{loop-nop}{%
+      $\<\ceu{\Nop\AtLoop{\stmt}},\nil,\theta>
+      \nst\<\ceu{\Loop{\stmt}},\nil,\theta>$}\\
+    %% ---------------------------------------------------------------------
+    \RULE{var-brk}{%
+      $\<\ceu{\AtVar{v\,n\,\Break}},\nil,\theta>
+      \nst\<\ceu{\Break},\nil,\theta>$}
+    %%
+    &\RULE{loop-brk}{%
+      $\<\ceu{\Break\AtLoop{\stmt}},\nil,\theta>
+      \nst\<\ceu{\Nop},\nil,\theta>$}\\
+    %% ---------------------------------------------------------------------
+    \RULE{var-adv}{%
+      \AxiomC{\strut$\<\ceu{\stmt},\nil,(v,n){:}\theta>
+        \nst\<\ceu{\stmt'},e,(v,n'){:}\theta'>$}
+      \UnaryInfC{\strut$\<\ceu{\AtVar{v\,n\,\stmt}},\nil,\theta>
+        \nst\<\ceu{\AtVar{v\,n'\,\stmt'}},e,\theta'>$}
+      \bottomAlignProof
+      \DisplayProof}
+    %%
+    &\RULE{loop-adv}{%
+      \AxiomC{\strut$\<\stmt_1,\nil,\theta>\nst\<\stmt_1',e,\theta'>$}
+      \UnaryInfC{\strut$\<\ceu{\stmt_1\AtLoop{\stmt_2}},\nil,\theta>
+        \nst\<\ceu{\stmt_1'\AtLoop{\stmt_2}},e,\theta'>$}
+      \bottomAlignProof
+      \DisplayProof}\\
+    %% ---------------------------------------------------------------------
+    \hfil\emph{Par/and} & \hfil\emph{Par/or}\\
+    %%
+    \RULE{par/and-expd}{$
+      \begin{aligned}[b]
+        &\<\ceu{\stmt_1\ParAnd{\stmt_2}},\ell,\nil,\theta>\\
+        &\qquad\nst\<\ceu{\stmt_1\AtParAnd(\RunAt(\ell);\stmt_2)},
+        \ell,\nil,\theta>
+      \end{aligned}$}
+    %%
+    &\RULE{par/or-expd}{$
+      \begin{aligned}[b]
+        &\<\ceu{\stmt_1\ParOr{\stmt_2}},\ell,\nil,\theta>\\
+        &\qquad\nst\<\ceu{\stmt_1\AtParOr(\RunAt(\ell);\stmt_2)},
+        \ell,\nil,\theta>
+      \end{aligned}$}\\
+    %% ---------------------------------------------------------------------
+    \RULE{par/and-nop1}{%
+      $\<\ceu{{\Nop}\AtParAnd{\stmt_2}},\nil,\theta>
+      \nst\<\stmt_2,\nil,\theta>$}
+    %%
+    &\RULE{par/or-nop1}{%
+      $\<\ceu{{\Nop}\AtParOr{\stmt_2}},\nil,\theta>
+      \nst\<\clear(\stmt_2),\nil,\theta>$}\\
+    %%
+    \RULE{par/and-nop2}{%
+      \AxiomC{\strut$\isblk(\stmt_1,\ell)$}
+      \UnaryInfC{\strut$\<\ceu{\stmt_1\AtParAnd{\Nop}},\ell,\nil,\theta>
+        \nst\<\stmt_1,\ell,\nil,\theta>$}
+      \bottomAlignProof
+      \DisplayProof}
+    %%
+    &\RULE{par/or-nop2}{%
+      \AxiomC{\strut$\isblk(\stmt_1,\ell)$}
+      \UnaryInfC{\strut$\<\ceu{\stmt_1\AtParOr{\Nop}},\ell,\nil,\theta>
+        \nst\<\clear(\stmt_1),\ell,\nil,\theta>$}
+      \bottomAlignProof
+      \DisplayProof}\\
+    %% ---------------------------------------------------------------------
+    \RULE{par/and-brk1}{%
+      $\<\ceu{{\Break}\AtParAnd{\stmt_2}},\nil,\theta>
+      \nst\<\ceu{\clear(\stmt_2);\Break},\nil,\theta>$}
+    %%
+    &\RULE{par/or-brk1}{%
+      $\<\ceu{{\Break}\AtParOr{\stmt_2}},\nil,\theta>
+      \nst\<\ceu{\clear(\stmt_2);\Break},\nil,\theta>$}\\
+    %%
+    \RULE{par/and-brk2}{%
+      \AxiomC{\strut$\isblk(\stmt_1,\ell)$}
+      \UnaryInfC{\strut$\<\ceu{\stmt_1\AtParAnd{\Break}},\ell,\nil,\theta>
+        \nst\<\ceu{\clear(\stmt_1);\Break},\ell,\nil,\theta>$}
+      \bottomAlignProof
+      \DisplayProof}
+    %%
+    &\RULE{par/or-brk2}{%
+      \AxiomC{\strut$\isblk(\stmt_1,\ell)$}
+      \UnaryInfC{\strut$\<\ceu{\stmt_1\AtParOr{\Break}},\ell,\nil,\theta>
+        \nst\<\ceu{\clear(\stmt_1);\Break},\ell,\nil,\theta>$}
+      \bottomAlignProof
+      \DisplayProof}\\
+    %% ---------------------------------------------------------------------
+    \RULE{par/and-adv1}{%
+      \AxiomC{\strut$\<\stmt_1,\nil,\theta>\nst\<\stmt_1',e,\theta'>$}
+      \UnaryInfC{\strut$\<\ceu{\stmt_1\AtParAnd{\stmt_2}},\nil,\theta>
+        \nst\<\ceu{\stmt_1'\AtParAnd{\stmt_2}},e,\theta'>$}
+      \bottomAlignProof
+      \DisplayProof}
+    %%
+    &\RULE{par/or-adv1}{%
+      \AxiomC{\strut$\<\stmt_1,\nil,\theta>\nst\<\stmt_1',e,\theta'>$}
+      \UnaryInfC{\strut$\<\ceu{\stmt_1\AtParOr{\stmt_2}},\nil,\theta>
+        \nst\<\ceu{\stmt_1'\AtParOr{\stmt_2}},e,\theta'>$}
+      \bottomAlignProof
+      \DisplayProof}\\
+    %%
+    \RULE{par/and-adv2}{%
+      \AxiomC{\strut$\isblk(\stmt_1,\ell)$}
+      \AxiomC{\strut$\<\stmt_2,\ell,\nil,\theta'>\nst\<\stmt_2',\ell,e,\theta'>$}
+      \BinaryInfC{\strut$\<\ceu{\stmt_1\AtParAnd{\stmt_2}},\ell,\nil,\theta>
+        \nst\<\ceu{\stmt_1\AtParAnd{\stmt_2'}},\ell,e,\theta'>$}
+      \bottomAlignProof
+      \DisplayProof}
+    %%
+    &\RULE{par/or-adv2}{%
+      \AxiomC{\strut$\isblk(\stmt_1,\ell)$}
+      \AxiomC{\strut$\<\stmt_2,\ell,\nil,\theta>\nst\<\stmt_2',\ell,e,\theta'>$}
+      \BinaryInfC{\strut$\<\ceu{\stmt_1\AtParOr{\stmt_2}},\ell,\nil,\theta>
+        \nst\<\ceu{\stmt_1\AtParOr{\stmt_2'}},\ell,e,\theta'>$}
+      \bottomAlignProof
+      \DisplayProof}\\[3em]
+    %%
+    \hline
+  \end{tabularx}
+  \caption{Rules for $\out$ and~$\nst$ transitions.}
+  \label{fig.rules}
+  \label{R:push}
+  \label{R:pop}
+  \label{R:emit-int}
+  \label{R:run-at}
+  \label{R:assign}
+  \label{R:if-true}
+  \label{R:if-false}
+  \label{R:seq-nop}
+  \label{R:seq-brk}
+  \label{R:seq-adv}
+  \label{R:var-expd}
+  \label{R:var-nop}
+  \label{R:var-brk}
+  \label{R:var-adv}
+  \label{R:loop-expd}
+  \label{R:loop-nop}
+  \label{R:loop-brk}
+  \label{R:loop-adv}
+  \label{R:par/and-expd}
+  \label{R:par/or-expd}
+  \label{R:par/and-nop1}
+  \label{R:par/or-nop1}
+  \label{R:par/and-nop2}
+  \label{R:par/or-nop2}
+  \label{R:par/and-brk1}
+  \label{R:par/or-brk1}
+  \label{R:par/and-brk2}
+  \label{R:par/or-brk2}
+  \label{R:par/and-adv1}
+  \label{R:par/or-adv1}
+  \label{R:par/and-adv2}
+  \label{R:par/or-adv2}
+\end{figure*}
+
+%%% Local Variables:
+%%% mode: latex
+%%% TeX-master: "index.tex"
+%%% End:

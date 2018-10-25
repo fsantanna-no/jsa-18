@@ -5,6 +5,7 @@
 \usepackage{mathtools}
 \usepackage{thmtools}
 \usepackage{empheq}
+\usepackage{tabularx}
 \usepackage{xspace}
 \usepackage[normalem]{ulem}
 
@@ -23,6 +24,7 @@
 
 % Proof trees.
 \usepackage{bussproofs}
+\def\extraVskip{1pt}
 \def\labelSpacing{0pt}
 \def\ScoreOverhang{0pt}
 \def\defaultHypSeparation{\hspace*{.85em}}
@@ -87,8 +89,8 @@ labelwidth=*,align=case,label*=.\arabic*}
 \def\@int{\mathit{int}}
 \def\@ext{\mathit{ext}}
 \let\ext\@ext
-\def\@ceuop#1{\mathop{\relax{\small\texttt{#1}}}}%
-\def\@ceubin#1{\mathbin{\relax{\small\texttt{#1}}}}%
+\def\@ceuop#1{\mathop{\text{\small{\texttt{#1}}}}}%
+\def\@ceubin#1{\mathbin{\text{\small{\texttt{#1}}}}}%
 \def\ceu{\protect\@ceu}
 \def\@ceu#1{%
   \bgroup

@@ -105,7 +105,7 @@ program, the generated program must satisfy the following restrictions:
 \end{enumerate}
 
 Restrictions~\ref{sec.sem.restrictions.1} and~\ref{sec.sem.restrictions.2}
-prevent the use of undeclared variables or orphan~$\ceu{\Break}$'s.
+prevent the use of undeclared variables and orphan~$\ceu{\Break}$'s.
 Restriction~\ref{sec.sem.restrictions.3} ensures that the program does not
 have an infinite loop with a body that runs in zero time (which would
 violate the synchronous hypothesis).  And
@@ -393,8 +393,8 @@ the memory~$\theta_0$ holding the values of the variables of~$\stmt_0$.  The
 final description~$\delta_f=\<stmt_f,0,\nil,\theta_f>$ contains the two
 outputs of the reaction: the text of the program at the end of the reaction
 ($\stmt_f$) and the memory~$\theta_f$ holding the values of the variables
-of~$\stmt_f$ at the end of the reaction.  The output program~$\stmt_f$ and
-memory~$\theta_f$ become inputs for the next reaction.
+of~$\stmt_f$.  The output program~$\stmt_f$ and memory~$\theta_f$ are used
+by the interpreter as inputs in the next reaction.
 
 We write~$\delta_0\trans[i]\delta_f$ to indicate that $\delta_0$ leads
 to~$\delta_f$ after exactly~$i$ transitions, and we
@@ -418,8 +418,8 @@ The next two sections, Sections~\ref{sec.sem.outermost}
 and~\ref{sec.sem.nested}, give the rules for transitions.  There are two
 types of transitions: \emph{outermost transitions} $\out$ and \emph{nested
   transitions} $\nst$.  The rules for~$\out$ and~$\nst$ transitions are
-listed all at once in Figure~\ref{fig.rules}.  Each of these rules has the
-form
+listed all at once in Figure~\ref{fig.rules} (page~\pageref{fig.rules}).
+Each of these rules has the form
 \[
   \AxiomC{\strut condition$_1$}
   \AxiomC{\strut condition$_2$}
@@ -468,10 +468,10 @@ it:
   becomes~$\ell+1$); and
 \item consumes the input event ($e$ becomes~$\nil$).
 \end{enumerate*}
-(Note that \R{push} is the only rule that matches a nonempty event in the
-input description.)
 
 Function~$\bcast$ is defined as follows:
+\begingroup
+\setlength{\jot}{.5\jot}
 \begin{align*}
   \bcast(\ceu{\AwaitExt(e)},e)
   &=\ceu{\Nop}\\
@@ -501,260 +501,85 @@ Function~$\bcast$ is defined as follows:
   %%
   bcast(\_,e)&=\_\quad\text{\emph{(otherwise)}}
 \end{align*}
+\endgroup
+%%
 where the underscore ($\_$) denotes the omitted patterns.  Function $\bcast$
-takes a statement and an event~$e$ and awakes any trails awaiting for~$e$ by
-converting active~$\ceu{\protect\AwaitExt(e)}$
-and~$\ceu{\protect\AwaitInt(e)}$ statements to~$\ceu{\protect\Nop}$ (and
-thus consuming them) and by unwinding active
-$\ceu{\protect\Every{e\,\stmt}}$ statements once.
+takes a statement~$\stmt$ and an event~$e$ and awakes any trails in~$\stmt$
+awaiting for~$e$.  It does so by converting any active
+$\ceu{\protect\AwaitExt(e)}$ and $\ceu{\protect\AwaitInt(e)}$ statements
+in~$\stmt$ to~$\ceu{\protect\Nop}$ (and thus consuming them) and by
+unwinding any active $\ceu{\protect\Every{e\,\stmt'}}$ statements in~$\stmt$
+once (and thus allowing their body~$\stmt'$ to execute once).
 
-Rule \R{pop} simply decreases the stack level by one; it can only be applied
-if the program is blocked or terminated ($\stmt=\ceu{\Nop}$).  As we will
-see, these two conditions ensure that an $\ceu{\EmitInt}$ only resumes after
-its internal reaction completes and blocks at the current stack level.
+Note that \R{push} is the only rule that uses function~$\bcast$.  Moreover,
+it is the only rule that matches a nonempty event ($e\ne\nil$) in the input
+description---all other rules expect an empty input event.
 
-\gl{CONTINUAR DAQUI}
+Rule \R{pop}, the other outermost rule, simply decreases the stack level by
+one.  Rule~\R{pop} can be applied whenever the stack level is greater than
+zero ($\ell>0$) and the program is blocked or terminated
+($\stmt=\ceu{\Nop}$).  As we will see, these two conditions ensure that an
+$\ceu{\EmitInt}$ only resumes after its internal reaction completes and
+blocks at the current stack level.
 
 In order to determine whether the program is blocked, \R{pop} uses
-predicate~$\isblk$.  This predicate is~\emph{true} if all parallel branches
-of the given program are blocked waiting for events, finalization clauses,
-or certain stack levels; otherwise, it is false.  Predicate~$\isblk$ is
-defined as follows:
+predicate~$\isblk$.  This predicate is~\emph{true} if all parallel trails of
+the given program are blocked waiting for events, finalization clauses, or
+certain stack levels; otherwise, it is false.  Predicate~$\isblk$ is defined
+as follows:
+\begingroup
+\setlength{\jot}{.5\jot}
 \begin{align*}
-  \isblk(\ceu{\AwaitExt(e)},n)
+  \isblk(\ceu{\AwaitExt(e)},\ell)
   &=\mathit{true}\\
   %% 
-  \isblk(\ceu{\AwaitInt(e)},n)
+  \isblk(\ceu{\AwaitInt(e)},\ell)
   &=\mathit{true}\\
   %% 
-  \isblk(\ceu{\Every{e}\ {\stmt}},n)
+  \isblk(\ceu{\Every{e}\ {\stmt}},\ell)
   &=\mathit{true}\\
   %% 
-  \isblk(\ceu{\RunAt(m)},n)
-  &=(n>m)\\
+  \isblk(\ceu{\RunAt(\ell')},\ell)
+  &=(\ell>\ell')\\
   %% 
-  \isblk(\ceu{\Fin{\stmt}},n)
+  \isblk(\ceu{\Fin{\stmt}},\ell)
   &=\mathit{true}\\
   %% 
-  \isblk(\ceu{\stmt_1;\stmt_2},n)
-  &=\isblk(\stmt_1,n)\\
+  \isblk(\ceu{\stmt_1;\stmt_2},\ell)
+  &=\isblk(\stmt_1,\ell)\\
   %%
-  \isblk(\ceu{\AtVar{v\,n\,\stmt}},n)
-  &=\isblk(\stmt,n)\\
+  \isblk(\ceu{\AtVar{v\,\ell\,\stmt}},\ell)
+  &=\isblk(\stmt,\ell)\\
   %%
-  \isblk(\ceu{\stmt_1\AtLoop{\stmt_2}},n)
-  &=\isblk(\stmt_1,n)\\
+  \isblk(\ceu{\stmt_1\AtLoop{\stmt_2}},\ell)
+  &=\isblk(\stmt_1,\ell)\\
   %% 
-  \isblk(\ceu{\stmt_1\AtParAnd{\stmt_2}},n)
-  &=\isblk(\stmt_1,n)\land\isblk(\stmt_2,n)\\
+  \isblk(\ceu{\stmt_1\AtParAnd{\stmt_2}},\ell)
+  &=\\[-1\jot]
+  &\hskip-3em\isblk(\stmt_1,\ell)\land\isblk(\stmt_2,\ell)\\
   %% 
-  \isblk(\ceu{\stmt_1\AtParOr{\stmt_2}},n)
-  &=\isblk(\stmt_1,n)\land\isblk(\stmt_2,n)\\
+  \isblk(\ceu{\stmt_1\AtParOr{\stmt_2}},\ell)
+  &=\\[-1\jot]
+  &\hskip-3em\isblk(\stmt_1,\ell)\land\isblk(\stmt_2,\ell)\\
   %% 
-  \isblk(\_,n)
+  \isblk(\_,\ell)
   &=\mathit{false}\quad\text{\emph{(otherwise)}}
 \end{align*}
+\endgroup
+%%
+where the underscore ($\_$) denotes the omitted patterns.
 
-%(determined via function $\isblk$, defined below)
+As we will see, besides \R{pop}, predicate $\isblk$ is also used as a
+condition in the $\nst$ rules for advancing the right-hand side of parallel
+compositions (which can only advance if the left-hand side is blocked).
 
-At the beginning of a reaction, an external event is emitted, which triggers
-rule \R{push}, immediately raising the stack level to~1.  At the end of the
-reaction, the program will block or terminate and successive applications of
-rule~\R{pop} will lead to an irreducible description with this same program
-at stack level~0.
+% At the beginning of a reaction, an external event is emitted, which triggers
+% rule \R{push}, immediately raising the stack level to~1.  At the end of the
+% reaction, the program will block or terminate and successive applications of
+% rule~\R{pop} will lead to an irreducible description with this same program
+% at stack level~0.
 
-\begin{figure*}[t]
-  \small
-  \newcommand*\LBL[1]{\Rlabel{#1}}
-  \setlength{\extrarowheight}{1.2em}
-  \newcommand{\specialcell}[2][c]{%
-  \begin{tabular}[#1]{@{}c@{}}#2\end{tabular}}
-  \begin{tabular}[t]{|ll|}
-    \hline
-    %% ---------------------------------------------------------------------
-    \hfil\emph{Outermost transitions} & \hfil\emph{Emissions}\\
-    %%
-    \LBL{push}\hfil
-    \AxiomC{$e\ne\nil$}%
-    \UnaryInfC{$\<\stmt,\ell,e,\theta>%
-    \out\<\bcast(\stmt,e),\ell+1,\nil,\theta>$}%
-    \DisplayProof
-    %% 
-    &\LBL{emit-int}\hfil
-    $\<\ceu{\EmitInt(e)},\ell,\nil,\theta>
-    \nst\<\ceu{\RunAt(\ell)},\ell,e,\theta>$\\
-    %% ---------------------------------------------------------------------
-    \LBL{pop}\hfil
-    \AxiomC{$n>0$}%
-    \AxiomC{$\stmt=\ceu{\Nop}\lor\isblk(\stmt,n)$}%
-    \BinaryInfC{$\<\stmt,\ell,\nil,\theta>%
-    \out\<\stmt,\ell-1,\nil,\theta>$}%
-    \DisplayProof
-    %% 
-    &\LBL{run-at}\hfil
-    $\<\ceu{\RunAt(\ell)},\ell,\nil,\theta>
-    \nst\<\ceu{\Nop},\ell,\nil,\theta>$\\
-    %% --------------------------------------------------------------------
-    \hfil\emph{Assignments \& conditionals} & \hfil\emph{Sequences}\\
-    %%
-    \LBL{assign}\hfil
-    $\<\ceu{v\coloneqq{\expr}},\nil,\theta>
-    \nst\<\ceu{\Nop},\nil,\memupdt(\theta,v,\memeval(\theta,\expr))>$
-    %%
-    &\LBL{seq-nop}\hfil
-    $\<\ceu{\Nop;\stmt_2},\nil,\theta>\nst\<\stmt_2,\nil,\theta>$\\
-    %%
-    \LBL{if-true}\hfil
-    \AxiomC{$\memeval(\theta,\expr)\ne0$}
-    \UnaryInfC{$\<\ceu{\IfElse{\expr}{\stmt_1}{\stmt_2}},\nil,\theta>
-    \nst\<\stmt_1,\nil,\theta>$}
-    \DisplayProof
-    %%
-    &\Rlabel{seq-brk}\hfil
-    $\<\ceu{\Break;\stmt_2},\nil,\theta>
-    \nst\<\ceu{\Break},\nil,\theta>$\\
-    %%
-    \LBL{if-false}\hfil
-    \AxiomC{$\memeval(\theta,\expr)=0$}
-    \UnaryInfC{$\<\ceu{\IfElse{\expr}{\stmt_1}{\stmt_2}},\nil,\theta>
-    \nst\<\stmt_2,\nil,\theta>$}
-    \DisplayProof
-    %%
-    &\LBL{seq-adv}\hfil
-    \AxiomC{$\<\stmt_1,\nil,\theta>\nst\<\stmt_1',e,\theta'>$}
-    \UnaryInfC{$\<\ceu{\stmt_1;\stmt_2},\nil,\theta>
-    \nst\<\ceu{\stmt_1';\stmt_2},e,\theta'>$}
-    \DisplayProof\\
-    %% ---------------------------------------------------------------------
-    \hfil\emph{Variable declarations} & \hfil\emph{Loops}\\
-    %%
-    \LBL{var-expd}\hfil
-    $\<\ceu{\Var{v\,\stmt}},\nil,\theta>
-    \nst\<\ceu{\AtVar{v\,\bot\,\stmt}},\nil,\theta>$
-    %%
-    &\LBL{loop-expd}\hfil
-    $\<\ceu{\Loop{\stmt}},\nil,\theta>
-    \nst\<\ceu{\stmt\AtLoop{\stmt}},\nil,\theta>$\\
-    %% ---------------------------------------------------------------------
-    \LBL{var-nop}\hfil
-    $\<\ceu{\AtVar{v\,n\,\Nop}},\nil,\theta>
-    \nst\<\ceu{\Nop},\nil,\theta>$
-    %%
-    &\LBL{loop-nop}\hfil
-    $\<\ceu{\Nop\AtLoop{\stmt_2}},\nil,\theta>
-    \nst\<\ceu{\Loop{\stmt_2}},\nil,\theta>$\\
-    %% ---------------------------------------------------------------------
-    \LBL{var-brk}\hfil
-    $\<\ceu{\AtVar{v\,n\,\Break}},\nil,\theta>
-    \nst\<\ceu{\Break},\nil,\theta>$
-    %%
-    &\LBL{loop-brk}\hfil
-    $\<\ceu{\Break\AtLoop{\stmt_2}},\nil,\theta>
-    \nst\<\ceu{\Nop},\nil,\theta>$\\
-    %% ---------------------------------------------------------------------
-    \LBL{var-adv}\hfil
-    \AxiomC{$\<\ceu{\stmt},\nil,(v,n){:}\theta>
-    \nst\<\ceu{\stmt'},e,(v,n'){:}\theta'>$}
-    \UnaryInfC{$\<\ceu{\AtVar{v\,n\,\stmt}},\nil,\theta>
-    \nst\<\ceu{\AtVar{v\,n'\,\stmt'}},e,\theta'>$}
-    \DisplayProof
-    %%
-    &\LBL{loop-adv}\hfil
-    \AxiomC{$\<\stmt_1,\nil,\theta>\nst\<\stmt_1',e,\theta'>$}
-    \UnaryInfC{$\<\ceu{\stmt_1\AtLoop{\stmt_2}},\nil,\theta>
-    \nst\<\ceu{\stmt_1'\AtLoop{\stmt_2}},e,\theta'>$}
-    \DisplayProof\\
-    %% ---------------------------------------------------------------------
-    \hfil\emph{Par/and} & \hfil\emph{Par/or}\\[-.8\extrarowheight]
-    %%
-    \LBL{par/and-expd} & \LBL{par/or-expd}\\[-.3\extrarowheight]
-    %%
-    \hfil{$
-    \begin{aligned}
-      &\<\ceu{\stmt_1\ParAnd{\stmt_2}},\ell,\nil,\theta>\\[-\jot]
-      &\qquad\nst\<\ceu{\stmt_1\AtParAnd(\RunAt(\ell);\stmt_2)},
-      \ell,\nil,\theta>
-    \end{aligned}$}
-    %%
-    &\hfil{$
-    \begin{aligned}
-      &\<\ceu{\stmt_1\ParOr{\stmt_2}},\ell,\nil,\theta>\\[-\jot]
-      &\qquad\nst\<\ceu{\stmt_1\AtParOr(\RunAt(\ell);\stmt_2)},
-      \ell,\nil,\theta>
-    \end{aligned}$}\\
-    %% ---------------------------------------------------------------------
-    \LBL{par/and-nop1} & \LBL{par/or-nop1}\\[-.9\extrarowheight]
-    %%
-    \hfil$\<\ceu{{\Nop}\AtParAnd{\stmt_2}},\nil,\theta>
-    \nst\<\stmt_2,\nil,\theta>$
-    %%
-    &\hfil$\<\ceu{{\Nop}\AtParOr{\stmt_2}},\nil,\theta>
-    \nst\<\clear(\stmt_2),\nil,\theta>$\\
-    %%
-    \LBL{par/and-nop2} & \LBL{par/or-nop2}\\[-.9\extrarowheight]
-    %%
-    \hfil\AxiomC{$\isblk(\stmt_1,\ell)$}
-    \UnaryInfC{$\<\ceu{\stmt_1\AtParAnd{\Nop}},\ell,\nil,\theta>
-    \nst\<\stmt_1,\ell,\nil,\theta>$}
-    \DisplayProof
-    %%
-    &\hfil\AxiomC{$\isblk(\stmt_1,\ell)$}
-    \UnaryInfC{$\<\ceu{\stmt_1\AtParOr{\Nop}},\ell,\nil,\theta>
-    \nst\<\clear(\stmt_1),\ell,\nil,\theta>$}
-    \DisplayProof\\
-    %% ---------------------------------------------------------------------
-    \LBL{par/and-brk1} & \LBL{par/or-brk1}\\[-.9\extrarowheight]
-    %%
-    \hfil$\<\ceu{{\Break}\AtParAnd{\stmt_2}},\nil,\theta>
-    \nst\<\ceu{\clear(\stmt_2);\Break},\nil,\theta>$
-    %%
-    &\hfil$\<\ceu{{\Break}\AtParOr{\stmt_2}},\nil,\theta>
-    \nst\<\ceu{\clear(\stmt_2);\Break},\nil,\theta>$\\
-    %%
-    \LBL{par/and-brk2} & \LBL{par/or-brk2}\\[-.9\extrarowheight]
-    %%
-    \hfil\AxiomC{$\isblk(\stmt_1,\ell)$}
-    \UnaryInfC{$\<\ceu{\stmt_1\AtParAnd{\Break}},\ell,\nil,\theta>
-    \nst\<\ceu{\clear(\stmt_1);\Break},\ell,\nil,\theta>$}
-    \DisplayProof
-    %%
-    &\hfil\AxiomC{$\isblk(\stmt_1,\ell)$}
-    \UnaryInfC{$\<\ceu{\stmt_1\AtParOr{\Break}},\ell,\nil,\theta>
-    \nst\<\ceu{\clear(\stmt_1);\Break},\ell,\nil,\theta>$}
-    \DisplayProof\\
-    %% ---------------------------------------------------------------------
-    \LBL{par/and-adv1} & \LBL{par/or-adv1}\\[-.9\extrarowheight]
-    %%
-    \hfil\AxiomC{$\<\stmt_1,\nil,\theta>\nst\<\stmt_1',e,\theta'>$}
-    \UnaryInfC{$\<\ceu{\stmt_1\AtParAnd{\stmt_2}},\nil,\theta>
-    \nst\<\ceu{\stmt_1'\AtParAnd{\stmt_2}},e,\theta'>$}
-    \DisplayProof
-    %%
-    &\hfil\AxiomC{$\<\stmt_1,\nil,\theta>\nst\<\stmt_1',e,\theta'>$}
-    \UnaryInfC{$\<\ceu{\stmt_1\AtParOr{\stmt_2}},\nil,\theta>
-    \nst\<\ceu{\stmt_1'\AtParOr{\stmt_2}},e,\theta'>$}
-    \DisplayProof\\
-    %%
-    \LBL{par/and-adv2} & \LBL{par/or-adv2}\\[-.5\extrarowheight]
-    %%
-    \hfil\AxiomC{$\isblk(\stmt_1,\ell)$}
-    \AxiomC{$\<\stmt_2,\ell,\nil,\theta'>\nst\<\stmt_2',\ell,e,\theta'>$}
-    \BinaryInfC{$\<\ceu{\stmt_1\AtParAnd{\stmt_2}},\ell,\nil,\theta>
-    \nst\<\ceu{\stmt_1\AtParAnd{\stmt_2'}},\ell,e,\theta'>$}
-    \DisplayProof
-    %%
-    &\hfil\AxiomC{$\isblk(\stmt_1,\ell)$}
-    \AxiomC{$\<\stmt_2,\ell,\nil,\theta>\nst\<\stmt_2',\ell,e,\theta'>$}
-    \BinaryInfC{$\<\ceu{\stmt_1\AtParOr{\stmt_2}},\ell,\nil,\theta>
-    \nst\<\ceu{\stmt_1\AtParOr{\stmt_2'}},\ell,e,\theta'>$}
-    \DisplayProof\\[2em]
-    %%
-    \hline
-  \end{tabular}
-  \caption{Rules for $\out$ and~$\nst$ transitions.}
-  \label{fig.rules}
-  \Rlabelhook
-\end{figure*}
+\input{rules}
 
 \subsection{Nested Transitions}
 \label{sec.sem.nested}
@@ -1299,7 +1124,6 @@ follows:\footnote{In the $\nst$ transitions we underline the part of the
   axiom---and write the name of this axiom in parentheses below the arrow
   representing the transition.}
 
-\clearpage% <-- temporary
 \begin{align*}
   \delta_0\TRANS{push}\null&
     \<\ceu{\uline{\Locals{\led}\,\ddd}}\,,1,\nil,[]>\\
