@@ -401,11 +401,13 @@ to~$\delta_f$ after exactly~$i$ transitions, and we
 write~$\delta_0\trans[*]\delta_f$ to indicate that it does so after an
 unspecified but finite number of transitions.  Using this notation, we can
 define function~$\reaction$ (the first part of our goal) as follows:
-\begin{align*}
-  &\reaction(\stmt_0,\theta_0,e)=\<\stmt_f,\theta_f>\\
-  &\quad\text{if (and only if)}\quad
-    \<\stmt_0,0,e,\theta_0>\trans[*]\<\stmt_f,0,\nil,\theta_f>,
-\end{align*}
+\[
+  \reaction(\stmt_0,\theta_0,e)=\<\stmt_f,\theta_f>
+\]
+if, and only if,
+\[
+  \<\stmt_0,0,e,\theta_0>\trans[*]\<\stmt_f,0,\nil,\theta_f>,
+\]
 where~$\<\stmt_f,0,\nil,\theta_f>$ is an irreducible description.  Under
 this definition, $\reaction$ will be deterministic, terminating, and
 memory-bounded (the second part of goal) if relation~$\trans[*]$ happens to
@@ -510,6 +512,8 @@ Rule \R{pop} simply decreases the stack level by one; it can only be applied
 if the program is blocked or terminated ($\stmt=\ceu{\Nop}$).  As we will
 see, these two conditions ensure that an $\ceu{\EmitInt}$ only resumes after
 its internal reaction completes and blocks at the current stack level.
+
+\gl{CONTINUAR DAQUI}
 
 In order to determine whether the program is blocked, \R{pop} uses
 predicate~$\isblk$.  This predicate is~\emph{true} if all parallel branches
