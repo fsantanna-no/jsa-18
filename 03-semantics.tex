@@ -10,10 +10,9 @@ elaborate constructs of full \CEU can be defined on top of it, as we will
 discuss shortly.
 
 The statements of basic \CEU are presented in Figure~\ref{fig.sem.syntax}.
-In the figure, the metavariables~$v$ (ln~2), $e$ (ln~3--5, 10), and~$n$
-(ln~15--16) range over variable identifiers, event identifiers, and
-integers.  The metavariable~$\vars$ (ln~1) denotes zero or more variable
-identifiers.  The metavariable~$\stmt$ (ln~1, 7--13, 17--19) denotes a
+In the figure, the metavariables~$v$ (ln~1, 2, 16), $e$ (ln~3--5, 10),
+and~$n$ (ln~15--16) range over variable identifiers, event identifiers, and
+integers.  The metavariable~$\stmt$ (ln~1, 7--13, 16--19) denotes a
 statement, i.e., any of the statements of
 Figure~\ref{fig.sem.syntax}---complex statements are defined recursively in
 terms of simpler statements.  Finally, the metavariable $\expr$ (ln~2, 7)
@@ -24,7 +23,7 @@ denotes an expression.
 \setlength{\jot}{0pt}
 \def\N#1{\mathllap{\text{\scriptsize{#1}}\hspace{1em}}}
 \begin{empheq}[box=\fbox]{alignat*=3}
-     \N1&\hskip4pt&&\ceu{\Locals{\vars\ \stmt}}
+     \N1&\hskip4pt&&\ceu{\Var{v\,\stmt}}
                                     &\quad&\text{\it variable declaration}\\
      \N2&&&\ceu{v\coloneqq\expr}         &&\text{\it assignment statement}\\
      \N3&&&\ceu{\AwaitExt(e)}            &&\text{\it await external event}\\
@@ -40,10 +39,10 @@ denotes an expression.
   \N{13}&&&\ceu{\Fin\stmt}               &&\text{\it finalization statement}\\
   \N{14}&&&\ceu{\Nop}                    &&\text{\it dummy statement}\\
   \N{15}&&&\ceu{\RunAt(n)}               &&\text{\it run at stack level~$n$}\\
-  \N{16}&&&\ceu{\Restore(n)}             &&\text{\it restore environment}\\
-  \N{17}&&&\ceu{\stmt_1\AtLoop\stmt_2}   &&\text{\it unwinded loop}\\
-  \N{18}&&&\ceu{\stmt_1\AtParAnd\stmt_2} &&\text{\it unwinded par/and}\\
-  \N{19}&&&\ceu{\stmt_1\AtParOr\stmt_2}  &&\text{\it unwinded par/or}
+  \N{16}&&&\ceu{\AtVar{v\,n\,\stmt}}     &&\text{\it expanded var}\\
+  \N{17}&&&\ceu{\stmt_1\AtLoop\stmt_2}   &&\text{\it expanded loop}\\
+  \N{18}&&&\ceu{\stmt_1\AtParAnd\stmt_2} &&\text{\it expanded par/and}\\
+  \N{19}&&&\ceu{\stmt_1\AtParOr\stmt_2}  &&\text{\it expanded par/or}
 \end{empheq}
 \endgroup
 \caption{The statements of basic \CEU.}
@@ -60,8 +59,8 @@ nonzero value means true while zero means false.
 We distinguish between three kinds of basic \CEU statements.  First, there
 are those statements which are common in imperative languages and behave as
 usual, namely, declarations, assignments, conditionals, sequences, loops,
-and breaks.  The $\ceu{\Locals}$ statement of basic \CEU introduces its
-local variables at once in a list of identifiers.
+and breaks.  (The $\ceu{\Var}$ statement of basic \CEU introduces a single
+local variable whose scope is the statement immediately following it.)
 
 The statements of the second kind are those which are specific to \CEU.
 These are the statements $\ceu{\AwaitExt}$, $\ceu{\AwaitInt}$,
@@ -73,7 +72,7 @@ the statement~$\ceu{\Fin}$, which defines a finalization block.  These basic
 properties to Section~\ref{sec.sem.opsem}.
 
 Finally, the statements of the third kind are the remaining ones, namely,
-$\ceu{\Nop}$, $\ceu{\RunAt}$, $\ceu{\Restore}$, $\ceu{\AtLoop}$,
+$\ceu{\Nop}$, $\ceu{\RunAt}$, $\ceu{\AtVar}$, $\ceu{\AtLoop}$,
 $\ceu{\AtParAnd}$, and $\ceu{\AtParOr}$.  These are hidden internal
 statements used by the interpreter to encode in the program's text
 information about its execution.  We will have more to say about these
@@ -91,7 +90,7 @@ program, the generated program must satisfy the following restrictions:
 \begin{enumerate}
 \item\label{sec.sem.restrictions.1} If variable~$v$ occurs in an expression
   or assignment statement of the program, then this occurrence happens in
-  the body of a~$\ceu{\Locals}$ statement that declares~$v$.
+  the body of a~$\ceu{\Var}$ statement that declares~$v$.
 \item\label{sec.sem.restrictions.2} If a~$\ceu{\Break}$ occurs in the
   program, then this occurrence happens in the body of a~$\ceu{\Loop}$.
 \item\label{sec.sem.restrictions.3} If a statement of the
@@ -108,11 +107,12 @@ program, the generated program must satisfy the following restrictions:
 Restrictions~\ref{sec.sem.restrictions.1} and~\ref{sec.sem.restrictions.2}
 prevent the use of undeclared variables or orphan~$\ceu{\Break}$'s.
 Restriction~\ref{sec.sem.restrictions.3} ensures that the program does not
-have an infinite loop with a body that runs in zero time (which would violate the
-synchronous hypothesis).  And restriction~\ref{sec.sem.restrictions.4}
-ensures that the body of $\ceu{\Every}$ and~$\ceu{\Fin}$ statements always
-execute to completion within the same reaction.  Similar restrictions exist
-in full \CEU, as discussed in Section~\ref{sec.ceu}.
+have an infinite loop with a body that runs in zero time (which would
+violate the synchronous hypothesis).  And
+restriction~\ref{sec.sem.restrictions.4} ensures that the body of
+$\ceu{\Every}$ and~$\ceu{\Fin}$ statements always execute to completion
+within the same reaction.  Similar restrictions exist in full \CEU, as
+discussed in Section~\ref{sec.ceu}.
 
 From now on, whenever we speak of a basic \CEU program we mean a well-formed
 basic \CEU program.
@@ -261,7 +261,6 @@ var int tot_ = 1000 + delta_;
 
 \subsubsection*{Finalization}
 
-% \begin{comment}
 % Finally, a ``\code{finalize $A$ with $B$ end; $C$}'' in the concrete
 % language is equivalent to ``\ceu{A;\;((\Fin{B})\ \ParOr\ C)}'' in the abstract
 % language.  In the concrete language, $A$ and~$C$ execute in sequence, and
@@ -271,7 +270,6 @@ var int tot_ = 1000 + delta_;
 % need an explicit \code{or} to execute~$C$ in parallel, whose termination
 % aborts ``$\ceu{\Fin B}$'', which finally causes~$B$ to execute (by the
 % semantic rules below).
-% \end{comment}
 
 The biggest mismatch between full \CEU and basic \CEU is in their support
 for finalization, i.e., between the statements \code{finalize} of full \CEU
@@ -355,10 +353,10 @@ We will define $\reaction$ using a set of rules for a small-step operational
 semantics~\cite{Plotkin-G-D-1981}.  These rules dictate how the internal
 state of the basic \CEU interpreter progresses while it is computing a
 reaction.  A snapshot of this internal state is called a \emph{description},
-denoted~$\delta$, and consists of a quadruple~$\<\stmt,n,e,\theta>$ where
+denoted~$\delta$, and consists of a quadruple~$\<\stmt,\ell,e,\theta>$ where
 \begin{itemize}
 \item $\stmt$ is a well-formed basic \CEU program;
-\item $n$ is a nonnegative integer, called the stack level;
+\item $\ell$ is a nonnegative integer, called the stack level;
 \item $e$ is an event identifier or the empty identifier~$\nil$;
   and
 \item $\theta$ is a memory.
@@ -391,26 +389,23 @@ the form
 The initial description~$\delta_0=\<\stmt_0,0,e,\theta_0>$ contains the
 three inputs of the reaction: the text of the program at the beginning of
 the reaction ($\stmt_0$), the event~$e$ to which the program must react, and
-the memory~$\theta_0$ which holds the values of the variables used
-in~$\stmt_0$ at the beginning of the reaction.  The final
-description~$\delta_f=\<stmt_f,0,\nil,\theta_f>$ contains the two outputs of
-the reaction: the text of the program at the end of the reaction ($\stmt_f$)
-and the values of the variables used in~$\stmt_f$ at the end of the
-reaction.  The output program~$\stmt_f$ and memory~$\theta_f$ will be used
-by the interpreter as inputs in the next reaction.
+the memory~$\theta_0$ holding the values of the variables of~$\stmt_0$.  The
+final description~$\delta_f=\<stmt_f,0,\nil,\theta_f>$ contains the two
+outputs of the reaction: the text of the program at the end of the reaction
+($\stmt_f$) and the memory~$\theta_f$ holding the values of the variables
+of~$\stmt_f$ at the end of the reaction.  The output program~$\stmt_f$ and
+memory~$\theta_f$ become inputs for the next reaction.
 
 We write~$\delta_0\trans[i]\delta_f$ to indicate that $\delta_0$ leads
 to~$\delta_f$ after exactly~$i$ transitions, and we
 write~$\delta_0\trans[*]\delta_f$ to indicate that it does so after an
 unspecified but finite number of transitions.  Using this notation, we can
 define function~$\reaction$ (the first part of our goal) as follows:
-\[
-  \reaction(\stmt_0,\theta_0,e)=\<\stmt_f,\theta_f>
-\]
-if, and only if,
-\[
-  \<\stmt_0,0,e,\theta_0>\trans[*]\<\stmt_f,0,\nil,\theta_f>,
-\]
+\begin{align*}
+  &\reaction(\stmt_0,\theta_0,e)=\<\stmt_f,\theta_f>\\
+  &\quad\text{if (and only if)}\quad
+    \<\stmt_0,0,e,\theta_0>\trans[*]\<\stmt_f,0,\nil,\theta_f>,
+\end{align*}
 where~$\<\stmt_f,0,\nil,\theta_f>$ is an irreducible description.  Under
 this definition, $\reaction$ will be deterministic, terminating, and
 memory-bounded (the second part of goal) if relation~$\trans[*]$ happens to
@@ -420,7 +415,9 @@ defined, as we will see in Section~\ref{sec.proofs}.
 The next two sections, Sections~\ref{sec.sem.outermost}
 and~\ref{sec.sem.nested}, give the rules for transitions.  There are two
 types of transitions: \emph{outermost transitions} $\out$ and \emph{nested
-  transitions} $\nst$.  Both are defined by rules of the form
+  transitions} $\nst$.  The rules for~$\out$ and~$\nst$ transitions are
+listed all at once in Figure~\ref{fig.rules}.  Each of these rules has the
+form
 \[
   \AxiomC{\strut condition$_1$}
   \AxiomC{\strut condition$_2$}
@@ -429,7 +426,7 @@ types of transitions: \emph{outermost transitions} $\out$ and \emph{nested
   \QuaternaryInfC{$\delta\trans\delta'$}
   \DisplayProof
 \]
-which establish that a transition~$\delta\trans\delta'$ shall take place if
+and establishes that a transition~$\delta\trans\delta'$ shall take place if
 condition$_1$, condition$_2$, \dots, and condition$_n$ are all true.  If the
 number of conditions is zero, then the line is omitted and the rule is
 called an axiom.
@@ -437,47 +434,323 @@ called an axiom.
 \subsection{Outermost Transitions}
 \label{sec.sem.outermost}
 
-The rules \R{push} and \R{pop} for~$\out$ transitions are non-recursive
-definitions that apply to the program as a whole.  These are the only rules
-that manipulate the stack level---the component of descriptions that
-determines the order of execution of internal reactions.
-%%
-\begin{gather*}
-  \AxiomC{$e\ne\nil$}
-  \UnaryInfC{$\<\stmt,n,e,\theta>\out\<\bcast(\stmt,e),n+1,\nil,\theta>$}
-  \DisplayProof
-  \Rtag{push}\\
-  %%
-  \AxiomC{$n>0$}
-  \AxiomC{$\stmt=\ceu{\Nop}\lor\isblk(\stmt,n)$}
-  \BinaryInfC{$\<\stmt,n,\nil,\theta>\out\<\stmt,n-1,\nil,\theta>$}
-  \Rtag{pop}
-  \DisplayProof
-\end{gather*}
+The rules \R{push} and \R{pop} for~$\out$ transitions (see
+Figure~\ref{fig.rules}) are non-recursive definitions that apply to the
+program as a whole.  These are the only rules that manipulate the stack
+level---the component of descriptions that determines the order of execution
+of internal reactions.
 
-Rule \R{push} can be applied whenever there is a nonempty event in the input
-description; it instantly broadcasts the event to the program, which means it:
+\gl{\textbf{Pergunta:} ``Internal reaction'' (do jeito que está sendo usado
+  aqui e abaixo) é a mesma coisa que ``nested reaction''?}
+
+% \begin{gather*}
+%   \AxiomC{$e\ne\nil$}
+%   \UnaryInfC{$\<\stmt,n,e,\theta>\out\<\bcast(\stmt,e),n+1,\nil,\theta>$}
+%   \DisplayProof
+%   \Rtag{push}\\
+%   %%
+%   \AxiomC{$n>0$}
+%   \AxiomC{$\stmt=\ceu{\Nop}\lor\isblk(\stmt,n)$}
+%   \BinaryInfC{$\<\stmt,n,\nil,\theta>\out\<\stmt,n-1,\nil,\theta>$}
+%   \Rtag{pop}
+%   \DisplayProof
+% \end{gather*}
+
+Rule \R{push} matches whenever there is a nonempty event in the input
+description; it instantly broadcasts the event to the program, which means
+it:
 \begin{enumerate*}[label=(\roman*)]
-\item awakes (and consumes) any active $\ceu{\AwaitExt}$ or
-  $\ceu{\AwaitInt}$ statements in the program (see $\bcast$ in
-  Figure~\ref{fig.bcast});
-\item creates a nested reaction by increasing the stack level; and
+\item uses function~$\bcast$ (defined below) to awake active
+  $\ceu{\AwaitExt}$, $\ceu{\AwaitInt}$, or $\ceu{\Every}$ statements;
+\item creates a nested reaction by increasing the stack level ($\ell$
+  becomes~$\ell+1$); and
 \item consumes the input event ($e$ becomes~$\nil$).
 \end{enumerate*}
-Rule \R{push} is the only rule that matches a nonempty event in the input
-description.
+(Note that \R{push} is the only rule that matches a nonempty event in the
+input description.)
+
+Function~$\bcast$ is defined as follows:
+\begin{align*}
+  \bcast(\ceu{\AwaitExt(e)},e)
+  &=\ceu{\Nop}\\
+  %%
+  \bcast(\ceu{\AwaitInt(e)},e)
+  &=\ceu{\Nop}\\
+  %%
+  \bcast(\ceu{\Every{e}\ {\stmt}},e)
+  &=\ceu{\stmt;\Every{e}\ {\stmt}}\\
+  %%
+  \bcast(\ceu{\stmt_1;\stmt_2},e)
+  &=\ceu{\bcast(\stmt_1,e);\stmt_2}\\
+  %%
+  \bcast(\ceu{\AtVar{v\,n\,\stmt}})
+  &=\ceu{\AtVar{v\,n\,\bcast(\stmt,e)}}\\
+  %%
+  \bcast(\ceu{\stmt_1\AtLoop{\stmt_2}},e)
+  &=\ceu{\bcast(\stmt_1,e)\AtLoop{\stmt_2}}\\
+  %%
+  \bcast(\ceu{\stmt_1\AtParAnd{\stmt_2}},e)
+  &=\\[-1\jot]
+  &\hskip-3em\ceu{{\bcast(\stmt_1,e)}\AtParAnd{\bcast(\stmt_2,e)}}\\
+  %%
+  \bcast(\ceu{\stmt_1\AtParOr{\stmt_2}},e)
+  &=\\[-1\jot]
+  &\hskip-3em\ceu{{\bcast(\stmt_1,e)}\AtParOr{\bcast(\stmt_2,e)}}\\
+  %%
+  bcast(\_,e)&=\_\quad\text{\emph{(otherwise)}}
+\end{align*}
+where the underscore ($\_$) denotes the omitted patterns.  Function $\bcast$
+takes a statement and an event~$e$ and awakes any trails awaiting for~$e$ by
+converting active~$\ceu{\protect\AwaitExt(e)}$
+and~$\ceu{\protect\AwaitInt(e)}$ statements to~$\ceu{\protect\Nop}$ (and
+thus consuming them) and by unwinding active
+$\ceu{\protect\Every{e\,\stmt}}$ statements once.
 
 Rule \R{pop} simply decreases the stack level by one; it can only be applied
-if the program is blocked (see $\isblk$ in Figure~\ref{fig.isblocked}) or
-terminated ($\stmt=\ceu{\Nop}$).  This condition ensures that an
-$\ceu{\EmitInt}$ only resumes after its internal reaction completes and
-blocks at the current stack level.
+if the program is blocked or terminated ($\stmt=\ceu{\Nop}$).  As we will
+see, these two conditions ensure that an $\ceu{\EmitInt}$ only resumes after
+its internal reaction completes and blocks at the current stack level.
+
+In order to determine whether the program is blocked, \R{pop} uses
+predicate~$\isblk$.  This predicate is~\emph{true} if all parallel branches
+of the given program are blocked waiting for events, finalization clauses,
+or certain stack levels; otherwise, it is false.  Predicate~$\isblk$ is
+defined as follows:
+\begin{align*}
+  \isblk(\ceu{\AwaitExt(e)},n)
+  &=\mathit{true}\\
+  %% 
+  \isblk(\ceu{\AwaitInt(e)},n)
+  &=\mathit{true}\\
+  %% 
+  \isblk(\ceu{\Every{e}\ {\stmt}},n)
+  &=\mathit{true}\\
+  %% 
+  \isblk(\ceu{\RunAt(m)},n)
+  &=(n>m)\\
+  %% 
+  \isblk(\ceu{\Fin{\stmt}},n)
+  &=\mathit{true}\\
+  %% 
+  \isblk(\ceu{\stmt_1;\stmt_2},n)
+  &=\isblk(\stmt_1,n)\\
+  %%
+  \isblk(\ceu{\AtVar{v\,n\,\stmt}},n)
+  &=\isblk(\stmt,n)\\
+  %%
+  \isblk(\ceu{\stmt_1\AtLoop{\stmt_2}},n)
+  &=\isblk(\stmt_1,n)\\
+  %% 
+  \isblk(\ceu{\stmt_1\AtParAnd{\stmt_2}},n)
+  &=\isblk(\stmt_1,n)\land\isblk(\stmt_2,n)\\
+  %% 
+  \isblk(\ceu{\stmt_1\AtParOr{\stmt_2}},n)
+  &=\isblk(\stmt_1,n)\land\isblk(\stmt_2,n)\\
+  %% 
+  \isblk(\_,n)
+  &=\mathit{false}\quad\text{\emph{(otherwise)}}
+\end{align*}
+
+%(determined via function $\isblk$, defined below)
 
 At the beginning of a reaction, an external event is emitted, which triggers
 rule \R{push}, immediately raising the stack level to~1.  At the end of the
 reaction, the program will block or terminate and successive applications of
 rule~\R{pop} will lead to an irreducible description with this same program
 at stack level~0.
+
+\begin{figure*}[t]
+  \small
+  \newcommand*\LBL[1]{\Rlabel{#1}}
+  \setlength{\extrarowheight}{1.2em}
+  \newcommand{\specialcell}[2][c]{%
+  \begin{tabular}[#1]{@{}c@{}}#2\end{tabular}}
+  \begin{tabular}[t]{|ll|}
+    \hline
+    %% ---------------------------------------------------------------------
+    \hfil\emph{Outermost transitions} & \hfil\emph{Emissions}\\
+    %%
+    \LBL{push}\hfil
+    \AxiomC{$e\ne\nil$}%
+    \UnaryInfC{$\<\stmt,\ell,e,\theta>%
+    \out\<\bcast(\stmt,e),\ell+1,\nil,\theta>$}%
+    \DisplayProof
+    %% 
+    &\LBL{emit-int}\hfil
+    $\<\ceu{\EmitInt(e)},\ell,\nil,\theta>
+    \nst\<\ceu{\RunAt(\ell)},\ell,e,\theta>$\\
+    %% ---------------------------------------------------------------------
+    \LBL{pop}\hfil
+    \AxiomC{$n>0$}%
+    \AxiomC{$\stmt=\ceu{\Nop}\lor\isblk(\stmt,n)$}%
+    \BinaryInfC{$\<\stmt,\ell,\nil,\theta>%
+    \out\<\stmt,\ell-1,\nil,\theta>$}%
+    \DisplayProof
+    %% 
+    &\LBL{run-at}\hfil
+    $\<\ceu{\RunAt(\ell)},\ell,\nil,\theta>
+    \nst\<\ceu{\Nop},\ell,\nil,\theta>$\\
+    %% --------------------------------------------------------------------
+    \hfil\emph{Assignments \& conditionals} & \hfil\emph{Sequences}\\
+    %%
+    \LBL{assign}\hfil
+    $\<\ceu{v\coloneqq{\expr}},\nil,\theta>
+    \nst\<\ceu{\Nop},\nil,\memupdt(\theta,v,\memeval(\theta,\expr))>$
+    %%
+    &\LBL{seq-nop}\hfil
+    $\<\ceu{\Nop;\stmt_2},\nil,\theta>\nst\<\stmt_2,\nil,\theta>$\\
+    %%
+    \LBL{if-true}\hfil
+    \AxiomC{$\memeval(\theta,\expr)\ne0$}
+    \UnaryInfC{$\<\ceu{\IfElse{\expr}{\stmt_1}{\stmt_2}},\nil,\theta>
+    \nst\<\stmt_1,\nil,\theta>$}
+    \DisplayProof
+    %%
+    &\Rlabel{seq-brk}\hfil
+    $\<\ceu{\Break;\stmt_2},\nil,\theta>
+    \nst\<\ceu{\Break},\nil,\theta>$\\
+    %%
+    \LBL{if-false}\hfil
+    \AxiomC{$\memeval(\theta,\expr)=0$}
+    \UnaryInfC{$\<\ceu{\IfElse{\expr}{\stmt_1}{\stmt_2}},\nil,\theta>
+    \nst\<\stmt_2,\nil,\theta>$}
+    \DisplayProof
+    %%
+    &\LBL{seq-adv}\hfil
+    \AxiomC{$\<\stmt_1,\nil,\theta>\nst\<\stmt_1',e,\theta'>$}
+    \UnaryInfC{$\<\ceu{\stmt_1;\stmt_2},\nil,\theta>
+    \nst\<\ceu{\stmt_1';\stmt_2},e,\theta'>$}
+    \DisplayProof\\
+    %% ---------------------------------------------------------------------
+    \hfil\emph{Variable declarations} & \hfil\emph{Loops}\\
+    %%
+    \LBL{var-expd}\hfil
+    $\<\ceu{\Var{v\,\stmt}},\nil,\theta>
+    \nst\<\ceu{\AtVar{v\,\bot\,\stmt}},\nil,\theta>$
+    %%
+    &\LBL{loop-expd}\hfil
+    $\<\ceu{\Loop{\stmt}},\nil,\theta>
+    \nst\<\ceu{\stmt\AtLoop{\stmt}},\nil,\theta>$\\
+    %% ---------------------------------------------------------------------
+    \LBL{var-nop}\hfil
+    $\<\ceu{\AtVar{v\,n\,\Nop}},\nil,\theta>
+    \nst\<\ceu{\Nop},\nil,\theta>$
+    %%
+    &\LBL{loop-nop}\hfil
+    $\<\ceu{\Nop\AtLoop{\stmt_2}},\nil,\theta>
+    \nst\<\ceu{\Loop{\stmt_2}},\nil,\theta>$\\
+    %% ---------------------------------------------------------------------
+    \LBL{var-brk}\hfil
+    $\<\ceu{\AtVar{v\,n\,\Break}},\nil,\theta>
+    \nst\<\ceu{\Break},\nil,\theta>$
+    %%
+    &\LBL{loop-brk}\hfil
+    $\<\ceu{\Break\AtLoop{\stmt_2}},\nil,\theta>
+    \nst\<\ceu{\Nop},\nil,\theta>$\\
+    %% ---------------------------------------------------------------------
+    \LBL{var-adv}\hfil
+    \AxiomC{$\<\ceu{\stmt},\nil,(v,n){:}\theta>
+    \nst\<\ceu{\stmt'},e,(v,n'){:}\theta'>$}
+    \UnaryInfC{$\<\ceu{\AtVar{v\,n\,\stmt}},\nil,\theta>
+    \nst\<\ceu{\AtVar{v\,n'\,\stmt'}},e,\theta'>$}
+    \DisplayProof
+    %%
+    &\LBL{loop-adv}\hfil
+    \AxiomC{$\<\stmt_1,\nil,\theta>\nst\<\stmt_1',e,\theta'>$}
+    \UnaryInfC{$\<\ceu{\stmt_1\AtLoop{\stmt_2}},\nil,\theta>
+    \nst\<\ceu{\stmt_1'\AtLoop{\stmt_2}},e,\theta'>$}
+    \DisplayProof\\
+    %% ---------------------------------------------------------------------
+    \hfil\emph{Par/and} & \hfil\emph{Par/or}\\[-.8\extrarowheight]
+    %%
+    \LBL{par/and-expd} & \LBL{par/or-expd}\\[-.3\extrarowheight]
+    %%
+    \hfil{$
+    \begin{aligned}
+      &\<\ceu{\stmt_1\ParAnd{\stmt_2}},\ell,\nil,\theta>\\[-\jot]
+      &\qquad\nst\<\ceu{\stmt_1\AtParAnd(\RunAt(\ell);\stmt_2)},
+      \ell,\nil,\theta>
+    \end{aligned}$}
+    %%
+    &\hfil{$
+    \begin{aligned}
+      &\<\ceu{\stmt_1\ParOr{\stmt_2}},\ell,\nil,\theta>\\[-\jot]
+      &\qquad\nst\<\ceu{\stmt_1\AtParOr(\RunAt(\ell);\stmt_2)},
+      \ell,\nil,\theta>
+    \end{aligned}$}\\
+    %% ---------------------------------------------------------------------
+    \LBL{par/and-nop1} & \LBL{par/or-nop1}\\[-.9\extrarowheight]
+    %%
+    \hfil$\<\ceu{{\Nop}\AtParAnd{\stmt_2}},\nil,\theta>
+    \nst\<\stmt_2,\nil,\theta>$
+    %%
+    &\hfil$\<\ceu{{\Nop}\AtParOr{\stmt_2}},\nil,\theta>
+    \nst\<\clear(\stmt_2),\nil,\theta>$\\
+    %%
+    \LBL{par/and-nop2} & \LBL{par/or-nop2}\\[-.9\extrarowheight]
+    %%
+    \hfil\AxiomC{$\isblk(\stmt_1,\ell)$}
+    \UnaryInfC{$\<\ceu{\stmt_1\AtParAnd{\Nop}},\ell,\nil,\theta>
+    \nst\<\stmt_1,\ell,\nil,\theta>$}
+    \DisplayProof
+    %%
+    &\hfil\AxiomC{$\isblk(\stmt_1,\ell)$}
+    \UnaryInfC{$\<\ceu{\stmt_1\AtParOr{\Nop}},\ell,\nil,\theta>
+    \nst\<\clear(\stmt_1),\ell,\nil,\theta>$}
+    \DisplayProof\\
+    %% ---------------------------------------------------------------------
+    \LBL{par/and-brk1} & \LBL{par/or-brk1}\\[-.9\extrarowheight]
+    %%
+    \hfil$\<\ceu{{\Break}\AtParAnd{\stmt_2}},\nil,\theta>
+    \nst\<\ceu{\clear(\stmt_2);\Break},\nil,\theta>$
+    %%
+    &\hfil$\<\ceu{{\Break}\AtParOr{\stmt_2}},\nil,\theta>
+    \nst\<\ceu{\clear(\stmt_2);\Break},\nil,\theta>$\\
+    %%
+    \LBL{par/and-brk2} & \LBL{par/or-brk2}\\[-.9\extrarowheight]
+    %%
+    \hfil\AxiomC{$\isblk(\stmt_1,\ell)$}
+    \UnaryInfC{$\<\ceu{\stmt_1\AtParAnd{\Break}},\ell,\nil,\theta>
+    \nst\<\ceu{\clear(\stmt_1);\Break},\ell,\nil,\theta>$}
+    \DisplayProof
+    %%
+    &\hfil\AxiomC{$\isblk(\stmt_1,\ell)$}
+    \UnaryInfC{$\<\ceu{\stmt_1\AtParOr{\Break}},\ell,\nil,\theta>
+    \nst\<\ceu{\clear(\stmt_1);\Break},\ell,\nil,\theta>$}
+    \DisplayProof\\
+    %% ---------------------------------------------------------------------
+    \LBL{par/and-adv1} & \LBL{par/or-adv1}\\[-.9\extrarowheight]
+    %%
+    \hfil\AxiomC{$\<\stmt_1,\nil,\theta>\nst\<\stmt_1',e,\theta'>$}
+    \UnaryInfC{$\<\ceu{\stmt_1\AtParAnd{\stmt_2}},\nil,\theta>
+    \nst\<\ceu{\stmt_1'\AtParAnd{\stmt_2}},e,\theta'>$}
+    \DisplayProof
+    %%
+    &\hfil\AxiomC{$\<\stmt_1,\nil,\theta>\nst\<\stmt_1',e,\theta'>$}
+    \UnaryInfC{$\<\ceu{\stmt_1\AtParOr{\stmt_2}},\nil,\theta>
+    \nst\<\ceu{\stmt_1'\AtParOr{\stmt_2}},e,\theta'>$}
+    \DisplayProof\\
+    %%
+    \LBL{par/and-adv2} & \LBL{par/or-adv2}\\[-.5\extrarowheight]
+    %%
+    \hfil\AxiomC{$\isblk(\stmt_1,\ell)$}
+    \AxiomC{$\<\stmt_2,\ell,\nil,\theta'>\nst\<\stmt_2',\ell,e,\theta'>$}
+    \BinaryInfC{$\<\ceu{\stmt_1\AtParAnd{\stmt_2}},\ell,\nil,\theta>
+    \nst\<\ceu{\stmt_1\AtParAnd{\stmt_2'}},\ell,e,\theta'>$}
+    \DisplayProof
+    %%
+    &\hfil\AxiomC{$\isblk(\stmt_1,\ell)$}
+    \AxiomC{$\<\stmt_2,\ell,\nil,\theta>\nst\<\stmt_2',\ell,e,\theta'>$}
+    \BinaryInfC{$\<\ceu{\stmt_1\AtParOr{\stmt_2}},\ell,\nil,\theta>
+    \nst\<\ceu{\stmt_1\AtParOr{\stmt_2'}},\ell,e,\theta'>$}
+    \DisplayProof\\[2em]
+    %%
+    \hline
+  \end{tabular}
+  \caption{Rules for $\out$ and~$\nst$ transitions.}
+  \label{fig.rules}
+  \Rlabelhook
+\end{figure*}
 
 \subsection{Nested Transitions}
 \label{sec.sem.nested}
@@ -505,33 +778,34 @@ a single~$\out$ transition (stack operation) takes place.  Finally, zero or
 more $\nst$ transitions followed by a last~$\outpop$ transition, which
 decrements the stack level to~0, terminates the reaction.
 
-We now give the rules for nested transitions.  Since these rules do not
-affect the stack level, whenever convenient, we will omit the stack level in
-the their definition.  Thus, in this section, we will sometimes write
-descriptions as triples~$\<\stmt,e,\theta>$ with the tacit understanding
-that there is a hidden integer for the stack level between the
-components~$\stmt$ and~$e$.
+We now describe the rules for nested transitions (also listed in
+Figure~\ref{fig.rules}).  Since these rules do not affect the stack level,
+whenever convenient, we will omit the stack level when writing them.  Thus,
+in Figure~\ref{fig.rules}, we sometimes write descriptions as
+triples~$\<\stmt,e,\theta>$ with the tacit understanding that there is a
+hidden integer~$\ell$ for the stack level between the components~$\stmt$
+and~$e$.
 
 \subsubsection*{Declarations and assignments}
 
-There are three $\nst$ rules for dealing with variables: \R{locals}, which
+There are five $\nst$ rules for dealing with variables: \R{locals}, which
 introduces a new block of declarations; \R{restore}, which makes a
 previously introduced block go out of scope; and \R{assign}, which evaluates
 an expression and assigns the resulting value to a variable.
 %%
-\begin{gather*}
-  \<\ceu{\Locals{\vars\,\stmt}},\nil,\theta>
-  \nst\<\ceu{\stmt;\Restore(\left|\theta\right|)},\nil,\memdecl(\theta,\vars)>
-  \Rtag{locals}\\
-  %%
-  \<\ceu{\Restore(n)},\nil,\theta>
-  \nst\<\ceu{\Nop},\nil,\memrest(\theta,n)>
-  \Rtag{restore}\\
-  %%
-  \<\ceu{v\coloneqq{\expr}},\nil,\theta>
-  \nst\<\ceu{\Nop},\nil,\memupdt(\theta,v,\memeval(\theta,\expr))>
-  \Rtag{assign}
-\end{gather*}
+% \begin{gather*}
+%   \<\ceu{\Locals{\vars\,\stmt}},\nil,\theta>
+%   \nst\<\ceu{\stmt;\Restore(\left|\theta\right|)},\nil,\memdecl(\theta,\vars)>
+%   \Rtag{locals}\\
+%   %%
+%   \<\ceu{\Restore(n)},\nil,\theta>
+%   \nst\<\ceu{\Nop},\nil,\memrest(\theta,n)>
+%   \Rtag{restore}\\
+%   %%
+%   \<\ceu{v\coloneqq{\expr}},\nil,\theta>
+%   \nst\<\ceu{\Nop},\nil,\memupdt(\theta,v,\memeval(\theta,\expr))>
+%   \Rtag{assign}
+% \end{gather*}
 
 The three rules, \R{locals}, \R{restore}, and~\R{assign}, act on the input
 memory~$\theta$.  A \emph{memory} is a stack of environments
@@ -548,13 +822,6 @@ $v_1$ was re-declared (shadowing the previous declaration) and~$v_2$ was
 declared for the first time.  Still in the nested scope, which corresponds
 to the most recent environment~$E_1$, variable~$v_1$ was set to~1 but~$v_2$
 remained undefined, hence its value~$\bot$ (\emph{undefined}).
-
-\strut\fs{A definição de Env está ligeiramente diferente da implementação, mas
-  imagino que você esteja ciente (se sim, ignore esse comentário).}
-
-\gl{Estou ciente.  É só porque é menos coisa para explicar.  A menos do
-  histórico elas são equivalentes.  Se no futuro precisar do histórico, eu
-  substituo ``conjunto'' por ``lista''.}
 
 We use the following functions to manipulate memories (all of them return a
 modified memory):
@@ -610,41 +877,42 @@ variable or division by zero, will cause the interpreter to abort.
 
 \subsubsection*{Emissions}
 
-\begin{gather*}
-  \<\ceu{\EmitInt(e)},n,\nil,\theta>
-  \nst\<\ceu{\RunAt(n)},n,e,\theta>\Rtag{emit-int}\\
-  %%
-  \<\ceu{\RunAt(n)},n,\nil,\theta>
-  \nst\<\ceu{\Nop},n,\nil,\theta>\Rtag{run-at}
-\end{gather*}
+% \begin{gather*}
+%   \<\ceu{\EmitInt(e)},n,\nil,\theta>
+%   \nst\<\ceu{\RunAt(n)},n,e,\theta>\Rtag{emit-int}\\
+%   %%
+%   \<\ceu{\RunAt(n)},n,\nil,\theta>
+%   \nst\<\ceu{\Nop},n,\nil,\theta>\Rtag{run-at}
+% \end{gather*}
 
-An $\ceu{\EmitInt(e)}$ generates event $e$ and becomes a $\ceu{\RunAt(n)}$
-statement (rule \R{emit-int}); this $\ceu{\RunAt(n)}$ statement only resumes
-at stack level~$n$ (rule \R{run-at}).
+An $\ceu{\EmitInt(e)}$ generates event~$e$ and becomes a
+$\ceu{\RunAt(\ell)}$ statement (rule \R{emit-int}); this
+$\ceu{\RunAt(\ell)}$ statement only resumes at stack level~$\ell$ (rule
+\R{run-at}).
 
 Since every~$\nst$ rule expects the input event to be empty, an application
 of \R{emit-int} leads immediately to an application of \R{push} at the outer
-level, creating a new level~$n+1$ on the stack.  With this new stack level,
-the $\ceu{\RunAt}(n)$ resulting from the $\ceu{\EmitInt(e)}$ can only
-transition after future applications of~\R{pop} put the stack level back
-in~$n$.  This interplay between \R{emit-int}, \R{push}, \R{pop}, and
+level, creating a new level~$\ell+1$ on the stack.  With this new stack
+level, the $\ceu{\RunAt}(\ell)$ resulting from the $\ceu{\EmitInt(e)}$ can
+only transition after future applications of~\R{pop} put the stack level
+back in~$\ell$.  This interplay between \R{emit-int}, \R{push}, \R{pop}, and
 \R{run-at} provides the desired stack-based semantics for internal events.
 
 \subsubsection*{Conditionals}
 
-\begin{gather*}
-  \AxiomC{$\memeval(\theta,\expr)\ne0$}
-  \UnaryInfC{$\<\ceu{\IfElse{\expr}{\stmt_1}{\stmt_2}},\nil,\theta>
-    \nst\<\stmt_1,\nil,\theta>$}
-  \DisplayProof
-  \Rtag{if-true}\\
-  %%
-  \AxiomC{$\memeval(\theta,\expr)=0$}
-  \UnaryInfC{$\<\ceu{\IfElse{\expr}{\stmt_1}{\stmt_2}},\nil,\theta>
-    \nst\<\stmt_2,\nil,\theta>$}
-  \DisplayProof
-  \Rtag{if-false}
-\end{gather*}
+% \begin{gather*}
+%   \AxiomC{$\memeval(\theta,\expr)\ne0$}
+%   \UnaryInfC{$\<\ceu{\IfElse{\expr}{\stmt_1}{\stmt_2}},\nil,\theta>
+%     \nst\<\stmt_1,\nil,\theta>$}
+%   \DisplayProof
+%   \Rtag{if-true}\\
+%   %%
+%   \AxiomC{$\memeval(\theta,\expr)=0$}
+%   \UnaryInfC{$\<\ceu{\IfElse{\expr}{\stmt_1}{\stmt_2}},\nil,\theta>
+%     \nst\<\stmt_2,\nil,\theta>$}
+%   \DisplayProof
+%   \Rtag{if-false}
+% \end{gather*}
 
 Rules \R{if-true} and \R{if-false} transform a conditional statement into
 its if-part ($\stmt_1$) or else-part ($\stmt_2$) depending on the value to
@@ -656,20 +924,20 @@ contents of the memory in a way that affects the control flow.
 
 \subsubsection*{Sequences}
 
-\begin{gather*}
-  \<\ceu{\Nop;\stmt_2},\nil,\theta>
-  \nst\<\stmt_2,\nil,\theta>
-  \Rtag{seq-nop}\\
-  %%
-  \<\ceu{\Break;\stmt_2},\nil,\theta>
-  \nst\<\ceu{\Break},\nil,\theta>\Rtag{seq-brk}\\
-  %%
-  \AxiomC{$\<\stmt_1,\nil,\theta>\nst\<\stmt_1',e,\theta'>$}
-  \UnaryInfC{$\<\ceu{\stmt_1;\stmt_2},\nil,\theta>
-    \nst\<\ceu{\stmt_1';\stmt_2},e,\theta'>$}
-  \DisplayProof
-  \Rtag{seq-adv}
-\end{gather*}
+% \begin{gather*}
+%   \<\ceu{\Nop;\stmt_2},\nil,\theta>
+%   \nst\<\stmt_2,\nil,\theta>
+%   \Rtag{seq-nop}\\
+%   %%
+%   \<\ceu{\Break;\stmt_2},\nil,\theta>
+%   \nst\<\ceu{\Break},\nil,\theta>\Rtag{seq-brk}\\
+%   %%
+%   \AxiomC{$\<\stmt_1,\nil,\theta>\nst\<\stmt_1',e,\theta'>$}
+%   \UnaryInfC{$\<\ceu{\stmt_1;\stmt_2},\nil,\theta>
+%     \nst\<\ceu{\stmt_1';\stmt_2},e,\theta'>$}
+%   \DisplayProof
+%   \Rtag{seq-adv}
+% \end{gather*}
 
 A sequence whose first part is terminated ($\ceu{\Nop}$) becomes its second
 part (rule \R{seq-nop}).  A sequence whose first part is a~$\ceu{\Break}$,
@@ -680,26 +948,26 @@ from advancing just its first part (rule \R{seq-adv}).
 
 \subsubsection*{Loops}
 
-\begin{gather*}
-  \<\ceu{\Loop{\stmt}},\nil,\theta>
-  \nst\<\ceu{(\stmt\AtLoop{\stmt});
-    \Restore({\left|\theta\right|})},\nil,\theta>
-  \Rtag{loop-expd}\\
-  %%
-  \<\ceu{\Nop\AtLoop{\stmt_2}},\nil,\theta>
-  \nst\<\ceu{\Loop{\stmt_2}},\nil,\theta>
-  \Rtag{loop-nop}\\
-  %%
-  \<\ceu{\Break\AtLoop{\stmt_2}},\nil,\theta>
-  \nst\<\ceu{\Nop},\nil,\theta>
-  \Rtag{loop-brk}\\
-  %%
-  \AxiomC{$\<\stmt_1,\nil,\theta>\nst\<\stmt_1',e,\theta'>$}
-  \UnaryInfC{$\<\ceu{\stmt_1\AtLoop{\stmt_2}},\nil,\theta>
-    \nst\<\ceu{\stmt_1'\AtLoop{\stmt_2}},e,\theta'>$}
-  \DisplayProof
-  \Rtag{loop-adv}
-\end{gather*}
+% \begin{gather*}
+%   \<\ceu{\Loop{\stmt}},\nil,\theta>
+%   \nst\<\ceu{(\stmt\AtLoop{\stmt});
+%     \Restore({\left|\theta\right|})},\nil,\theta>
+%   \Rtag{loop-expd}\\
+%   %%
+%   \<\ceu{\Nop\AtLoop{\stmt_2}},\nil,\theta>
+%   \nst\<\ceu{\Loop{\stmt_2}},\nil,\theta>
+%   \Rtag{loop-nop}\\
+%   %%
+%   \<\ceu{\Break\AtLoop{\stmt_2}},\nil,\theta>
+%   \nst\<\ceu{\Nop},\nil,\theta>
+%   \Rtag{loop-brk}\\
+%   %%
+%   \AxiomC{$\<\stmt_1,\nil,\theta>\nst\<\stmt_1',e,\theta'>$}
+%   \UnaryInfC{$\<\ceu{\stmt_1\AtLoop{\stmt_2}},\nil,\theta>
+%     \nst\<\ceu{\stmt_1'\AtLoop{\stmt_2}},e,\theta'>$}
+%   \DisplayProof
+%   \Rtag{loop-adv}
+% \end{gather*}
 
 When the interpreter encounters a $\ceu{\Loop}$, it expands its body in
 sequence with the loop itself followed by a $\ceu{\Restore}$ statement (rule
@@ -721,20 +989,20 @@ a~$\ceu{\Nop}$.
 
 \subsubsection*{Par/and and par/or compositions}
 
-\begin{gather*}
-  \begin{split}
-    &\<\ceu{\stmt_1\ParAnd{\stmt_2}},n,\nil,\theta>\\
-    &\qquad\null\nst\<\ceu{\stmt_1\AtParAnd(\RunAt(n);\stmt_2)},n,\nil,\theta>
-  \end{split}
-  \Rtag{par/and-expd}\\
-  %%
-  \begin{split}
-    &\<\ceu{\stmt_1\ParOr{\stmt_2}},n,\nil,\theta>\\
-    &\qquad\null\nst\<\ceu{(\stmt_1\AtParOr(\RunAt(n);\stmt_2));
-      \Restore(\left|\theta\right|)},n,\nil,\theta>
-  \end{split}
-  \Rtag{par/or-expd}
-\end{gather*}
+% \begin{gather*}
+%   \begin{split}
+%     &\<\ceu{\stmt_1\ParAnd{\stmt_2}},n,\nil,\theta>\\
+%     &\qquad\null\nst\<\ceu{\stmt_1\AtParAnd(\RunAt(n);\stmt_2)},n,\nil,\theta>
+%   \end{split}
+%   \Rtag{par/and-expd}\\
+%   %%
+%   \begin{split}
+%     &\<\ceu{\stmt_1\ParOr{\stmt_2}},n,\nil,\theta>\\
+%     &\qquad\null\nst\<\ceu{(\stmt_1\AtParOr(\RunAt(n);\stmt_2));
+%       \Restore(\left|\theta\right|)},n,\nil,\theta>
+%   \end{split}
+%   \Rtag{par/or-expd}
+% \end{gather*}
 
 When first encountered by the interpreter, $\ceu{\ParAnd}$ and
 $\ceu{\ParOr}$ are immediately expanded to their internal versions
@@ -767,33 +1035,33 @@ left-hand side is blocked.  The twelve rules are divided into three groups:
 We begin by presenting the rules of the last group, which do not involve the
 termination of one of the sides.
 %%
-\begin{gather*}
-  \AxiomC{$\<\stmt_1,n,\nil,\theta>\nst\<\stmt_1',n,e,\theta'>$}
-  \UnaryInfC{$\<\ceu{\stmt_1\AtParAnd{\stmt_2}},n,\nil,\theta>
-    \nst\<\ceu{\stmt_1'\AtParAnd{\stmt_2}},n,e,\theta'>$}
-  \DisplayProof
-  \Rtag{par/and-adv1}\\
-  %%
-  \AxiomC{$\isblk(\stmt_1,n)$}
-  \AxiomC{$\<\stmt_2,n,\nil,\theta'>\nst\<\stmt_2',n,e,\theta'>$}
-  \BinaryInfC{$\<\ceu{\stmt_1\AtParAnd{\stmt_2}},n,\nil,\theta>
-    \nst\<\ceu{\stmt_1\AtParAnd{\stmt_2'}},n,e,\theta'>$}
-  \DisplayProof
-  \Rtag{par/and-adv2}\\
-  %%
-  \AxiomC{$\<\stmt_1,n,\nil,\theta>\nst\<\stmt_1',n,e,\theta'>$}
-  \UnaryInfC{$\<\ceu{\stmt_1\AtParOr{\stmt_2}},n,\nil,\theta>
-    \nst\<\ceu{\stmt_1'\AtParOr{\stmt_2}},n,e,\theta'>$}
-  \DisplayProof
-  \Rtag{par/or-adv1}\\
-  %%
-  \AxiomC{$\isblk(\stmt_1,n)$}
-  \AxiomC{$\<\stmt_2,n,\nil,\theta>\nst\<\stmt_2',n,e,\theta'>$}
-  \BinaryInfC{$\<\ceu{\stmt_1\AtParOr{\stmt_2}},n,\nil,\theta>
-    \nst\<\ceu{\stmt_1\AtParOr{\stmt_2'}},n,e,\theta'>$}
-  \DisplayProof
-  \Rtag{par/or-adv2}
-\end{gather*}
+% \begin{gather*}
+%   \AxiomC{$\<\stmt_1,n,\nil,\theta>\nst\<\stmt_1',n,e,\theta'>$}
+%   \UnaryInfC{$\<\ceu{\stmt_1\AtParAnd{\stmt_2}},n,\nil,\theta>
+%     \nst\<\ceu{\stmt_1'\AtParAnd{\stmt_2}},n,e,\theta'>$}
+%   \DisplayProof
+%   \Rtag{par/and-adv1}\\
+%   %%
+%   \AxiomC{$\isblk(\stmt_1,n)$}
+%   \AxiomC{$\<\stmt_2,n,\nil,\theta'>\nst\<\stmt_2',n,e,\theta'>$}
+%   \BinaryInfC{$\<\ceu{\stmt_1\AtParAnd{\stmt_2}},n,\nil,\theta>
+%     \nst\<\ceu{\stmt_1\AtParAnd{\stmt_2'}},n,e,\theta'>$}
+%   \DisplayProof
+%   \Rtag{par/and-adv2}\\
+%   %%
+%   \AxiomC{$\<\stmt_1,n,\nil,\theta>\nst\<\stmt_1',n,e,\theta'>$}
+%   \UnaryInfC{$\<\ceu{\stmt_1\AtParOr{\stmt_2}},n,\nil,\theta>
+%     \nst\<\ceu{\stmt_1'\AtParOr{\stmt_2}},n,e,\theta'>$}
+%   \DisplayProof
+%   \Rtag{par/or-adv1}\\
+%   %%
+%   \AxiomC{$\isblk(\stmt_1,n)$}
+%   \AxiomC{$\<\stmt_2,n,\nil,\theta>\nst\<\stmt_2',n,e,\theta'>$}
+%   \BinaryInfC{$\<\ceu{\stmt_1\AtParOr{\stmt_2}},n,\nil,\theta>
+%     \nst\<\ceu{\stmt_1\AtParOr{\stmt_2'}},n,e,\theta'>$}
+%   \DisplayProof
+%   \Rtag{par/or-adv2}
+% \end{gather*}
 
 Rules~\R{par/and-adv1} and \R{par/or-adv1} match whenever the left-hand side
 of the composition is not blocked (see $\isblk$ in
@@ -805,27 +1073,27 @@ on the right-hand side and match only when the left-hand side is blocked.
 The next rules apply whenever one of the sides of the $\ceu{\AtParAnd}$ or
 $\ceu{\AtParOr}$ terminates (becomes a $\ceu{\Nop}$).
 %%
-\begin{gather*}
-  \<\ceu{{\Nop}\AtParAnd{\stmt_2}},n,\nil,\theta>
-  \nst\<\stmt_2,n,\nil,\theta>
-  \Rtag{par/and-nop1}\\
-  %%
-  \AxiomC{$\isblk(\stmt_1,n)$}
-  \UnaryInfC{$\<\ceu{\stmt_1\AtParAnd{\Nop}},n,\nil,\theta>
-    \nst\<\stmt_1,n,\nil,\theta>$}
-  \DisplayProof
-  \Rtag{par/and-nop2}\\
-  %%
-  \<\ceu{{\Nop}\AtParOr{\stmt_2}},n,\nil,\theta>
-  \nst\<\clear(\stmt_2),n,\nil,\theta>
-  \Rtag{par/or-nop1}\\
-  %%
-  \AxiomC{$\isblk(\stmt_1,n)$}
-  \UnaryInfC{$\<\ceu{\stmt_1\AtParOr{\Nop}},n,\nil,\theta>
-    \nst\<\clear(\stmt_1),n,\nil,\theta>$}
-  \DisplayProof
-  \Rtag{par/or-nop2}
-\end{gather*}
+% \begin{gather*}
+%   \<\ceu{{\Nop}\AtParAnd{\stmt_2}},n,\nil,\theta>
+%   \nst\<\stmt_2,n,\nil,\theta>
+%   \Rtag{par/and-nop1}\\
+%   %%
+%   \AxiomC{$\isblk(\stmt_1,n)$}
+%   \UnaryInfC{$\<\ceu{\stmt_1\AtParAnd{\Nop}},n,\nil,\theta>
+%     \nst\<\stmt_1,n,\nil,\theta>$}
+%   \DisplayProof
+%   \Rtag{par/and-nop2}\\
+%   %%
+%   \<\ceu{{\Nop}\AtParOr{\stmt_2}},n,\nil,\theta>
+%   \nst\<\clear(\stmt_2),n,\nil,\theta>
+%   \Rtag{par/or-nop1}\\
+%   %%
+%   \AxiomC{$\isblk(\stmt_1,n)$}
+%   \UnaryInfC{$\<\ceu{\stmt_1\AtParOr{\Nop}},n,\nil,\theta>
+%     \nst\<\clear(\stmt_1),n,\nil,\theta>$}
+%   \DisplayProof
+%   \Rtag{par/or-nop2}
+% \end{gather*}
 
 In a~$\ceu{\AtParAnd}$, if one of the sides terminates, the composition
 becomes the other side (rules \R{par/and-nop1} and \R{par/and-nop2}).  In
@@ -849,27 +1117,27 @@ Finally, a~$\ceu{\Break}$ in one of the sides of a $\ceu{\AtParAnd}$ or
 $\ceu{\AtParOr}$ is propagated, terminating the composition and properly
 aborting the other side with a~$\clear$ call:
 %%
-\begin{gather*}
-  \<\ceu{{\Break}\AtParAnd{\stmt_2}},n,\nil,\theta>
-  \nst\<\ceu{\clear(\stmt_2);\Break},n,\nil,\theta>
-  \Rtag{and-brk1}\\
-  %%
-  \AxiomC{$\isblk(\stmt_1,n)$}
-  \UnaryInfC{$\<\ceu{\stmt_1\AtParAnd{\Break}},n,\nil,\theta>
-    \nst\<\ceu{\clear(\stmt_1);\Break},n,\nil,\theta>$}
-  \DisplayProof
-  \Rtag{and-brk2}\\[\baselineskip]
-  %%
-  \<\ceu{{\Break}\AtParOr{\stmt_2}},n,\nil,\theta>
-  \nst\<\ceu{\clear(\stmt_2);\Break},n,\nil,\theta>
-  \Rtag{or-brk1}\\
-  %%
-  \AxiomC{$\isblk(\stmt_1,n)$}
-  \UnaryInfC{$\<\ceu{\stmt_1\AtParOr{\Break}},n,\nil,\theta>
-    \nst\<\ceu{\clear(\stmt_1);\Break},n,\nil,\theta>$}
-  \DisplayProof
-  \Rtag{or-brk2}
-\end{gather*}
+% \begin{gather*}
+%   \<\ceu{{\Break}\AtParAnd{\stmt_2}},n,\nil,\theta>
+%   \nst\<\ceu{\clear(\stmt_2);\Break},n,\nil,\theta>
+%   \Rtag{and-brk1}\\
+%   %%
+%   \AxiomC{$\isblk(\stmt_1,n)$}
+%   \UnaryInfC{$\<\ceu{\stmt_1\AtParAnd{\Break}},n,\nil,\theta>
+%     \nst\<\ceu{\clear(\stmt_1);\Break},n,\nil,\theta>$}
+%   \DisplayProof
+%   \Rtag{and-brk2}\\[\baselineskip]
+%   %%
+%   \<\ceu{{\Break}\AtParOr{\stmt_2}},n,\nil,\theta>
+%   \nst\<\ceu{\clear(\stmt_2);\Break},n,\nil,\theta>
+%   \Rtag{or-brk1}\\
+%   %%
+%   \AxiomC{$\isblk(\stmt_1,n)$}
+%   \UnaryInfC{$\<\ceu{\stmt_1\AtParOr{\Break}},n,\nil,\theta>
+%     \nst\<\ceu{\clear(\stmt_1);\Break},n,\nil,\theta>$}
+%   \DisplayProof
+%   \Rtag{or-brk2}
+% \end{gather*}
 
 \begin{figure}[h]
 \small
@@ -913,35 +1181,6 @@ aborting the other side with a~$\clear$ call:
       \shortintertext{\llap{(ii)~}Predicate~$\isblk$:}
       %%-
       %%
-      \isblk(\ceu{\AwaitExt(e)},n)
-      &=\mathit{true}\\
-      %%
-      \isblk(\ceu{\AwaitInt(e)},n)
-      &=\mathit{true}\\
-      %%
-      \isblk(\ceu{\Every{e}\ {\stmt}},n)
-      &=\mathit{true}\\
-      %%
-      \isblk(\ceu{\RunAt(m)},n)
-      &=(n>m)\\
-      %%
-      \isblk(\ceu{\Fin{\stmt}},n)
-      &=\mathit{true}\\
-      %%
-      \isblk(\ceu{\stmt_1;\stmt_2},n)
-      &=\isblk(\stmt_1,n)\\
-      %%
-      \isblk(\ceu{\stmt_1\AtLoop{\stmt_2}},n)
-      &=\isblk(\stmt_1,n)\\
-      %%
-      \isblk(\ceu{\stmt_1\AtParAnd{\stmt_2}},n)
-      &=\isblk(\stmt_1,n)\land\isblk(\stmt_2,n)\\
-      %%
-      \isblk(\ceu{\stmt_1\AtParOr{\stmt_2}},n)
-      &=\isblk(\stmt_1,n)\land\isblk(\stmt_2,n)\\
-      %%
-      \isblk(\_,n)
-      &=\mathit{false}\quad\text{\emph{(otherwise)}}\\[4\jot]
       %%
       %%-
       \shortintertext{\llap{(iii)~}Function~$\clear$:}
@@ -1088,7 +1327,7 @@ follows:\footnote{In the $\nst$ transitions we underline the part of the
                (\uline{\led\coloneqq1};\ddd\AtLoop\ddd;\Restore(1);\ddd);}\\[-\jot]
              &\ceu{\Restore(1);\Restore(0)},1,\nil,[\{(\led,\bot)\}]\rangle\\
     \end{aligned}\\
-    %% 
+    %%
   \TRANS[\text{(assign)}]{par/or-adv2}\null&
     \begin{aligned}[t]
       \langle&\ceu{(\ddd)\AtParOr

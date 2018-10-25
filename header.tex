@@ -1,5 +1,6 @@
 \usepackage[utf8]{inputenc}
 \usepackage[T1]{fontenc}
+\usepackage{array}
 \usepackage{etoolbox}
 \usepackage{mathtools}
 \usepackage{thmtools}
@@ -91,10 +92,7 @@ labelwidth=*,align=case,label*=.\arabic*}
 \def\ceu{\protect\@ceu}
 \def\@ceu#1{%
   \bgroup
-  \def\Locals{\@ceuop{locals}}%
   \def\Var{\@ceuop{var}}%
-  \def\Id{\mathit{id}}%
-  \def\Mem{\@ceuop{mem}}%
   \def\AwaitExt{\@ceuop{await}\nolimits_\@ext}%
   \def\AwaitInt{\@ceuop{await}\nolimits_\@int}%
   \def\EmitInt{\@ceuop{emit}\nolimits_\@int}%
@@ -102,20 +100,24 @@ labelwidth=*,align=case,label*=.\arabic*}
   \def\IfElse##1##2##3{\@ceuop{if}##1\@ceuop{then}{##2}\@ceuop{else}{##3}}%
   \def\Loop{\@ceuop{loop}}%
   \def\Every{\@ceuop{every}}%
-  \def\And{\@ceubin{and}}%          to be removed
-  \def\Or{\@ceubin{or}}%            to be removed
-  \def\ParAnd{\@ceubin{par/and}}%
-  \def\ParOr{\@ceubin{par/or}}%
+  \def\ParAnd{\@ceubin{par\!/\!and}}%
+  \def\ParOr{\@ceubin{par\!/\!or}}%
   \def\Fin{\@ceuop{fin}}%
   \def\Nop{\@ceuop{@nop}}%
-  \def\CanRun{\@ceuop{@canrun}}%    to be removed
   \def\RunAt{\@ceuop{@runat}}%
-  \def\Restore{\@ceuop{@restore}}%
+  \def\AtVar{\@ceuop{@var}}%
   \def\AtLoop{\@ceuop{@loop}}%
-  \def\AtAnd{\@ceubin{@and}}%       to be removed
-  \def\AtOr{\@ceubin{@or}}%         to be removed
-  \def\AtParAnd{\@ceubin{@par/and}}%
-  \def\AtParOr{\@ceubin{@par/or}}%
+  \def\AtParAnd{\@ceubin{@par\!/\!and}}%
+  \def\AtParOr{\@ceubin{@par\!/\!or}}%
+  \def\Id{\mathit{id}}%             TO BE REMOVED
+  \def\Mem{\@ceuop{mem}}%           TO BE REMOVED
+  \def\Locals{\@ceuop{locals}}%     TO BE REMOVED
+  \def\And{\@ceubin{and}}%          TO BE REMOVED
+  \def\Or{\@ceubin{or}}%            TO BE REMOVED
+  \def\CanRun{\@ceuop{@canrun}}%    TO BE REMOVED
+  \def\Restore{\@ceuop{@restore}}%  TO BE REMOVED 
+  \def\AtAnd{\@ceubin{@and}}%       TO BE REMOVED
+  \def\AtOr{\@ceubin{@or}}%         TO BE REMOVED
   \ensuremath{#1}\ignorespaces
   \egroup
 }
@@ -160,9 +162,13 @@ labelwidth=*,align=case,label*=.\arabic*}
 
 % Rule labels.
 \makeatletter
-\def\@R#1{{\bfseries#1}}
-\def\Rtag#1{\tag{\@R{#1}}\label{R:#1}}
-\def\R#1{\hyperref[R:#1]{\@R{#1}}}
+\newcommand*\Rlabelhook{}
+\newcommand*\@Rlabel[1]{\ensuremath{\text{\@R{#1}\bfseries{:}}}%
+  \appto{\Rlabelhook}{\label{R:#1}}}
+\newcommand*\Rlabel[1]{\@Rlabel{#1}}
+\newcommand*\@R[1]{{\bfseries#1}}
+\newcommand*\R[1]{\hyperref[R:#1]{\@R{#1}}}
+\newcommand*\Rtag[1]{\tag{\@R{#1}}\label{R:#1}} % TO BE REMOVED
 \makeatother
 
 % Transition arrows.
