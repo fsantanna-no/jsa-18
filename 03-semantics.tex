@@ -440,10 +440,7 @@ The rules \R{push} and \R{pop} for~$\out$ transitions (see
 Figure~\ref{fig.rules}) are non-recursive definitions that apply to the
 program as a whole.  These are the only rules that manipulate the stack
 level---the component of descriptions that determines the order of execution
-of internal reactions.
-
-\gl{\textbf{Pergunta:} ``Internal reaction'' (do jeito que está sendo usado
-  aqui e abaixo) é a mesma coisa que ``nested reaction''?}
+of nested reactions.
 
 % \begin{gather*}
 %   \AxiomC{$e\ne\nil$}
@@ -463,13 +460,13 @@ description; it instantly broadcasts the event to the program, which means
 it:
 \begin{enumerate*}[label=(\roman*)]
 \item uses function~$\bcast$ (defined below) to awake active
-  $\ceu{\AwaitExt}$, $\ceu{\AwaitInt}$, or $\ceu{\Every}$ statements;
+  $\ceu{\AwaitExt}$, $\ceu{\AwaitInt}$, and $\ceu{\Every}$ statements;
 \item creates a nested reaction by increasing the stack level ($\ell$
   becomes~$\ell+1$); and
 \item consumes the input event ($e$ becomes~$\nil$).
 \end{enumerate*}
 
-Function~$\bcast$ is defined as follows:
+Function~$\bcast$ is defined as
 \begingroup
 \setlength{\jot}{.5\jot}
 \begin{align*}
@@ -503,48 +500,50 @@ Function~$\bcast$ is defined as follows:
 \end{align*}
 \endgroup
 %%
-where the underscore ($\_$) denotes the omitted patterns.  Function $\bcast$
-takes a statement~$\stmt$ and an event~$e$ and awakes any trails in~$\stmt$
-awaiting for~$e$.  It does so by converting any active
+where the underscore ($\_$) denotes the omitted patterns.
+
+Function $\bcast$ takes a statement~$\stmt$ and an event~$e$ and awakes any
+trails in~$\stmt$ awaiting for~$e$.  It does so by converting any active
 $\ceu{\protect\AwaitExt(e)}$ and $\ceu{\protect\AwaitInt(e)}$ statements
 in~$\stmt$ to~$\ceu{\protect\Nop}$ (and thus consuming them) and by
 unwinding any active $\ceu{\protect\Every{e\,\stmt'}}$ statements in~$\stmt$
-once (and thus allowing their body~$\stmt'$ to execute once).
+(and thus allowing their body~$\stmt'$ to execute once).
 
 Note that \R{push} is the only rule that uses function~$\bcast$.  Moreover,
-it is the only rule that matches a nonempty event ($e\ne\nil$) in the input
-description---all other rules expect an empty input event.
+it is the only rule in the semantics that matches a nonempty event
+($e\ne\nil$) in the input description.
 
-Rule \R{pop}, the other outermost rule, simply decreases the stack level by
+Rule \R{pop}, the other $\out$ rule, simply decreases the stack level by
 one.  Rule~\R{pop} can be applied whenever the stack level is greater than
 zero ($\ell>0$) and the program is blocked or terminated
-($\stmt=\ceu{\Nop}$).  As we will see, these two conditions ensure that an
-$\ceu{\EmitInt}$ only resumes after its internal reaction completes and
-blocks at the current stack level.
+($\stmt=\ceu{\Nop}$).  As we will see, these conditions ensure that an
+$\ceu{\EmitInt}$ only resumes after its nested reaction completes and blocks
+at the current stack level.
 
 In order to determine whether the program is blocked, \R{pop} uses
-predicate~$\isblk$.  This predicate is~\emph{true} if all parallel trails of
-the given program are blocked waiting for events, finalization clauses, or
-certain stack levels; otherwise, it is false.  Predicate~$\isblk$ is defined
-as follows:
+predicate~$\isblk$.  This predicate evaluates to~\emph{true} if all parallel
+trails in the given program are blocked waiting for events, finalization
+clauses, or certain stack levels; otherwise, it evaluates to \emph{false}.
+Predicate~$\isblk$ is defined as
+%%
 \begingroup
 \setlength{\jot}{.5\jot}
 \begin{align*}
   \isblk(\ceu{\AwaitExt(e)},\ell)
   &=\mathit{true}\\
-  %% 
+  %%
   \isblk(\ceu{\AwaitInt(e)},\ell)
   &=\mathit{true}\\
-  %% 
+  %%
   \isblk(\ceu{\Every{e}\ {\stmt}},\ell)
   &=\mathit{true}\\
-  %% 
+  %%
   \isblk(\ceu{\RunAt(\ell')},\ell)
   &=(\ell>\ell')\\
-  %% 
+  %%
   \isblk(\ceu{\Fin{\stmt}},\ell)
   &=\mathit{true}\\
-  %% 
+  %%
   \isblk(\ceu{\stmt_1;\stmt_2},\ell)
   &=\isblk(\stmt_1,\ell)\\
   %%
@@ -553,15 +552,15 @@ as follows:
   %%
   \isblk(\ceu{\stmt_1\AtLoop{\stmt_2}},\ell)
   &=\isblk(\stmt_1,\ell)\\
-  %% 
+  %%
   \isblk(\ceu{\stmt_1\AtParAnd{\stmt_2}},\ell)
   &=\\[-1\jot]
   &\hskip-3em\isblk(\stmt_1,\ell)\land\isblk(\stmt_2,\ell)\\
-  %% 
+  %%
   \isblk(\ceu{\stmt_1\AtParOr{\stmt_2}},\ell)
   &=\\[-1\jot]
   &\hskip-3em\isblk(\stmt_1,\ell)\land\isblk(\stmt_2,\ell)\\
-  %% 
+  %%
   \isblk(\_,\ell)
   &=\mathit{false}\quad\text{\emph{(otherwise)}}
 \end{align*}
@@ -569,15 +568,16 @@ as follows:
 %%
 where the underscore ($\_$) denotes the omitted patterns.
 
-As we will see, besides \R{pop}, predicate $\isblk$ is also used as a
-condition in the $\nst$ rules for advancing the right-hand side of parallel
-compositions (which can only advance if the left-hand side is blocked).
+Besides \R{pop}, predicate $\isblk$ is also used as a condition in the
+$\nst$ rules for advancing the right-hand side of parallel compositions
+(which can only advance if the left-hand side is blocked).  We detail these
+and the other~$\nst$ rules next.
 
-% At the beginning of a reaction, an external event is emitted, which triggers
-% rule \R{push}, immediately raising the stack level to~1.  At the end of the
-% reaction, the program will block or terminate and successive applications of
-% rule~\R{pop} will lead to an irreducible description with this same program
-% at stack level~0.
+% At the beginning of a reaction, an external event is emitted, which
+% triggers rule \R{push}, immediately raising the stack level to~1.  At the
+% end of the reaction, the program will block or terminate and successive
+% applications of rule~\R{pop} will lead to an irreducible description with
+% this same program at stack level~0.
 
 \input{rules}
 
@@ -602,107 +602,18 @@ A full reaction follows the pattern
 \end{align*}
 %%
 First, a~$\outpush$ starts a nested reaction at level~1.  Then, a series of
-alternations between zero or more~$\nst$ transitions (nested reactions) and
-a single~$\out$ transition (stack operation) takes place.  Finally, zero or
-more $\nst$ transitions followed by a last~$\outpop$ transition, which
-decrements the stack level to~0, terminates the reaction.
+alternations between zero or more~$\nst$ transitions and a single~$\out$
+transition (stack operation) takes place.  Finally, zero or more $\nst$
+transitions followed by a last~$\outpop$ transition, which decrements the
+stack level to~0, terminates the reaction.
 
-We now describe the rules for nested transitions (also listed in
-Figure~\ref{fig.rules}).  Since these rules do not affect the stack level,
-whenever convenient, we will omit the stack level when writing them.  Thus,
-in Figure~\ref{fig.rules}, we sometimes write descriptions as
+We now describe the rules for nested transitions (listed in
+Figure~\ref{fig.rules}).  Since the $\nst$ rules do not affect the stack
+level, whenever convenient, we omit the ``$\ell$'' when discussing them.
+Thus, in Figure~\ref{fig.rules}, we sometimes write descriptions as
 triples~$\<\stmt,e,\theta>$ with the tacit understanding that there is a
 hidden integer~$\ell$ for the stack level between the components~$\stmt$
 and~$e$.
-
-\subsubsection*{Declarations and assignments}
-
-There are five $\nst$ rules for dealing with variables: \R{locals}, which
-introduces a new block of declarations; \R{restore}, which makes a
-previously introduced block go out of scope; and \R{assign}, which evaluates
-an expression and assigns the resulting value to a variable.
-%%
-% \begin{gather*}
-%   \<\ceu{\Locals{\vars\,\stmt}},\nil,\theta>
-%   \nst\<\ceu{\stmt;\Restore(\left|\theta\right|)},\nil,\memdecl(\theta,\vars)>
-%   \Rtag{locals}\\
-%   %%
-%   \<\ceu{\Restore(n)},\nil,\theta>
-%   \nst\<\ceu{\Nop},\nil,\memrest(\theta,n)>
-%   \Rtag{restore}\\
-%   %%
-%   \<\ceu{v\coloneqq{\expr}},\nil,\theta>
-%   \nst\<\ceu{\Nop},\nil,\memupdt(\theta,v,\memeval(\theta,\expr))>
-%   \Rtag{assign}
-% \end{gather*}
-
-The three rules, \R{locals}, \R{restore}, and~\R{assign}, act on the input
-memory~$\theta$.  A \emph{memory} is a stack of environments
-$[E_1,\dots,E_k]$ where each environment~$E_i$ is a set of bindings, i.e.,
-pairs of the form~$(v,n)$ which associate a variable~$v$ to an integer
-value~$n$.  For instance, the memory
-\[
-  \big[\{(v_1,1),(v_2,\bot)\},\,\{(v_1,0)\}\big]
-\]
-has two environments: $E_1=\{(v_1,1),(v_2,\bot)\}$ (top-of-stack)
-and~$E_2=\{(v_1,0)\}$.  This memory tells us that, at some point,
-variable~$v_1$ was declared and set to~0, and that later, in a nested scope,
-$v_1$ was re-declared (shadowing the previous declaration) and~$v_2$ was
-declared for the first time.  Still in the nested scope, which corresponds
-to the most recent environment~$E_1$, variable~$v_1$ was set to~1 but~$v_2$
-remained undefined, hence its value~$\bot$ (\emph{undefined}).
-
-We use the following functions to manipulate memories (all of them return a
-modified memory):
-\begin{align*}
-  \memdecl(\theta,v_1,,\dots,v_n)
-  &=\{(v_1,\bot),\dots,(v_n,\bot)\}:\theta\\
-  %%
-  \memrest(\theta,n)
-  &=\text{pops $\left|\theta\right|-n$ elements from~$\theta$}\\
-  %%
-  \memupdt(E{:}\theta,v,n)
-  &=\begin{cases}
-    \begin{aligned}[b]
-      &((E-\{(v,n')\})\\
-      &\quad\null\cup\{(v,n)\}):\theta
-    \end{aligned}
-    &\text{if~$(v,n')\in{E}$}\\
-    %%
-    \memupdt(\theta,v,n)
-    &\text{otherwise}
-  \end{cases}
-\end{align*}
-%%
-The colon ($:$) stands for the list constructor operator---thus $E{:}\theta$
-denotes the stack obtained by pushing~$E$
-onto~$\theta$---and~$\left|\theta\right|$ stands for the length of
-stack~$\theta$.
-
-Function~$\memdecl$ pushes onto stack~$\theta$ a new environment in which
-variables~$v_1$, \dots, $v_n$ are declared but not initialized.
-Function~$\memrest$ restores stack~$\theta$ to index~$n$, dropping any
-environments above this index.  And function~$\memupdt$ binds variable~$v$
-to the integer~$n$ in the most recent environment where~$v$ occurs.
-
-Back to the rules, \R{locals} transforms a statement of the form
-$\ceu{\Locals{\vars\,\stmt}}$ into a sequence
-$\ceu{\stmt;\Restore(\left|\theta\right|)}$ and pushes onto~$\theta$ a new
-environment declaring all variables in~$\vars$.  The idea is that
-after~$\stmt$ executes and the $\ceu{\Locals}$ block goes out of scope, the
-memory is restored to its original length by the subsequent $\ceu{\Restore}$
-statement (rule~\R{restore}), which effectively removes any environments
-introduced by the $\ceu{\Locals}$ block and its body.
-
-Rule~\R{assign} transforms~$\ceu{v\coloneqq\expr}$ into $\ceu{\Nop}$ (the
-dummy statement) and performs the assignment.  That is, it evaluates~$\expr$
-to an integer~$n$ and assigns~$n$ to variable~$v$ in the most recent
-environment where~$v$ was declared.
-
-Expression evaluation is carried out by function~$\memeval$.  For
-simplicity, we assume that~$\memeval$ always returns an integer.  In
-practice, any error in the evaluation, such as access to an uninitialized
-variable or division by zero, will cause the interpreter to abort.
 
 \subsubsection*{Emissions}
 
@@ -724,19 +635,98 @@ of \R{emit-int} leads immediately to an application of \R{push} at the outer
 level, creating a new level~$\ell+1$ on the stack.  With this new stack
 level, the $\ceu{\RunAt}(\ell)$ resulting from the $\ceu{\EmitInt(e)}$ can
 only transition after future applications of~\R{pop} put the stack level
-back in~$\ell$.  This interplay between \R{emit-int}, \R{push}, \R{pop}, and
-\R{run-at} provides the desired stack-based semantics for internal events.
+back in~$\ell$.
+
+The interplay between \R{emit-int}, \R{push}, \R{pop}, and \R{run-at}
+provides the desired stack-based semantics for internal events.
+
+\subsubsection*{Variable declarations and assignments}
+
+There are five $\nst$ rules for dealing with variables: \R{var-expd},
+\R{var-nop}, \R{var-brk}, \R{var-adv}, and~\R{assign}.  The last two,
+\R{var-adv} and~\R{assign}, are the only rules in the semantics that modify
+the memory---the fourth component of descriptions.
+
+A \emph{memory}~$\theta$ is a stack of bindings~$[b_1,\ldots,b_k]$ where
+each binding~$b_i$ is a pair~$(v,n)$ associating the variable~$v$ to the
+integer value~$n$.  For instance, the memory
+\[
+  [(v_1,1),(v_2,\bot),(v_1,0)]
+\]
+has three bindings: $b_1=(v_1,1)$, which is the top-of-stack,
+$b_2=(v_2,\bot)$, and~$b_3=(v_1,0)$.  From this memory, we can tell that, at
+some point, variable~$v_1$ was declared and set to~$0$.  Later, in the scope
+of~$v_1$, variable~$v_2$ was declared but not initialized, hence its
+value~$\bot$ (undefined), and in the scope of~$v_2$, variable~$v_1$ was
+re-declared (shadowing the initial declaration) and set to~$1$.
+
+The basic \CEU interpreter starts with the empty memory~$\theta=[]$.  When
+it encounters a declaration $\ceu{\Var{v\,\stmt}}$, the interpreter
+immediately expands it to~$\ceu{\AtVar{v\,\bot\,\stmt}}$ (rule~\R{var-expd})
+and proceeds to advance its body~($\stmt$).  At this point, three things can
+happen:
+\begin{enumerate}
+\item If~$\stmt$ is terminated ($=\ceu{\Nop}$), the interpreter consumes the
+  whole~$\ceu{\AtVar}$ statement by transforming it into a~$\ceu{\Nop}$
+  (rule~\R{var-nop}).
+\item If~$\stmt$ is a break~($=\ceu{\Break}$), the interpreter propagates
+  the break outwards by transforming the whole~$\ceu{\AtVar}$ statement into
+  a~$\ceu{\Break}$ (rule~\R{var-brk}).
+\item Otherwise, the interpreter advances~$\stmt$ recursively
+  (rule~\R{var-adv}) and updates the~$\ceu{\AtVar}$ statement with the
+  resulting body~$\stmt'$, event~$e$, memory~$\theta'$, and
+  binding~$(v,n')$.
+\end{enumerate}
+
+In rule~\R{var-adv}, the recursive execution of the body ($\stmt$) of
+the~$\ceu{\AtVar}$ statement happens in a memory $(v,n):\theta$, i.e., the
+memory resulting from pushing binding~$(v,n)$ to the current
+memory~$\theta$, which effectively declares~$v$ with value~$n$ in the scope
+of~$\stmt$.  Initially, $n=\bot$ (undefined), but any assignments in~$\stmt$
+may change that.  Thus, after~$\stmt$ is advanced, the value~$n'$ associated
+with variable~$v$ in the (possibly) updated binding~$(v,n')$ is stored back
+in the enclosing $\ceu{\AtVar}$ statement.  (The updated binding itself is
+popped from the resulting memory because at this point the $\ceu{\AtVar}$ is
+no longer in effect.)
+
+We borrowed the technique used in rule~\R{var-adv} to implement lexical
+scoping from the formal semantics of Esterel~\cite{Berry-G-1992}.  Our
+version is simpler though.  While in Esterel the memories resulting from
+advancing parallel trails need to be merged into a single memory, in \CEU
+this is not necessary: parallel trails are always advanced from left to
+right and can thus safely operate over the same memory.
+
+The last $\nst$ rule for dealing with variables is~\R{assign}.
+Rule~\R{assign} transforms~$\ceu{v\coloneqq\expr}$ into $\ceu{\Nop}$ and
+performs the assignment.  That is, it evaluates~$\expr$ to an integer~$n$
+and assigns~$n$ to variable~$v$ in the most recent environment where~$v$ was
+declared.
+
+Expression evaluation is carried out by function~$\eval$.  For
+simplicity, we assume that~$\eval$ always returns an integer.  In
+practice, any error in the evaluation, such as access to an uninitialized
+variable or division by zero, will cause the interpreter to abort.
+
+Memory updates are carried out by function~$\updt$, which simply updates
+the most recent binding of the given variable to the given value:
+\[
+  \updt((v,n):\theta,v',n')=
+  \begin{cases}
+    (v,n'):\theta             &\text{if~$v=v'$}\\
+    (v,n):\updt(\theta,v',n') &\text{otherwise}.
+  \end{cases}
+\]
 
 \subsubsection*{Conditionals}
 
 % \begin{gather*}
-%   \AxiomC{$\memeval(\theta,\expr)\ne0$}
+%   \AxiomC{$\eval(\theta,\expr)\ne0$}
 %   \UnaryInfC{$\<\ceu{\IfElse{\expr}{\stmt_1}{\stmt_2}},\nil,\theta>
 %     \nst\<\stmt_1,\nil,\theta>$}
 %   \DisplayProof
 %   \Rtag{if-true}\\
 %   %%
-%   \AxiomC{$\memeval(\theta,\expr)=0$}
+%   \AxiomC{$\eval(\theta,\expr)=0$}
 %   \UnaryInfC{$\<\ceu{\IfElse{\expr}{\stmt_1}{\stmt_2}},\nil,\theta>
 %     \nst\<\stmt_2,\nil,\theta>$}
 %   \DisplayProof
@@ -748,8 +738,10 @@ its if-part ($\stmt_1$) or else-part ($\stmt_2$) depending on the value to
 which the associated expression ($\expr$) evaluates in the current memory.
 If it evaluates to a nonzero value, then \R{if-true} applies and the
 conditional becomes~$\stmt_1$; otherwise, \R{if-false} applies and the
-conditional becomes~$\stmt_2$.  These are the only rules that use the
-contents of the memory in a way that affects the control flow.
+conditional becomes~$\stmt_2$.
+
+These are the only rules that use the contents of the memory in a way that
+affects the control flow.
 
 \subsubsection*{Sequences}
 
@@ -798,30 +790,26 @@ from advancing just its first part (rule \R{seq-adv}).
 %   \Rtag{loop-adv}
 % \end{gather*}
 
-When the interpreter encounters a $\ceu{\Loop}$, it expands its body in
-sequence with the loop itself followed by a $\ceu{\Restore}$ statement (rule
-\R{loop-expd}).  The $\ceu{\Restore}$ statement ensures that if the loop is
-terminated by a $\ceu{\Break}$, any environments introduced by the loop are
-popped from the memory.
+When the interpreter encounters a $\ceu{\Loop\stmt}$, it unwinds it once,
+expanding it to~$\ceu{\stmt\AtLoop{\stmt}}$ (rule \R{loop-expd}).
 
 The remaining rules for loops are similar to those for sequences but use
 ``\texttt{@}'' as separators to bind the current code of the loop to its
 next iteration.  Rules \R{loop-nop} and \R{loop-adv} are analogous to rules
 \R{seq-nop} and \R{seq-adv}.  They advance the current code of the loop
 until it becomes a~$\ceu{\Nop}$.  When this happens the loop is restarted
-(\R{seq-nop}).  (Note that if we had used ``\texttt{;}'' as a separator in
+(\R{loop-nop}).  (Note that if we had used ``\texttt{;}'' as a separator in
 loops, rules \R{loop-brk} and \R{seq-brk} would conflict.)  Finally, rule
 \R{loop-brk} escapes the enclosing loop, transforming everything into
 a~$\ceu{\Nop}$.
-
-\strut\fs{Cheguei até aqui.}
 
 \subsubsection*{Par/and and par/or compositions}
 
 % \begin{gather*}
 %   \begin{split}
 %     &\<\ceu{\stmt_1\ParAnd{\stmt_2}},n,\nil,\theta>\\
-%     &\qquad\null\nst\<\ceu{\stmt_1\AtParAnd(\RunAt(n);\stmt_2)},n,\nil,\theta>
+%     &\qquad\null\nst\<\ceu{\stmt_1\AtParAnd(\RunAt(n);\stmt_2)},
+%      n,\nil,\theta>
 %   \end{split}
 %   \Rtag{par/and-expd}\\
 %   %%
@@ -833,33 +821,23 @@ a~$\ceu{\Nop}$.
 %   \Rtag{par/or-expd}
 % \end{gather*}
 
-When first encountered by the interpreter, $\ceu{\ParAnd}$ and
-$\ceu{\ParOr}$ are immediately expanded to their internal versions
-$\ceu{\AtParAnd}$ and~$\ceu{\AtParOr}$ by rules~\R{par/and-expd}
-and~\R{par/or-expd}.  These rules prefix a~$\ceu{\RunAt(n)}$ to the
-right-hand side of the compositions to ensure that any
-reachable~$\ceu{\EmitInt}$ on the left-hand side executes to completion
-before the right-hand side starts.
+When the interpreter encounters $\ceu{\ParAnd}$ and $\ceu{\ParOr}$, it
+expands them to $\ceu{\AtParAnd}$ and~$\ceu{\AtParOr}$ prefixing a
+$\ceu{\RunAt(\ell)}$ to the right-hand side of the resulting compositions.
+The $\ceu{\RunAt(\ell)}$ ensures that any reachable~$\ceu{\EmitInt}$ on the
+left-hand side executes to completion before the right-hand side starts
+(rules~\R{par/and-expd} and~\R{par/or-expd}).
 
-Rule~\R{par/or-expd} also appends a $\ceu{\Restore}$ to the resulting
-$\ceu{\AtParOr}$.  This ensures that old environments left by an aborted
-side are cleaned up when the $\ceu{\AtParOr}$ terminates.  This is not
-necessary in rule \R{par/and-expd} because a $\ceu{\ParAnd}$ terminates only
-after \emph{both} of its sides terminate, i.e., both sides will always run
-to completion, making any $\ceu{\Locals}$ block go out of scope.  But the
-same is not true for $\ceu{\ParOr}$, which terminates when \emph{any} of its
-sides terminates.
-
-There are twelve rules for advancing the sides of the
-internal~$\ceu{\AtParAnd}$ and~$\ceu{\AtParOr}$ statements.  Each of these
-rules ensures that the left-hand side always advances before the right-hand
-side.  That is, in each rule the right-hand side is advanced only when the
-left-hand side is blocked.  The twelve rules are divided into three groups:
-\begin{enumerate*}[label=(\roman*)]
-\item those that apply when one of the sides is $\ceu{\Nop}$;
-\item those that apply when one of the sides is $\ceu{\Break}$; and
-\item those that apply when neither side is $\ceu{\Nop}$ or $\ceu{\Break}$.
-\end{enumerate*}
+There are twelve rules for advancing the sides of~$\ceu{\AtParAnd}$
+and~$\ceu{\AtParOr}$ statements.  Each of these rules ensures that the
+left-hand side always advances before the right-hand side.  That is, in each
+rule the right-hand side is advanced only when the left-hand side is
+blocked.  The twelve rules are divided into three groups:
+\begin{enumerate}
+\item Those that apply when one of the sides is $\ceu{\Nop}$.
+\item Those that apply when one of the sides is $\ceu{\Break}$.
+\item Those that apply when neither side is $\ceu{\Nop}$ or $\ceu{\Break}$.
+\end{enumerate}
 
 We begin by presenting the rules of the last group, which do not involve the
 termination of one of the sides.
@@ -894,7 +872,7 @@ termination of one of the sides.
 
 Rules~\R{par/and-adv1} and \R{par/or-adv1} match whenever the left-hand side
 of the composition is not blocked (see $\isblk$ in
-Figure~\ref{fig.isblocked}).  They advance the composition the to the
+Section~\ref{sec.sem.outermost}).  They advance the composition the to the
 statement, event, and memory resulting from advancing just its left-hand
 side.  Rules~\R{par/and-adv2} and \R{par/or-adv2} are similar, but they act
 on the right-hand side and match only when the left-hand side is blocked.
@@ -927,24 +905,68 @@ $\ceu{\AtParOr}$ terminates (becomes a $\ceu{\Nop}$).
 In a~$\ceu{\AtParAnd}$, if one of the sides terminates, the composition
 becomes the other side (rules \R{par/and-nop1} and \R{par/and-nop2}).  In
 a~$\ceu{\AtParOr}$, however, if one of the sides terminates, the whole
-composition terminates and~$\clear$ is called to finalize the aborted side
-(rules \R{par/or-nop1} and \R{par/or-nop2}).
+composition terminates and function $\clear$ is called to finalize the
+aborted side (rules \R{par/or-nop1} and \R{par/or-nop2}).
 
-The~$\clear$ function (see Figure~\ref{fig.clear}) returns the statement
-resulting from sequencing the body of all active~$\ceu{\Fin}$ statements in
-the aborted side.  This way all finalization code associated with the
-aborted side executes immediately after the composition terminates.
+Function~$\clear$ takes a statement~$\stmt$ and extracts the bodies of all
+active $\ceu{\protect\Fin}$ statements in~$\stmt$, returning them in a
+sequence:
+%%
+\begingroup
+\setlength{\jot}{.5\jot}
+\begin{align*}
+  \clear(\ceu{\AwaitExt(e)})
+  &=\ceu{\Nop}\\
+  %%
+  \clear(\ceu{\AwaitInt(e)})
+  &=\ceu{\Nop}\\
+  %%
+  \clear(\ceu{\Every{e}\ \stmt})
+  &=\ceu{\Nop}\\
+  %%
+  \clear(\ceu{\RunAt(\ell)})
+  &=\ceu{\Nop}\\
+  %%
+  \clear(\ceu{\Fin{\stmt}})
+  &=\stmt\\
+  %%
+  \clear(\ceu{\stmt_1;\stmt_2})
+  &=\clear(\stmt_1)\\
+  %%
+  \clear(\ceu{\AtVar{v\,n\,\stmt}})
+  &=\clear(\stmt)\\
+  %%
+  \clear(\ceu{\stmt_1\AtLoop{\stmt_2}})
+  &=\clear(\stmt_1)\\
+  %%
+  \clear(\ceu{\stmt_1\AtParAnd{\stmt_2}})
+  &=\ceu{\clear(\stmt_1);\clear(\stmt_2)}\\
+  %%
+  \clear(\ceu{\stmt_1\AtParOr{\stmt_2}})
+  &=\ceu{\clear(\stmt_1);\clear(\stmt_2)}\\
+  %%
+  \clear(\_)
+  &=\bot\quad\text{\emph{(undefined)}}
+\end{align*}
+\endgroup
 
-(As there are no transition rules for~$\ceu{\Fin}$ statements, once reached,
-a $\ceu{\Fin}$ halts and will only be consumed if its trail is aborted.  At
-this moment, its body will execute as a result of the~$\clear$ call.  Note
-that the syntactic restrictions of Section~\ref{sec.sem.restrictions} ensure
-that the body of a~$\ceu{\Fin}$ statement always execute within the same
-reaction.)
+When applied to the aborted side of a~$\ceu{\AtParOr}$, $\clear$ returns all
+finalization code associated with it (if any).  Thus, by expanding to a
+$clear$ call on the aborted side, rules \R{par/or-nop1} and \R{par/or-nop2},
+ensure that the composition is properly finalized.
+
+Note that, as there are no transition rules for~$\ceu{\Fin}$ statements,
+once reached, a $\ceu{\Fin}$ halts and will only be consumed if its trail is
+aborted.  At this moment, its body will execute as a result of the~$\clear$
+call.  Note also that the syntactic restrictions of
+Section~\ref{sec.sem.restrictions} ensure that the body of a~$\ceu{\Fin}$
+statement always execute within the same reaction.
 
 Finally, a~$\ceu{\Break}$ in one of the sides of a $\ceu{\AtParAnd}$ or
-$\ceu{\AtParOr}$ is propagated, terminating the composition and properly
-aborting the other side with a~$\clear$ call:
+$\ceu{\AtParOr}$ is propagated outwards, terminating the composition and
+properly aborting the other side with a~$\clear$ call
+(rules~\R{par/and-brk1}, \R{par/and-brk2}, \R{par/or-brk1},
+and~\R{par/or-brk2}).
 %%
 % \begin{gather*}
 %   \<\ceu{{\Break}\AtParAnd{\stmt_2}},n,\nil,\theta>
@@ -968,111 +990,6 @@ aborting the other side with a~$\clear$ call:
 %   \Rtag{or-brk2}
 % \end{gather*}
 
-\begin{figure}[h]
-\small
-\begin{gather*}
-  \boxed{
-    \begin{align*}
-      %%
-      %%-
-      \shortintertext{\llap{(i)~}Function~$\bcast$:}
-      %%-
-      %%
-      \bcast(\ceu{\AwaitExt(e)},e)
-      &=\ceu{\Nop}\\
-      %%
-      \bcast(\ceu{\AwaitInt(e)},e)
-      &=\ceu{\Nop}\\
-      %%
-      \bcast(\ceu{\Every{e}\ {\stmt}},e)
-      &=\ceu{\stmt;\Every{e}\ {\stmt}}\\
-      %%
-      \bcast(\ceu{\stmt_1;\stmt_2},e)
-      &=\ceu{\bcast(\stmt_1,e);\stmt_2}\\
-      %%
-      \bcast(\ceu{\stmt_1\AtLoop{\stmt_2}},e)
-      &=\ceu{\bcast(\stmt_1,e)\AtLoop{\stmt_2}}\\
-      %%
-      \begin{split}
-        \bcast(\ceu{\stmt_1\AtParAnd{\stmt_2}},e)&=\\
-        &\hskip-3em\ceu{{\bcast(\stmt_1,e)}\AtParAnd\bcast(\stmt_2,e)}
-      \end{split}\\
-      %%
-      \begin{split}
-        \bcast(\ceu{\stmt_1\AtParOr{\stmt_2}},e)&=\\
-        &\hskip-3em\ceu{{\bcast(\stmt_1,e)}\AtParOr{\bcast(\stmt_2,e)}}
-      \end{split}\\
-      %%
-      bcast(\_,e)
-      &=\_\quad\text{\emph{(otherwise)}}\\[4\jot]
-      %%
-      %%-
-      \shortintertext{\llap{(ii)~}Predicate~$\isblk$:}
-      %%-
-      %%
-      %%
-      %%-
-      \shortintertext{\llap{(iii)~}Function~$\clear$:}
-      %%-
-      %%
-      \clear(\ceu{\AwaitExt(e)})
-      &=\ceu{\Nop}\\
-      %%
-      \clear(\ceu{\AwaitInt(e)})
-      &=\ceu{\Nop}\\
-      %%
-      \clear(\ceu{\Every{e}\ \stmt})
-      &=\ceu{\Nop}\\
-      %%
-      \clear(\ceu{\RunAt(n)})
-      &=\ceu{\Nop}\\
-      %%
-      \clear(\ceu{\Fin{\stmt}})
-      &=\stmt\\
-      %%
-      \clear(\ceu{\stmt_1;\stmt_2})
-      &=\clear(\stmt_1)\\
-      %%
-      \clear(\ceu{\stmt_1\AtLoop{\stmt_2}})
-      &=\clear(\stmt_1)\\
-      %%
-      \clear(\ceu{\stmt_1\AtParAnd{\stmt_2}})
-      &=\ceu{\clear(\stmt_1);\clear(\stmt_2)}\\
-      %%
-      \clear(\ceu{\stmt_1\AtParOr{\stmt_2}})
-      &=\ceu{\clear(\stmt_1);\clear(\stmt_2)}\\
-      %%
-      \clear(\_)
-      &=\bot\quad\text{\emph{(undefined)}}
-    \end{align*}}
-\end{gather*}
-\vskip-2\belowdisplayskip
-\caption{%
-  (i)~Function~$\bcast$ awakes awaiting trails matching the event by
-  converting~$\ceu{\protect\AwaitExt}$ and~$\ceu{\protect\AwaitInt}$
-  to~$\ceu{\protect\Nop}$, and by unwinding $\ceu{\protect\Every}$
-  statements.
-  %%
-  \space(ii)~Predicate~$\isblk$ is true only if all branches in parallel
-  are blocked waiting for events, finalization clauses, or certain
-  stack levels.
-  %%
-  \space(iii)~Function~$\clear$ extracts~$\ceu{\protect\Fin}$ statements in
-  parallel and put their bodies in sequence.
-  %%
-  In~(i), (ii), and~(iii),~``$\_$'' denotes the omitted patterns.  (Note
-  that the syntactic restrictions ensure that $\clear$ is only called on
-  inputs for which it is defined.)
-}
-\label{fig.bcast}
-\label{fig.isblocked}
-\label{fig.clear}
-\end{figure}
-
-\gl{Assim como as regras, estou pensando em mover as definições da
-  Figura~\ref{fig.bcast} junto com $\memdecl$, $\memrest$, e $\memupdt$ para
-  um quadrão de duas colunas.}
-
 \subsection{Using the Rules to Compute Reactions}
 
 We conclude the discussion of the rules for~$\out$ and~$\nst$ transitions
@@ -1080,175 +997,175 @@ with an example of their application in the computation of reactions.
 
 \begingroup
 \newcommand*{\led}{\mathit{led}}
-\newcommand*\evtboot{e_{\mathit{boot}}}
-\newcommand*\evtbttn{e_{\mathit{bttn}}}
-\newcommand*\evtrecv{e_{\mathit{recv}}}
+\newcommand*\evtboot{e_{0}}
+\newcommand*\evtbttn{e_{\mathit{bt}}}
+\newcommand*\evtrecv{e_{\mathit{rd}}}
+\newcommand*\ddd{\mathmakebox[1em][c]{.\hfil.\hfil.}}
 
 Consider the the following basic \CEU program:
 \begin{align*}
-  &\ceu{\Locals{\,\led}}\\
-  &\quad\ceu{\Big(\AwaitExt(\evtbttn)\Big)\enspace\ParOr\enspace}
+  &\ceu{\Var{\,\led}}\\
+  &\quad\ceu{\big(\AwaitExt(\evtbttn)\big)\enspace\ParOr\enspace}
   \begin{aligned}[t]
-    \Big(&\ceu{\Loop}\enspace
+    \big(&\ceu{\Loop}\enspace
     \begin{aligned}[t]
       \big(&\ceu{\led\coloneqq1;\AwaitExt(\evtrecv)};\\
        &\ceu{\led\coloneqq0;\AwaitExt(\evtrecv)}\big);\\
     \end{aligned}\\
-    &\ceu{\Fin\,{\led\coloneqq0}}\Big)
+    &\ceu{\Fin\,{\led\coloneqq0}}\big)
   \end{aligned}
 \end{align*}
-This is simplified basic \CEU version of the full \CEU program presented in
-Listing~\ref{lst.ceu}.  As its full \CEU counterpart, this program toggles a
-LED whenever a radio packet (event~$\evtrecv$) is received, terminating on a
-button press (event~$\evtbttn$) always with the LED off---the state of the
-led is represented by variable~$\led$.
+This is a simplified basic \CEU version of the full \CEU program presented
+in Listing~\ref{lst.ceu} (page~\ref{lst.ceu}).  As its full \CEU
+counterpart, this program toggles a LED whenever a radio packet
+(event~$\evtrecv$) is received, terminating on a button press
+(event~$\evtbttn$) always with the LED off---the state of the led is
+represented by variable~$\led$.
 
 We will compute three reactions of the above program.  First, to the
 bootstrap event~$\evtboot$ (the bootstrap reaction) and then to the external
-events~$\evtrecv$ and~$\evtbttn$.  We will execute the reactions in series,
-which means that the outputs of a reaction will become inputs of the next
-reaction.
-
-\newcommand*\ddd{\mathmakebox[1em][c]{.\hfil.\hfil.}}
-\newcommand*\TRANS[2][]{\xrightarrow[#1]{\text{#2}}}
+events~$\evtrecv$ and~$\evtbttn$ (in this order).  We will execute the
+reactions in series, which means that the outputs of a reaction will become
+inputs of the next reaction.
 
 The bootstrap reaction starts with a description
 \[
-  \delta_0=\<\ceu{\Locals{\led}\,\ddd}\,,0,e_\text{boot},[]>,
+  \<\ceu{\Var{\led}\,\ddd}\,,0,\evtboot,[]>,
 \]
-where~$\ceu{\Locals{\led}\,\ddd}$ is the original program, $e_\text{boot}$
-is the bootstrap event, and~$[]$ is the empty memory, and proceeds as
-follows:\footnote{In the $\nst$ transitions we underline the part of the
-  statement matched by the rule.  In case the rule is recursive, we
-  underline only the part matched by the basis of the recursion---the
-  axiom---and write the name of this axiom in parentheses below the arrow
-  representing the transition.}
+where~$\ceu{\Var{\led}\,\ddd}$ is the original program, $\evtboot$ is the
+bootstrap event, and~$[]$ is the empty memory, and proceeds as
+follows:\footnote{The arrow ($\to$) denotes an~$\out$ or~$\nst$ transition
+  and the hook ($\hookrightarrow$) introduces a recursive $\nst$ transition.
+  We only show the affected part of statements, and any updates on the
+  level~$\ell$, event~$e$, or memory~$\theta$ appear on the right-hand
+  side.}
 
-\begin{align*}
-  \delta_0\TRANS{push}\null&
-    \<\ceu{\uline{\Locals{\led}\,\ddd}}\,,1,\nil,[]>\\
-    %%
-  \TRANS{locals}\null&
-    \<\ceu{\uline{(\ddd)\ParOr(\ddd)};\Restore(0)},1,\nil,[\{(\led,\bot)\}]>\\
-    %%
-  \TRANS{par/or-expd}\null&
-    \begin{aligned}[t]
-      \langle&\ceu{(\ddd)\AtParOr(\uline{\RunAt(1)};\Loop\,\ddd);}\\[-\jot]
-             &\ceu{\Restore(1);\Restore(0)},1,\nil,[\{(\led,\bot)\}]\rangle\\
-    \end{aligned}\\
-    %%
-  \TRANS[\text{(run-at)}]{par/or-adv2}\null&
-    \begin{aligned}[t]
-      \langle&\ceu{(\ddd)\AtParOr(\uline{\Nop;\Loop\,\ddd});}\\[-\jot]
-             &\ceu{\Restore(1);\Restore(0)},1,\nil,[\{(\led,\bot)\}]\rangle\\
-    \end{aligned}\\
-    %%
-  \TRANS[\text{(seq-nop)}]{par/or-adv2}\null&
-    \begin{aligned}[t]
-      \langle&\ceu{(\ddd)\AtParOr(\uline{\Loop\,\ddd});}\\[-\jot]
-             &\ceu{\Restore(1);\Restore(0)},1,\nil,[\{(\led,\bot)\}]\rangle\\
-    \end{aligned}\\
-    %%
-  \TRANS[\text{(loop-expd)}]{par/or-adv2}\null&
-    \begin{aligned}[t]
-      \langle&\ceu{(\ddd)\AtParOr
-               (\uline{\led\coloneqq1};\ddd\AtLoop\ddd;\Restore(1);\ddd);}\\[-\jot]
-             &\ceu{\Restore(1);\Restore(0)},1,\nil,[\{(\led,\bot)\}]\rangle\\
-    \end{aligned}\\
-    %%
-  \TRANS[\text{(assign)}]{par/or-adv2}\null&
-    \begin{aligned}[t]
-      \langle&\ceu{(\ddd)\AtParOr
-               (\uline{\Nop;\ddd\AtLoop\ddd;\Restore(1);\ddd)};}\\[-\jot]
-             &\ceu{\Restore(1);\Restore(0)},1,\nil,[\{(\led,1)\}]\rangle\\
-    \end{aligned}\\
-    %%
-  \TRANS[\text{(seq-nop)}]{par/or-adv2}\null&
-    \begin{aligned}[t]
-      \langle&\ceu{(\ddd)\AtParOr(\AwaitExt(\evtrecv);\ddd}\\[-\jot]
-             &\ceu{\AtLoop\ddd;\Restore(1);\ddd);}\\[-\jot]
-             &\ceu{\Restore(1);\Restore(0)},1,\nil,[\{(\led,1)\}]\rangle\\
-    \end{aligned}\\
-  \shortintertext{(both sides are now blocked and
-    the next transition ends the reaction)}
-  \TRANS{pop}\null&
-    \begin{aligned}[t]
-      \langle&\ceu{(\ddd)\AtParOr(\AwaitExt(\evtrecv);\ddd}\\[-\jot]
-             &\ceu{\AtLoop\ddd;\Restore(1);\ddd);}\\[-\jot]
-             &\ceu{\Restore(1);\Restore(0)},0,\nil,[\{(\led,1)\}]\rangle\\
-    \end{aligned}
-\end{align*}
+\makeatletter
+\newsavebox{\trarrow}
+\savebox{\trarrow}{$\xrightarrow{\phantom{xxxx}}$}
+\newcommand*\@tr[2]{%
+  \rlap{\usebox{\trarrow}}%
+  \rlap{\raisebox{1.05\height}%
+    {\makebox[\wd\trarrow][c]{\scriptsize{\strut#1}}}}%
+  \raisebox{-.7\height}%
+  {\makebox[\wd\trarrow][c]{\scriptsize{\strut#2}}}%
+}
+\newcommand*\TR[4]{\hspace*{#1em}$\mathop{\@tr{#2}{#3}}\ceu{#4}$}
+\newcommand*\HK[2]{\hspace*{#1em}$\xhookrightarrow{\hphantom{xxxx}}\ceu{#2}$}
+\makeatother
 
-So, the bootstrap reaction terminates in a memory where variable~$\led$ is
-set to~$1$ with both sides of the $\ceu{\AtParOr}$ blocked
-on~$\ceu{\AwaitExt}$ statements: the left-hand side waiting on~$\evtbttn$
-and the right hand-side waiting on~$\evtrecv$.
+\begin{center}
+\begin{tabularx}{\columnwidth}{X}
+  \TR{0}{push}{}
+  {\Var{\led}\,\ddd}
+  \hfill$\ell=1,e=\nil,\theta=[]$\\
+  %%
+  \TR{0}{var}{expd}
+  {\AtVar{\led\,\bot}\,\ddd\ParOr\ddd}\\
+  %%
+  \HK{1}
+  {\ddd\ParOr\ddd}
+  \hfill$\theta=[(\led,\bot)]$\\
+  %%
+  \TR{1}{par/or}{expd}
+  {\AwaitExt(\evtbttn)\AtParOr(\Loop\ddd)}\\
+  %%
+  \HK{2}
+  {\Loop\ddd}\\
+  %%
+  \TR{2}{loop}{expd}
+  {\led\coloneqq1;\ddd\AtLoop\ddd}\\
+  %%
+  \HK{3}
+  {\led\coloneqq1;\AwaitExt(\evtrecv);\ddd}\\
+  %%
+  \HK{4}
+  {\led\coloneqq1}\\
+  %%
+  \TR{4}{assign}{}
+  {\Nop}
+  \hfill$\theta=[(\led,1)]$\\
+  %%
+  \TR{3}{seq}{nop}
+  {\AwaitExt(\evtrecv);\ddd}\\
+  %%
+  \TR{2}{loop}{adv}
+  {\AwaitExt(\evtrecv);\ddd\AtLoop\ddd}\\
+  %%
+  \TR{1}{par/or}{adv2}
+  {\AwaitExt(\evtbttn)\AtParOr(\AwaitExt(\evtrecv);\ddd\AtLoop\ddd)}\\
+  %%
+  \TR{0}{var}{adv}
+  {\AtVar{\led\,1}\,\ddd\AtParOr\ddd}
+  \hfill$\theta=[]$
+  %%
+  \TR{0}{pop}{}
+  {\AtVar{\led\,1}\,\ddd\AtParOr\ddd}
+  \hfill$\ell=0$
+\end{tabularx}
+\end{center}
 
-(This is a general property of reactions.  Every reaction eventually blocks
+So, the bootstrap reaction terminates with variable~$\led$ set to~$1$ and
+with both sides of the $\ceu{\AtParOr}$ blocked on~$\ceu{\AwaitExt}$
+statements: the left-hand side waiting on~$\evtbttn$ and the right hand-side
+waiting on~$\evtrecv$.
+
+This is a general property of reactions.  Every reaction eventually blocks
 in~$\ceu{\AwaitExt}$, $\ceu{\AwaitInt}$, $\ceu{\Every}$, $\ceu{\Fin}$,
 or~$\ceu{\RunAt}$ statements in parallel trails.  If none of these trails is
 blocked in a~$\ceu{\RunAt}$, then the program can no longer advance and the
-reaction is terminated.)
+reaction is terminated.
 
 The second reaction is a reaction to event~$\evtrecv$.  It starts with the
 description produced by the previous reaction but with~$\nil$ replaced
 by~$\evtrecv$, i.e.,
 \begin{align*}
-  \langle&\ceu{(\ddd)\AtParOr
-           (\AwaitExt(\evtrecv);\ddd}\\[-\jot]
-         &\ceu{\AtLoop\ddd;\Restore(1);\ddd);}\\[-\jot]
-         &\ceu{\Restore(1);\Restore(0)},0,\evtrecv,[\{(\led,1)\}]\rangle,
+  \langle&\ceu{\AtVar{\led\,1}\,\AwaitExt(\evtbttn)}\\
+         &\ceu{\AtParOr(\AwaitExt(\evtrecv);\led\coloneqq0;\ddd\AtLoop\ddd)},
+           0,\evtrecv,[]\rangle
 \end{align*}
-and after four transitions results in:
+and after three transitions in the outer level (\R{push}, \R{var-adv}, and
+\R{pop}) results in:
 \begin{align*}
-  \langle&\ceu{(\ddd)\AtParOr
-           (\AwaitExt(\evtrecv)}\\[-\jot]
-         &\ceu{\AtLoop\ddd;\Restore(1);\ddd);}\\[-\jot]
-         &\ceu{\Restore(1);\Restore(0)},0,\nil,[\{(\led,0)\}]\rangle.
+  \langle&\ceu{\AtVar{\led\,0}\,\AwaitExt(\evtbttn)}\\
+         &\ceu{\AtParOr(\AwaitExt(\evtrecv);\led\coloneqq1;\ddd\AtLoop\ddd)},
+           0,\nil,[]\rangle
 \end{align*}
+where~$\led$ is set to~$0$ and the event is consumed.
 
-The third and final reaction is a reaction to event~$\evtbttn$.  It starts
-with the description
-\begin{align*}
-  \langle&\ceu{\AwaitExt(\evtbttn)\AtParOr
-           (\AwaitExt(\evtrecv)}\\[-1\jot]
-         &\ceu{\AtLoop\ddd;\Restore(1);\ddd);}\\[-\jot]
-         &\ceu{\Restore(1);\Restore(0)},0,\evtbttn,[\{(\led,0)\}]\rangle.
-\end{align*}
-and proceeds as follows:
-\begin{align*}
-  \TRANS{push}\null&
-    \begin{aligned}[t]
-      \langle&\ceu{\uline{\Nop}\AtParOr\,\null(\AwaitExt(\evtrecv)}\\[-\jot]
-             &\ceu{\AtLoop\ddd;\Restore(1);\ddd);}\\[-\jot]
-             &\ceu{\Restore(1);\Restore(0)},1,\nil,[\{(\led,0)\}]\rangle
-    \end{aligned}\\
-    %%
-  \shortintertext{(the next transition terminates the $\ceu{\AtParOr}$
-    and aborts its right-hand side; ``$\led\coloneqq0$'' is
-    the result of the call to~$\clear$)}
-  \TRANS{par/or-nop1}\null&
-    \<\ceu{\uline{\led\coloneqq0};\Restore(1);\Restore(0)},
-    1,\nil,[\{(\led,0)\}]>\\
-    %%
-  \TRANS[\text{(assign)}]{seq-adv}\null&
-    \<\ceu{\uline{\Nop};\Restore(1);\Restore(0)},1,\nil,[\{(\led,0)\}]>\\
-    %%
-  \TRANS{seq-nop}\null&
-    \<\ceu{\uline{\Restore(1)};\Restore(0)},1,\nil,[\{(\led,0)\}]>\\
-    %%
-  \TRANS[\text{(restore)}]{seq-adv}\null&
-    \<\ceu{\uline{\Nop};\Restore(0)},1,\nil,[\{(\led,0)\}]>\\
-    %%
-  \TRANS{seq-nop}\null&
-    \<\ceu{\uline{\Restore(0)}},1,\nil,[\{(\led,0)\}]>\\
-    %%
-  \TRANS{restore}\null&
-    \<\ceu{\uline{\Nop}},1,\nil,[]>\\
-    %%
-  \TRANS{pop}\null&
-    \<\ceu{\uline{\Nop}},0,\nil,[]>
-\end{align*}
+The third and last reaction is a reaction to event~$\evtbttn$.  It starts
+with the description produced in the previous reaction (with~$\evtbttn$
+replaced for~$\nil$) and proceeds as follows:
+\begin{center}
+\begin{tabularx}{\columnwidth}{X}
+  \TR{0}{push}{}
+  {\AtVar{\led\,0}\,\Nop\AtParOr\ddd}
+  \hfill$\ell=1,e=\nil,\theta=[]$\\
+  %%
+  \HK{1}
+  {\Nop\AtParOr\ddd}
+  \hfill$\theta=[(\led,0)]$\\
+  %%
+  \TR{1}{par/or}{nop1}
+  {\led\coloneqq0}
+  \hfill$(=\clear(\ddd))$\\
+  %%
+  \TR{1}{assign}{}
+  {\Nop}
+  \hfill$\theta=[(\led,0)]$\\
+  %%
+  \TR{0}{var}{adv}
+  {\AtVar{\led\,0}\,\Nop}
+  \hfill$\theta=[]$\\
+  %%
+  \TR{0}{var}{nop}
+  {\Nop}\\
+  %%
+  \TR{0}{pop}{}
+  {\Nop}
+  \hfill$\ell=0$
+\end{tabularx}
+\end{center}
 
 After the third reaction the program is terminated (consists of a single
 $\ceu{\Nop}$) and no longer responds to the environment.

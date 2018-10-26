@@ -1,6 +1,8 @@
 \begin{figure*}[t]
   \small
   \setlength{\extrarowheight}{.9em}
+  \newcommand*\hd[1]{\hfil{\emph{#1}}}
+  %%
   \newlength{\lblwd}
   \setlength{\lblwd}{5em}
   \newsavebox{\txtbox}
@@ -30,7 +32,7 @@
   \begin{tabularx}{\textwidth}{|XX|}
     \hline
     %% ---------------------------------------------------------------------
-    \hfil\emph{Outermost transitions} & \hfil\emph{Emissions}\\
+    \hd{Outermost transitions} & \hd{Emissions}\\
     %%
     \RULE{push}{%
       \AxiomC{\strut$e\ne\nil$}%
@@ -58,17 +60,17 @@
       \bottomAlignProof
       \DisplayProof}\\
     %% --------------------------------------------------------------------
-    \hfil\emph{Assignments \& conditionals} & \hfil\emph{Sequences}\\
+    \hd{Assignments \& conditionals} & \hd{Sequences}\\
     %%
     \RULE{assign}{%
       $\<\ceu{v\coloneqq{\expr}},\nil,\theta>
-      \nst\<\ceu{\Nop},\nil,\memupdt(\theta,v,\memeval(\theta,\expr))>$}
+      \nst\<\ceu{\Nop},\nil,\updt(\theta,v,\eval(\theta,\expr))>$}
     %%
     &\RULE{seq-nop}{%
       $\<\ceu{\Nop;\stmt_2},\nil,\theta>\nst\<\stmt_2,\nil,\theta>$}\\
     %%
     \RULE{if-true}{%
-      \AxiomC{\strut$\memeval(\theta,\expr)\ne0$}
+      \AxiomC{\strut$\eval(\theta,\expr)\ne0$}
       \UnaryInfC{\strut$\<\ceu{\IfElse{\expr}{\stmt_1}{\stmt_2}},\nil,\theta>
         \nst\<\stmt_1,\nil,\theta>$}
       \bottomAlignProof
@@ -79,7 +81,7 @@
       \nst\<\ceu{\Break},\nil,\theta>$}\\
     %%
     \RULE{if-false}{%
-      \AxiomC{\strut$\memeval(\theta,\expr)=0$}
+      \AxiomC{\strut$\eval(\theta,\expr)=0$}
       \UnaryInfC{\strut$\<\ceu{\IfElse{\expr}{\stmt_1}{\stmt_2}},\nil,\theta>
         \nst\<\stmt_2,\nil,\theta>$}
       \bottomAlignProof
@@ -92,7 +94,7 @@
       \bottomAlignProof
       \DisplayProof}\\
     %% ---------------------------------------------------------------------
-    \hfil\emph{Variable declarations} & \hfil\emph{Loops}\\
+    \hd{Variable declarations} & \hd{Loops}\\
     %%
     \RULE{var-expd}{%
       $\<\ceu{\Var{v\,\stmt}},\nil,\theta>
@@ -133,7 +135,7 @@
       \bottomAlignProof
       \DisplayProof}\\
     %% ---------------------------------------------------------------------
-    \hfil\emph{Par/and} & \hfil\emph{Par/or}\\
+    \hd{Par/and} & \hd{Par/or}\\[-\jot]
     %%
     \RULE{par/and-expd}{$
       \begin{aligned}[b]
@@ -221,7 +223,7 @@
       \BinaryInfC{\strut$\<\ceu{\stmt_1\AtParOr{\stmt_2}},\ell,\nil,\theta>
         \nst\<\ceu{\stmt_1\AtParOr{\stmt_2'}},\ell,e,\theta'>$}
       \bottomAlignProof
-      \DisplayProof}\\[3em]
+      \DisplayProof}\\[4em]
     %%
     \hline
   \end{tabularx}
