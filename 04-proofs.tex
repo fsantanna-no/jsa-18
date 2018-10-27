@@ -8,24 +8,16 @@ Second, that they always produce a result and terminate
 memory they consume never exceeds a fixed threshold which depends solely on
 their inputs (Section~\ref{sec.proofs.bound}).
 
-These three properties are actually properties of transitions and are
-inherited by reactions.  Recall that reactions are formally defined in terms
-of transitions as follows:
-\begin{align*}
-  &\reaction(\stmt_0,\theta_0,e)=\<\stmt_f,\theta_f>\\
-  &\quad\text{iff}\quad
-    \<\stmt_0,0,e,\theta_0>\trans[*]\<\stmt_f,0,\nil,\theta_f>.
-\end{align*}
-In words, a basic \CEU program~$\stmt_0$ in a memory~$\theta_0$ when fed
-with the external event~$e$ will react to a modified program~$\stmt_f$ and
-memory~$\theta_f$ if (and only if) a finite (possibly zero) number of
-transitions transforms the description~$\<\stmt_0,0,e,\theta_0>$ into
-$\<\stmt_f,0,\nil,\theta_f>$.
+Since reactions are defined in terms of relation~$\trans[*]$, i.e., as an
+exhaustive but finite number of transitions (see
+Section~\ref{sec.sem.opsem}), what we actually prove in this section is that
+relation~$\trans[*]$ has the three properties, and we do so from the bottom
+up.  That is, we first prove the properties for single~$\out$ and~$\nst$
+transitions, then to their finite iterations~$\out[*]$ and~$\nst[*]$, and
+finally, to the finite iteration of transitions in general, i.e., to
+relation~$\trans[*]$, and so, by definition, to operation $\reaction$.
 
-So, from this definition, \emph{reaction} will be deterministic,
-terminating, and memory bounded, if relation~$\trans[*]$ is so.
-
-\subsection{Deterministic Execution}
+\subsection{Determinism}
 \label{sec.proofs.det}
 
 Transitions~$\out$ and~$\nst$ are defined in such a way that given an input
@@ -34,39 +26,32 @@ applied (no choice involved).  This coupled with the fact that the output of
 every rule is a function of its input implies that transitions are
 deterministic: the same input description, if it can transition, will always
 result in the same output description.  Thus the transition
-relation~$\trans$ is in fact a partial function.
+relation~$\trans$ is in fact a (partial) function.
 
 The next two lemmas establish the determinism of a single application
 of~$\out$ and~$\nst$.  Lemma~\ref{lem.x.det-out} follows from a simple
 inspection of rules~\R{push} and~\R{pop}.  The proof of
 Lemma~\ref{lem.x.det-nst} follows by induction on the structure of the
 derivation trees produced by the rules for~$\nst$.  Both lemmas are used in
-the proof of the Theorem~\ref{thm.x.det}.
+the proof of the Theorem~\ref{thm.x.det}, the main result of this section.
 
-\begin{restatable}{lemma}{lemxdetout}
-  \label{lem.x.det-out}
-  %%
+\begin{lemma}[label=lem.x.det-out,restate=lemxdetout]
   If~$\delta\out\delta_1$ and~$\delta\out\delta_2$ then~$\delta_1=\delta_2$.
-\end{restatable}
+\end{lemma}
 
-\begin{restatable}{lemma}{lemxdetnst}
-  \label{lem.x.det-nst}
-  %%
+\begin{lemma}[label=lem.x.det-nst,restate=lemxdetnst]
   If~$\delta\nst\delta_1$ and~$\delta\nst\delta_2$ then~$\delta_1=\delta_2$.
-\end{restatable}
+\end{lemma}
 
-The main result of this section, Theorem~\ref{thm.x.det}, establishes that
-any given number~$i\ge0$ of applications of arbitrary transition rules,
-starting from the same input description, will always lead to the same
-output description.  In other words, any finite sequence of transitions
-behave deterministically.
+Theorem~\ref{thm.x.det} establishes that any given number~$i\ge0$ of
+applications of arbitrary transition rules, starting from the same input
+description, will always lead to the same output description.  In other
+words, any finite sequence of transitions behave deterministically.
 
-\begin{restatable}[Determinism]{theorem}{thmxdet}
-  \label{thm.x.det}
-  %%
+\begin{theorem}[name=Determinism,label=thm.x.det,restate=thmxdet]
   $\delta\trans[i]\delta_1$ and~$\delta\trans[i]\delta_2$
   implies~$\delta_1=\delta_2$.
-\end{restatable}
+\end{theorem}
 \begin{proof}
   By induction on~$i$.  The theorem is trivially true if~$i=0$ and follows
   directly from the previous lemmas if~$i=1$.  Suppose
@@ -83,69 +68,20 @@ behave deterministically.
   $\delta_1=\delta_2$.
 \end{proof}
 
-% The proof for determinism relies on the fact all semantic rules are
-% mutually exclusive, i.e., their preconditions are unique in the set of
-% rules.  This can be verified by direct inspection of rules.
-
-% Rule \textbf{push} is the only one with $e \neq \epsilon$ as a
-% precondition, and is trivially mutually exclusive with all other rules.
-
-% Rule \textbf{pop} either has $p=@nop$ or $isblocked(p,n)$ as
-% preconditions.
-% %
-% Note that rule \textbf{pop} only applies syntactically to top-level
-% transitions.  For instance, it can never match $\NST$ rules for
-% subprograms as in rule \textbf{seq-adv}.
-% %
-% Hence, for the first case, rule \textbf{pop} only applies, and is the only
-% one to apply, to $nop$ as the whole program (i.e., a $nop$ not surrounded
-% by other expressions, such as in rule \textbf{seq-nop}).
-% %
-% For the second case, we need to show that given $\LL p,n,\epsilon \RR$, no
-% $\NST$ transitions apply with $isblocked(p,n)$ and vice versa.  Except for
-% $@canrun$, there are no $\NST$ transitions for the other blocking
-% expressions ($awaitExt$, $awaitInt$, $every$, and $fin$).  However,
-% considering the precondition $\LL p,n,\epsilon \RR$,
-% $isblocked(@canrun(n),n)$ is false.  Hence, given the preconditions for
-% rule \textbf{pop}, no $\NST$ transitions can occur.  Conversely, if a
-% $\NST$ transition is possible, then $isblocked(p,n)$ must be false.
-% Again, except for $@canrun$, all other transitions do not involve blocking
-% expressions, hence, for these transitions, $isblocked(p,n)$ must be false.
-% For rule \R{can-run}, a transition can only occur if the current stack
-% level matches $@canrun(n)$.  In this case, $isblocked(@canrun(n),n)$ is
-% false.
-
-% Finally, we need to show that $\NST$ transitions are mutually exclusive
-% among themselves.
-% %
-% Note that most rules have unique syntactic prefixes, e.g., $(@nop~@and~q)$
-% (rule \textbf{and-nop1}) is trivially mutually exclusive with
-% $(@nop~@loop~p)$ (rule \textbf{or-nop1}).
-% %
-% The only exceptions are rules \textbf{and-adv1} vs. \textbf{and-adv2}, and
-% \textbf{or-adv1} vs. \textbf{or-adv2}.  In both cases, we need to show
-% that if the left branch can advance, then it cannot be blocked and
-% vice-versa, i.e., that $\LL p,n,\epsilon \RR \NST \LL p',n,e \RR$ and
-% $isblocked(p,n)$ are mutually exclusive, which is exactly the same
-% reasoning for rule \textbf{pop} above.
-
-\subsection{Terminating Reactions}
+\subsection{Termination}
 \label{sec.proofs.term}
 
 We now turn to the problem of termination.  We want to show that any
 sufficiently long sequence of applications of arbitrary transition rules
 will eventually lead to an irreducible description, i.e., one that cannot be
 modified by further transitions.  Before doing that, however, we need to
-introduce some notation and establish some basic properties of
-the transition relations~$\nst$ and~$\out$.
+introduce some notation and establish some basic properties of the
+transition relations~$\nst$ and~$\out$.
 
-\begin{definition}
-  \label{def.x.Hnst}
-  %%
-  A description~$\delta=\<p,n,e>$ is \emph{nested-irre\-ducible}
-  iff~$e\ne\nil$ or~$p=\ceu{\Nop}$ or~$p=\ceu{\Break}$
-  or~$\isblocked(p,n)$.\footnote{We sometimes abbreviate ``$p=\ceu{\Nop}$
-    or~$p=\ceu{\Break}$'' as~``$p=\ceu{\Nop,\Break}$''.}
+\begin{definition}[label=def.x.Hnst]
+  A description~$\delta=\<\stmt,\ell,e,\theta>$ is
+  \emph{nested-irre\-ducible} if, and only if, $e\ne\nil$ or~$p=\ceu{\Nop}$
+  or~$\isblk(\stmt,\ell)$.
 \end{definition}
 
 Nested-irreducible descriptions serve as normal forms for~$\nst$
@@ -153,130 +89,98 @@ transitions: they embody the result of an exhaustive number of~$\nst$
 applications.  We will write~$\delta_\Hnst$ to indicate that
 description~$\delta$ is nested-irreducible.
 
-The use of qualifier ``irreducible'' in Definition~\ref{def.x.Hnst} is
-justified by Proposition~\ref{prop.x.irr-nst-i}, which states that if a
-finite number of applications of~$\nst$ results in an irreducible
-description, then that occurs exactly once, at some specific number~$i$.
-The proof of Proposition~\ref{prop.x.irr-nst-i} follows directly from the
-definition of~$\nst$ by contradiction on the hypothesis that there is
-such~$k\ne{i}$.
+The use of word ``irreducible'' in Definition~\ref{def.x.Hnst} is justified
+by Proposition~\ref{prop.x.irr-nst-i}, which states that if a finite number
+of applications of~$\nst$ results in an irreducible description, then that
+occurs exactly once, at some specific number~$i$.  Its proof follows
+directly from the definition of~$\nst$ by contradiction on the hypothesis
+that there is such~$k\ne{i}$.
 
-\begin{restatable}{proposition}{propxirrnsti}
-  \label{prop.x.irr-nst-i}
-  %%
+\begin{proposition}[label=prop.x.irr-nst-i,restate=propxirrnsti]
   If~$\delta\nst[i]\delta_\Hnst'$ then, for all~$k\ne{i}$, there is
   no~$\delta_\Hnst''$ such that~$\delta\nst[k]\delta''_\Hnst$.
-\end{restatable}
+\end{proposition}
 
-The next lemma establishes that sequences of~$\nst$ transitions behave as
-expected regarding the order of evaluation of composition branches.  Its
+The next two lemmas establish that sequences of~$\nst$ transitions behave as
+expected regarding the internal evaluation of compound statements.  Its
 proof follows by induction on~$i$.
 
-\begin{restatable}{lemma}{lemxpropsnsti}
-  \label{lem.x.props-nst-i}\strut\\
+\begin{lemma}[label=lem.x.props-nst-i-a,restate=lemxpropsnstia]
+  \strut
   %%
-  If~$\<p_1,n,e>\nst[i]\<p_1',n,e'>$, for any~$p_2$:
-  \begin{enumerate:a}
-  \item\label{lem.x.props-nst-i.a}
-    $\<\ceu{p_1;\,p_2},n,e>\nst[i]\<p_1';p_2,n,e'>$.
-    %%
-  \item\label{lem.x.props-nst-i.b}
-    $\<\ceu{p_1\AtLoop{p_2}},n,e>\nst[i]\<\ceu{p_1'\AtLoop{p_2}},n,e'>$.
-    %%
-  \item\label{lem.x.props-nst-i.c}
-    $\<\ceu{{p_1}\AtAnd{p_2}},n,e>\nst[i]\<\ceu{{p_1'}\AtAnd{p_2}},n,e'>$.
-    %%
-  \item\label{lem.x.props-nst-i.d}
-    $\<\ceu{{p_1}\AtOr{p_2}},n,e>\nst[i]\<\ceu{{p_1}'\AtOr{p_2}},n,e'>$.
-  \end{enumerate:a}
-  \smallskip
-  If~$\<p_2,n,e>\nst[i]\<p_2',n,e'>$, for any~$p_1$ such
-  that~$\isblocked(p_1,n)$:
-  \begin{enumerate:a}
-    \setcounter{enumi}{4}
-  \item\label{lem.x.props-nst-i.e}
-    $\<\ceu{{p_1}\AtAnd{p_2}},n,e>\nst[i]\<\ceu{{p_1}\AtAnd{p_2'}},n,e'>$.
-    %%
-  \item\label{lem.x.props-nst-i.f}
-    $\<\ceu{{p_1}\AtOr{p_2}},n,e>\nst[i]\<\ceu{{p_1}\AtOr{p_2'}},n,e'>$.
-  \end{enumerate:a}
-\end{restatable}
-%%
-% \begin{proof}[Proof of~(a)]
-%   By induction on~$i$.  The lemma is trivially true for~$i=0$,
-%   as~$p_1=p_1'$, and follows directly from~\R{seq-adv} for~$i=1$.  Suppose
-%   \begin{equation}
-%     \label{lem.x.props-nst-i.a.eq1}
-%     \<p_1,n,e>\nst[1]\<p_1'',n,e''>\nst[i-1]\<p_1',n,e'>\,,
-%   \end{equation}
-%   for some~$i>1$.  Then~$\<p_1'',n,e''>$ is not nested-irreducible, i.e.,
-%   $e=\nil$ and~$p\ne{\ceu{\Nop},\ceu{\Break}}$ and~$\isblocked(p_1'',n)$
-%   is false.  By~\eqref{lem.x.props-nst-i.a.eq1} and by~\R{seq-adv},
-%   \begin{equation}
-%     \label{lem.x.props-nst-i.a.eq2}
-%     \<\ceu{p_1;\,p_2},n,e>\nst[1]\<\ceu{p_1'';\,p_2},n,e''>\,.
-%   \end{equation}
-%   From~\eqref{lem.x.props-nst-i.a.eq1}, by the induction hypothesis,
-%   \begin{equation}
-%     \label{lem.x.props-nst-i.a.eq3}
-%     \<\ceu{p_1'';\,p_2},n,e''>\nst[i-1]\<\ceu{p_1';\,p_2},n,e'>\,.
-%   \end{equation}
-%   From~\eqref{lem.x.props-nst-i.a.eq2} and~\eqref{lem.x.props-nst-i.a.eq3},
-%   \[
-%     \<\ceu{p_1;\,p_2},n,e>\nst[i]\<\ceu{p_1';\,p_2},n,e'>\,.
-%   \]
-%   The proofs of the other cases are similar.
-% \end{proof}
-%%
+  If~$\<\stmt_1,\ell,e,\theta>\nst[i]\<\stmt_1',\ell,e',\theta'>$, then
+  for any~$\stmt_2$,
+  \begin{align*}
+    \<\ceu{\stmt_1;\,\stmt_2},\ell,e,\theta>
+    &\nst[i]\<\stmt_1';\stmt_2,\ell,e',\theta'>\\
+    %% 
+    \<\ceu{\stmt_1\AtLoop{p_2}},\stmt_2,\ell,e,\theta>
+    &\nst[i]\<\ceu{\stmt_1'\AtLoop{\stmt_2}},\ell,e',\theta'>\\
+    %% 
+    \<\ceu{{\stmt_1}\AtParAnd{\stmt_2}},\ell,e,\theta>
+    &\nst[i]\<\ceu{{\stmt_1'}\AtParAnd{\stmt_2}},\ell,e',\theta'>\\
+    %% 
+    \<\ceu{{\stmt_1}\AtParOr{\stmt_2}},\ell,e,\theta>
+    &\nst[i]\<\ceu{{\stmt_1}'\AtParOr{\stmt_2}},\ell,e',\theta'>
+  \end{align*}
+\end{lemma}
 
-The syntactic restriction discussed in Section~\ref{sec.ceu.evts} regarding
-the body of loops and the restriction mentioned in
-Section~\ref{sec.sem.opsem} about the body of~$\ceu{\Fin}$ statements are
-formalized in Assumption~\ref{ass.x.syn-rest} below.  These restrictions are
-essential to prove the next theorem.
+\begin{lemma}[label=lem.x.props-nst-i-b,restate=lemxpropsnstib]
+  If~$\<\stmt_2,\ell,e,\theta>\nst[i]\<\stmt_2',\ell,e',\theta'>$, then for
+  any~$\stmt_1$ such that~$\isblk(\stmt_1,\ell)$,
+  \begin{align*}
+    \<\ceu{{\stmt_1}\AtParAnd{\stmt_2}},\ell,e,\theta>
+    &\nst[i]\<\ceu{{\stmt_1}\AtParAnd{\stmt_2'}},\ell,e',\theta'>\\
+    %%
+    \<\ceu{{\stmt_1}\AtParOr{\stmt_2}},\ell,e,\theta>
+    &\nst[i]\<\ceu{{\stmt_1}\AtParOr{\stmt_2'}},\ell,e',\theta'>
+  \end{align*}
+\end{lemma}
 
-\begin{assumption}[Syntactic restrictions]\strut
-  \label{ass.x.syn-rest}
-  %%
-  \begin{enumerate:a}
-  \item\label{ass.x.syn-rest.fin} If~$p=\ceu{\Fin{p_1}}$ then~$p_1$ contains
-    no occurrences of statements~$\ceu{\AwaitExt}$, $\ceu{\AwaitInt}$,
-    $\ceu{\Every}$, or~$\ceu{\Fin}$.  And so, for any~$n$,
-    $\<\clear(p_1),n,\nil>\nst[*]\<\ceu{\Nop},n,\nil>$.
+The syntactic restrictions presented in Section~\ref{sec.sem.restrictions}
+regarding the bodies of loops, $\ceu{\Every}$ statements, and $\ceu{\Fin}$
+statements are formalized in Assumption~\ref{ass.x.syn-rest} below.  (Note
+that the assumptions listed in Assumption~\ref{ass.x.syn-rest} in fact are
+provable properties.  We chose to introduce them as assumptions merely for
+the sake of convenience.)
+
+\begin{assumption}[label=ass.x.syn-rest]
+  \strut
+  \begin{enumerate}
+  \item\label{ass.x.syn-rest.fin} If~$\stmt=\ceu{\Every{e\,\stmt'}}$ or
+    $\stmt=\ceu{\Fin{\stmt'}}$, then~$\stmt'$ does not contain occurrences
+    of $\ceu{\Loop}$, $\ceu{\Break}$, $\ceu{\AwaitExt}$, $\ceu{\AwaitInt}$,
+    $\ceu{\Every}$, or~$\ceu{\Fin}$.  And so,
+    \[
+      \<\clear(\stmt'),\ell,\nil,\theta>
+      \nst[*]\<\ceu{\Nop},\ell,\nil,\theta'>.
+    \]
     %%
-    % \[
-    %   \<\clear(p_1),n,\nil>\nst[*]\<\ceu{\Nop},n,\nil>\,.
-    % \]
-    %%
-  \item\label{ass.x.syn-rest.loop} If~$p=\ceu{\Loop{p_1}}$ then all
-    execution paths of~$p_1$ contain a matching~$\ceu{\Break}$ or
-    an~$\ceu{\AwaitExt}$.  Consequently, for all~$n$, there are~$p_1'$
-    and~$e$ such that
-    $\<\ceu{\Loop{p_1}},n,\nil>\nst[*]\<p_1',n,e>$,
-    %%
-    % \[
-    %   \<\ceu{\Loop{p_1}},n,\nil>\nst[*]\<p_1',n,e>\,,
-    % \]
-    %%
-    where $p_1'=\ceu{{\Break}\AtLoop{p_1}}$ or~$\isblocked(p_1',n)$\,.
-  \end{enumerate:a}
+  \item\label{ass.x.syn-rest.loop} If~$\stmt=\ceu{\Loop{\stmt'}}$, then all
+    execution paths of~$\stmt'$ contain a matching~$\ceu{\Break}$ or
+    an~$\ceu{\AwaitExt}$.  Consequently,
+    \[
+      \<\ceu{\Loop{\stmt'}},\ell,\nil,\theta>\nst[*]\<\stmt'',\ell,e,\theta'>,
+    \]
+    where $\stmt''=\ceu{{\Break}\AtLoop{\stmt'}}$ or~$\isblk(\stmt'',\ell)$.
+  \end{enumerate}
 \end{assumption}
 
-Theorem~\ref{thm.x.term-nst-*} establishes that a finite (possibly zero)
-number of~$\nst$ transitions eventually leads to a nested-irreducible
-description.  Hence, for any input description~$\delta$, it is always
-possible to transform~$\delta$ in a nested-irreducible description~$\delta'$
-by applying to it a sufficiently long sequence of~$\nst$ transitions.  The
-proof of the theorem follows by induction on the structure of programs
-(members of set~$P$) and depends on Lemma~\ref{lem.x.props-nst-i} and
-Assumption~\ref{ass.x.syn-rest}.
+The next theorem, Theorem~\ref{thm.x.term-nst-*}, establishes that a finite
+(possibly zero) number of~$\nst$ transitions eventually leads to a
+nested-irreducible description.  Hence, for any input description~$\delta$,
+it is always possible to transform~$\delta$ in a nested-irreducible
+description~$\delta'$ by applying to it a sufficiently long sequence
+of~$\nst$ transitions.  The proof of the theorem follows by induction on the
+structure of statements and depends on Lemmas~\ref{lem.x.props-nst-i-a}
+and~\ref{lem.x.props-nst-i-b} and on Assumption~\ref{ass.x.syn-rest}.
 
-\begin{restatable}{theorem}{thmxtermnstx}
-  \label{thm.x.term-nst-*}
-  %%
+\begin{theorem}[label=thm.x.term-nst-*,restate=thmxtermnstx]
   For any~$\delta$ there is a~$\delta'_\Hnst$ such
   that~$\delta\nst[*]\delta'_\Hnst$.
-\end{restatable}
+\end{theorem}
+
+\gl{PAREI AQUI}
 
 The main result of this section, Theorem~\ref{thm.x.term}, is similar to
 Theorem~\ref{thm.x.term-nst-*} but applies to transitions~$\trans$ in
