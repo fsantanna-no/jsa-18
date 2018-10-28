@@ -64,46 +64,41 @@
 
   \begin{case}
   \item[{[$\stmt=\ceu{\Var{v\,\stmt'}}$]}] Then~$\pi_1$ and~$\pi_2$ are
-    instances of rule \R{var-expd}, i.e., their conclusions are obtained by
-    an application of this rule.  Hence,
+    instances of \R{var-expd}, i.e., their conclusions are obtained by an
+    application of this rule.  Hence,
     \[
       \stmt_1=\stmt_2=\ceu{\AtVar{v\,\bot\,\stmt'}},
     \]
     $e_1=e_2=\nil$, and~$\theta_1=\theta_2=\theta$.
     %%
   \item[{[$\stmt=\ceu{v\coloneqq\expr}$]}] Then~$\pi_1$ and~$\pi_2$ are
-    instances of rule \R{assign}.  Hence, $\stmt_1=\stmt_2=\ceu{\Nop}$,
+    instances of \R{assign}.  Hence, $\stmt_1=\stmt_2=\ceu{\Nop}$,
     $e_1=e_2=\nil$,
     and~$\theta_1=\theta_2=\updt(\theta,v,\eval(\theta,\expr))$.
     %%
   \item[{[$\stmt=\ceu{\EmitInt(e')}$]}] Then~$\pi_1$ and~$\pi_2$ are
-    instances of rule \R{emit-int}.  Hence,
+    instances of \R{emit-int}.  Hence,
     $\stmt_1=\stmt_2=\ceu{\RunAt(\ell)}$, $e_1=e_2=\nil$,
     and~$\theta_1=\theta_2=\theta$.
     %%
   \item[{[$\stmt=\ceu{\IfElse{\expr}{\stmt'}{\stmt''}}$]}]
     %%
-    There are two subcases.
-    \begin{case}
-    \item[{[$\eval(\theta,\expr)\ne0$]}] Then~$\pi_1$ and~$\pi_2$ are
-      instances of rule \R{if-true}.  Hence, $\stmt_1=\stmt_2=\stmt'$,
-      $e_1=e_2=\nil$, and $\theta_1=\theta_2=\theta$.
-    \item[{[$\eval(\theta,\expr)=0$]}] Then~$\pi_1$ and~$\pi_2$ are
-      instances of rule \R{if-false}.  Hence, $\stmt_1=\stmt_2=\stmt''$,
-      $e_1=e_2=\nil$, and $\theta_1=\theta_2=\theta$.
-    \end{case}
+    If $\eval(\theta,\expr)\ne0$, then~$\pi_1$ and~$\pi_2$ are instances of
+    \R{if-true}.  Hence, $\stmt_1=\stmt_2=\stmt'$, $e_1=e_2=\nil$, and
+    $\theta_1=\theta_2=\theta$.  The case for~$\eval(\theta,\expr)=0$ is
+    similar but uses \R{if-false}.
     %%
   \item[{[$\stmt=\ceu{\stmt';\stmt''}$]}]
     There are three subcases.
     \begin{case}
     \item[{[$\stmt'=\ceu{\Nop}$]}] Then~$\pi_1$ and~$\pi_2$ are instances of
-      rule \R{seq-nop}.  Hence, $\stmt_1=\stmt_2=\stmt''$, $e_1=e_2=\nil$,
-      and $\theta_1=\theta_2=\theta$.
+      \R{seq-nop}.  Hence, $\stmt_1=\stmt_2=\stmt''$, $e_1=e_2=\nil$, and
+      $\theta_1=\theta_2=\theta$.
     \item[{[$\stmt'=\ceu{\Break}$]}] Then~$\pi_1$ and~$\pi_2$ are instances
-      of rule \R{seq-brk}. Hence, $\stmt_1=\stmt_2=\ceu{\Break}$,
-      $e_1=e_2=\nil$, and $\theta_1=\theta_2=\theta$.
+      of \R{seq-brk}. Hence, $\stmt_1=\stmt_2=\ceu{\Break}$, $e_1=e_2=\nil$,
+      and $\theta_1=\theta_2=\theta$.
     \item[{[$\stmt'\ne\ceu{\Nop,\Break}$]}] Then~$\pi_1$ and~$\pi_2$ are
-      instances of rule \R{seq-adv}.  Hence, there are
+      instances of \R{seq-adv}.  Hence, there are
       derivations~$\pi_1'\prec\pi_1$ and~$\pi_2'\prec\pi_2$ (i.e.,
       structurally smaller than~$\pi_1$ and~$\pi_2$) such that
       \begin{align*}
@@ -127,7 +122,7 @@
       $e_1=e_1'=e_2'=e_2$, and $\theta_1=\theta_1'=\theta_2'=\theta_2$.
     \end{case}
     %%
-  \item[{[$\stmt=\ceu{\Loop{\stmt'}}$]}] Similar to the case for\\
+  \item[{[$\stmt=\ceu{\Loop{\stmt'}}$]}] Similar to the case for
     $\stmt=\ceu{\Var{v\,\stmt'}}$ but with rule \R{loop-expd}.
     %%
   \item[{[$\stmt=\ceu{\stmt'\ParAnd\stmt''}$]}] Ditto (rule
@@ -149,9 +144,9 @@
   \item[{[$\stmt=\ceu{\stmt'\AtParAnd\stmt''}$]}] There are two subcases.
     \begin{case}
     \item[{[$\lnot\isblk(\stmt')$]}] Then $\pi_1$ and~$\pi_2$ are instances
-      of rules \R{par/and-nop1}, \R{par/and-brk1}, or \R{par/and-adv1}.  The
-      proof of this case is similar to that of the cases where rules
-      \R{seq-nop}, \R{seq-brk}, and \R{seq-adv} apply.
+      of \R{par/and-nop1}, \R{par/and-brk1}, or \R{par/and-adv1}.  The proof
+      of this case is similar to that of the cases where rules \R{seq-nop},
+      \R{seq-brk}, and \R{seq-adv} apply.
     \item[{[$\isblk(\stmt')$]}] Ditto but with $\pi_1$ and $\pi_2$ as
       instances of \R{par/and-nop2}, \R{par/and-brk2}, and \R{par/and-adv2}.
     \end{case}
@@ -182,11 +177,11 @@
       \delta\nst[i]\delta'\nst[i+1]\delta_1'\nst[i+2]\cdots\nst[k]\delta''.
     \end{equation}
     Since~$\delta'=\<\stmt',\ell,e',\theta'>$ is nested-irreducible,
-    $e'=\nil$ or~$\stmt'=\ceu{\Nop}$ or~$\isblk(\stmt',\ell)$.  In any of
-    these cases, by the definition of~$\nst$, there is no~$\delta_1'$ such
-    that~$\delta'\nst[1]\delta_1'$, which
-    contradicts~\eqref{prop.x.irr-nst-i-eq1}.  Therefore, no such~$k$ can
-    exist.
+    $e'=\nil$ or~$\stmt'=\ceu{\Nop}$ or~$\stmt'=\ceu{\Break}$
+    or~$\isblk(\stmt',\ell)$.  In any of these cases, by the definition
+    of~$\nst$, there is no~$\delta_1'$ such that~$\delta'\nst[1]\delta_1'$,
+    which contradicts~\eqref{prop.x.irr-nst-i-eq1}.  Therefore, no such~$k$
+    can exist.
     %%
   \item Suppose there are~$k<i$ and~$\delta''_\Hnst$ such
     that~$\delta\nst[k]\delta''$.  Then, since~$i>k$, by
@@ -240,8 +235,214 @@
 \end{proof}
 
 
-\thmxtermnstx*
+\propxsynrestloop*
 \gl{TODO}
+
+
+\propxsynrestfin*
+\gl{TODO}
+
+
+\thmxtermnstx*
+\begin{proof}
+  By induction on the structure of programs.
+  Let~$\delta=\<\stmt,\ell,\nil,\theta>$.  The theorem is trivially true
+  if~$\delta$ is nested-irreducible, as by definition~$\delta\nst[0]\delta$.
+
+  Suppose~$\delta$ is not nested irreducible.  Then, depending on the
+  structure of~$\stmt$, the following cases are possible (these are the only
+  values for $\stmt$ that do not make $\delta$ nested-irreducible).  In each
+  of the cases, we show that the required description~$\delta'_\Hnst$
+  exists.
+
+  \begin{case}
+  \item[{[$stmt=\ceu{\Var{v\,\stmt'}}$]}]
+    %%
+  \item[{[$stmt=\ceu{v\coloneqq\expr}$]}] By \R{assign},
+    \[
+      \<\ceu{v\coloneqq\expr},\ell,\nil,\theta>
+      \nst[1]\<\ceu{\Nop},\ell,\nil,\updt(\theta,v,\eval(\theta,\expr))>_\Hnst.
+    \]
+    %%
+  \item[{[$stmt=\ceu{\EmitInt(e)}$]}] By \R{emit-int},
+    \[
+      \<\ceu{\EmitInt(e)},\ell,\nil,\theta>
+      \nst[1]\<\ceu{\RunAt(\ell)},\ell,e,\theta>_\Hnst.
+    \]
+    %%
+  \item[{[$stmt=\ceu{\IfElse{\expr}{\stmt'}{\stmt''}}$]}]
+    If~$\eval(\theta,\expr)\ne0$ then, by \R{if-true} and by the induction
+    hypothesis, there is a~$\delta'$ such that
+    \begin{align*}
+      \<\ceu{\IfElse{\expr}{\stmt'}{\stmt''}},\ell,\nil,\theta>
+      &\nst[1]\<stmt',\ell,\nil,\theta>\\
+      &\nst[*]\delta'_\Hnst.
+    \end{align*}
+    The case for~$\eval(\theta,\expr)=0$ is similar but uses \R{if-false}.
+    %%
+  \item[{[$stmt=\ceu{\stmt';\stmt''}$]}]
+    %%
+    There are three subcases.
+    \begin{case}
+    \item[{[$stmt'=\ceu{\Nop}$]}] By \R{seq-nop} and by the induction
+      hypothesis, there is a~$\delta'$ such that
+      \begin{align*}
+        \<\ceu{\Nop;\stmt''},\ell,\nil,\theta>
+        &\nst[1]\<\ceu{\stmt''},\ell,\nil\,theta>\\
+        &\nst[*]\delta'_\Hnst.
+      \end{align*}
+    \item[{[$stmt'=\ceu{\Break}$]}] By \R{seq-brk},
+      \[
+        \<\ceu{\Break;\stmt''},\ell,\nil,\theta>
+        \nst[1]\<\ceu{\Break},\ell,\nil,\theta>_\Hnst.
+      \]
+    \item[{[$stmt'\ne\ceu{\Nop,\Break}$]}] By induction hypothesis,
+      there are~$\stmt_1'$, $e$, and~$\theta'$ such that
+      \[
+        \<\stmt',\ell,\nil,\theta>\nst[*]\<\stmt_1',\ell,e,\theta'>_\Hnst.
+      \]
+      Then, by Lemma~\ref{lem.x.props-nst-i-a},
+      \[
+        \<\ceu{\stmt';\stmt''},\ell,\nil,\theta>
+        \nst[*]\<\ceu{\stmt_1';\stmt''},\ell,e,\theta>.
+      \]
+      It remains to be shown that description
+      \[
+        \delta'=\<\ceu{\stmt_1';\stmt''},\ell,\nil,\theta>
+      \]
+      is nested-irreducible or leads to a nested irreducible description.
+      This follows from the fact that the simpler description
+      $\<\stmt_1',\ell,e,\theta'>$ is nested-irreducible:
+      \begin{enumerate*}[label=(\roman*)]
+      \item if~$e\ne\nil$ then~$\delta'_\Hnst$;
+      \item if~$\stmt_1'=\ceu{\Nop}$ or~$\stmt_1'=\ceu{\Break}$ then the
+        rest of the proof is similar to the cases
+        for~$\stmt=\ceu{\Nop;\stmt''}$ and~$\stmt=\ceu{\Break;\stmt''}$; and
+      \item if~$\isblk(\stmt_1',\ell)$ then, by definition,
+        $\isblk(\stmt_1';\stmt_2,\ell)$, and so~$\delta'_\Hnst$.
+      \end{enumerate*}
+    \end{case}
+    %%
+  \item[{[$stmt=\ceu{\Loop{\stmt'}}$]}]
+    By Proposition~\ref{prop.x.syn-rest.loop},
+    \[
+      \<\ceu{\Loop{\stmt'}},\ell,\nil,\theta>
+      \nst[*]\<\stmt'',\ell,e,\theta'>
+    \]
+    %%
+    where either $\stmt''=\ceu{\Break\AtLoop{\stmt'}}$
+    or~$\isblk(\stmt'',\ell)$.  In the first case, by \R{loop-brk},
+    \begin{align*}
+      \<\ceu{\Loop{\stmt'}},\ell,\nil,\theta>
+      &\nst[*]\<\ceu{\Break\AtLoop{\stmt'}},\ell,e,\theta'>\\
+      &\nst[1]\<\ceu{\Nop},\ell,e,\theta'>_\Hnst.
+    \end{align*}
+    In the second case, by definition, $\<\stmt'',\ell,e,\theta'>_\Hnst$.
+    %% 
+  \item[{[$stmt=\ceu{\stmt'\ParAnd\stmt''}$]}]  By \R{par/and-expd},
+    \begin{align*}
+      &\<\ceu{\stmt'\ParAnd\stmt''},\ell,\nil,\theta>\\[-\jot]
+      &\nst[1]\<\ceu{\stmt1\AtParAnd(\RunAt(\ell);\stmt'')},\ell,\nil,\theta>.
+    \end{align*}
+    From this point on, this case becomes that
+    for~$\stmt=\ceu{\stmt'\AtParAnd\stmt''}$.
+    %% 
+  \item[{[$stmt=\ceu{\stmt'\ParOr\stmt''}$]}] Similar to the case
+    for~$\stmt=\ceu{\stmt'\ParAnd\stmt''}$.
+    %%
+  \item[{[$stmt=\ceu{\RunAt(\ell)}$]}] By \R{run-at},
+    \[
+      \<\ceu{\RunAt(\ell)},\ell,\nil,\theta>
+      \nst[1]\<\ceu{\Nop},\ell,\nil,\theta>_\Hnst.
+    \]
+    %%
+  \item[{[$stmt=\ceu{\AtVar{v\,n\,\stmt'}}$]}] Trivial if~$\stmt'$
+    is~$\ceu{\Nop}$ or~$\ceu{\Break}$.  Suppose that is not the case.  Then,
+    by induction hypothesis,
+    \[
+      \<\stmt',\ell,\nil,(v,n):\theta>
+      \nst[*]\<\stmt'',\ell,e,(v,n'):\theta'>_\Hnst.
+    \]
+    By Lemma~\ref{lem.x.props-nst-i-a},
+    \[
+      \<\ceu{\AtVar{v\,n\,\stmt'}},\ell,\nil,\theta>
+      \nst[*]\<\ceu{\AtVar{v\,n',\stmt''}},\ell,e,\theta'>.
+    \]
+    Again,...
+    %%
+  \item[{[$stmt=\ceu{\stmt'\AtLoop{\stmt''}}$]}]
+    There are three subcases.
+    \begin{case}
+    \item[{[$stmt'=\ceu{\Nop}$]}] By \R{loop-nop},
+      \[
+        \<\ceu{\Nop\AtLoop{\stmt''}},\ell,\nil,\theta>
+        \nst[1]\<\ceu{\Loop{\stmt''}},\ell,\nil,\theta>.
+      \]
+      The rest of the proof is similar to the case
+      for~$\stmt=\ceu{\Loop{\stmt'}}$.
+    \item[{[$stmt'=\ceu{\Break}$]}] By \R{loop-brk},
+      \[
+        \<\ceu{\Break\AtLoop{\stmt''}},\ell,\nil,\theta>
+        \nst[1]\<\ceu{\Nop},\ell,\nil,\theta>_\Hnst.
+      \]
+    \item[{[$stmt'\ne\ceu{\Nop,\Break}$]}] Similar to the case
+      for~$\stmt={\stmt';\stmt''}$ with~$\stmt'\ne\ceu{\Nop,\Break}$.
+    \end{case}
+    %%
+  \item[{[$stmt=\ceu{\stmt'\AtParAnd\stmt''}$]}] Suppose that $\stmt'$ is
+    not blocked, i.e., $\lnot\isblk(\stmt',\ell)$.  (The proof for a blocked
+    $\stmt'$ is similar.)  There are three subcases.
+    \begin{case}
+    \item[{[$stmt'=\ceu{\Nop}$]}] By \R{par/and-nop1} and by the induction
+      hypothesis, there is a~$\delta'$ such that
+      \[
+        \<\ceu{\Nop\AtParAnd\stmt''},\ell,\nil,\theta>
+        \nst[1]\<\ceu{\stmt''},\ell,\nil\theta>
+        \nst[*]\delta'_\Hnst.
+      \]
+    \item[{[$stmt'=\ceu{\Break}$]}] By \R{par/and-brk1},
+      \begin{align*}
+        &\<\ceu{\Break\AtParAnd\stmt''},\ell,\nil,\theta>\\[-\jot]
+        &\qquad\nst[1]\<\ceu{\clear(\stmt'');\Break},\ell,\nil,\theta>.
+      \end{align*}
+      By Proposition~\ref{prop.x.syn-rest.fin},
+      \[
+        \<\ceu{\clear(\stmt'')},\ell,\nil,\theta>.
+        \nst[*]\<\stmt''',\ell,e,\theta'>_\Hnst.
+      \]
+      Hence, by Lemma~\ref{lem.x.props-nst-i-a},
+      \begin{align*}
+        &\<\ceu{\clear(\stmt'');\Break},\ell,\nil,\theta>\\[-\jot]
+        &\qquad\nst[*]\<\ceu{\stmt''';\Break},\ell,e,\theta'>_\Hnst.
+      \end{align*}
+    \item[{[$stmt'\ne\ceu{\Nop,\Break}$]}] By the induction hypothesis,
+      \[
+        \<\stmt',\ell,\nil,\theta>\nst[*]\<\stmt_1',\ell,e,\theta'>_\Hnst.
+      \]
+      By Lemma~\ref{lem.x.props-nst-i-a},
+      \begin{align*}
+        &\<\ceu{\stmt'\AtParAnd\stmt''},\ell,\nil,\theta>\\[-\jot]
+        &\qquad\nst[*]\<\ceu{\stmt_1'\AtParAnd\stmt''},\ell,e,\theta>.
+      \end{align*}
+      It remains to be shown that description
+      \[
+        \delta'=\<\ceu{\stmt_1'\AtParAnd\stmt''},\ell,e,\theta>
+      \]
+      is nested-irreducible or leads to a nested-irreducible description.
+      This proof is similar to that used in the case
+      for~$\ceu{\stmt=\stmt';\stmt''}$ with~$\stmt'\ne\ceu{\Nop,\Break}$.
+      That is, if $e\ne\nil$ then~$\delta_\Hnst$;
+      if~$\stmt_1'=\ceu{\Nop,\Break}$ then this case reduces to those
+      for~$\stmt=\ceu{\Nop\AtParAnd\stmt''}$
+      and~$\stmt=\ceu{\Break\AtParAnd\stmt''}$; and if~$\isblk(stmt_1'')$
+      then this case reduces to that for~$\ceu{\stmt'\AtParAnd\stmt''}$
+      with~$\isblk(stmt',\ell)$ evaluating to true.
+    \end{case}
+    %%
+  \item[{[$stmt=\ceu{\stmt'\AtParOr\stmt''}$]}] Similar to the case for
+    $\stmt=\ceu{\stmt'\AtParAnd\stmt''}$.\qedhere
+  \end{case}
+\end{proof}
 
 
 %%% Local Variables:

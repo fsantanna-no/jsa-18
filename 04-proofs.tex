@@ -2,20 +2,38 @@
 \label{sec.proofs}
 
 In this section, we state and prove three properties of \CEU reactions.
-First, that reactions are deterministic (Section~\ref{sec.proofs.det}).
-Second, that they always produce a result and terminate
-(Section~\ref{sec.proofs.term}). And third, that the maximum amount of
-memory they consume never exceeds a fixed threshold which depends solely on
-their inputs (Section~\ref{sec.proofs.bound}).
+First, that reactions are deterministic.  Second, that they always produce a
+result and terminate. And third, that the maximum amount of memory they
+consume never exceeds a fixed threshold which can be derived statically from
+the input program.
 
-Since reactions are defined in terms of relation~$\trans[*]$, i.e., as an
-exhaustive but finite number of transitions (see
-Section~\ref{sec.sem.opsem}), what we actually prove in this section is that
-relation~$\trans[*]$ has the three properties, and we do so from the bottom
-up.  That is, we first prove the properties for single~$\out$ and~$\nst$
-transitions, then to their finite iterations~$\out[*]$ and~$\nst[*]$, and
-finally, to the finite iteration of transitions in general, i.e., to
-relation~$\trans[*]$, and so, by definition, to operation $\reaction$.
+% We anticipate that the proofs of determinism and termination are built
+% from the bottom up.
+
+The proofs of determinism (Section~\ref{sec.proofs.det}) and termination
+(Section~\ref{sec.proofs.term}) are constructed from the bottom up.  We
+first prove the determinism and termination of single~$\out$ and~$\nst$
+transitions, then of their finite iterations~$\out[*]$ and~$\nst[*]$, and
+finally of the finite iteration of transitions in general
+(relation~$\trans[*]$).  Since \emph{reaction} is formally defined in terms
+of relation~$\trans[*]$ (see Section~\ref{sec.sem.opsem}), by proving
+that~$\trans[*]$ is deterministic and always terminates (with an irreducible
+description), we establish that the same holds for \emph{reaction}.
+
+% The proof of the third property of reactions, memory-boundedness, follows
+% from...  We discuss this in Section.
+
+% We conclude this section with... program equivalence
+
+% Since reactions are defined in terms of relation~$\trans[*]$, i.e., as an
+% exhaustive but finite number of transitions (see
+% Section~\ref{sec.sem.opsem}), what we actually prove in this section is
+% that relation~$\trans[*]$ has the three properties, and we do so from the
+% bottom up.  That is, we first prove the properties for single~$\out$
+% and~$\nst$ transitions, then to their finite iterations~$\out[*]$
+% and~$\nst[*]$, and finally, to the finite iteration of transitions in
+% general, i.e., to relation~$\trans[*]$, and so, by definition, to
+% operation $\reaction$.
 
 \subsection{Determinism}
 \label{sec.proofs.det}
@@ -80,8 +98,8 @@ transition relations~$\nst$ and~$\out$.
 
 \begin{definition}[label=def.x.Hnst]
   A description~$\delta=\<\stmt,\ell,e,\theta>$ is
-  \emph{nested-irre\-ducible} if, and only if, $e\ne\nil$ or~$p=\ceu{\Nop}$
-  or~$\isblk(\stmt,\ell)$.
+  \emph{nested-irre\-ducible} if, and only if, $e\ne\nil$
+  or~$\stmt=\ceu{\Nop}$ or~$\stmt=\ceu{\Break}$ or~$\isblk(\stmt,\ell)$.
 \end{definition}
 
 Nested-irreducible descriptions serve as normal forms for~$\nst$
@@ -105,6 +123,8 @@ The next two lemmas establish that sequences of~$\nst$ transitions behave as
 expected regarding the internal evaluation of compound statements.  Its
 proof follows by induction on~$i$.
 
+\gl{TODO: AtVar}
+
 \begin{lemma}[label=lem.x.props-nst-i-a,restate=lemxpropsnstia]
   \strut
   %%
@@ -113,7 +133,7 @@ proof follows by induction on~$i$.
   \begin{align*}
     \<\ceu{\stmt_1;\,\stmt_2},\ell,e,\theta>
     &\nst[i]\<\stmt_1';\stmt_2,\ell,e',\theta'>\\
-    %% 
+    %%
     \<\ceu{\stmt_1\AtLoop{p_2}},\stmt_2,\ell,e,\theta>
     &\nst[i]\<\ceu{\stmt_1'\AtLoop{\stmt_2}},\ell,e',\theta'>\\
     %% 
@@ -139,33 +159,35 @@ proof follows by induction on~$i$.
 
 The syntactic restrictions presented in Section~\ref{sec.sem.restrictions}
 regarding the bodies of loops, $\ceu{\Every}$ statements, and $\ceu{\Fin}$
-statements are formalized in Assumption~\ref{ass.x.syn-rest} below.  (Note
-that the assumptions listed in Assumption~\ref{ass.x.syn-rest} in fact are
-provable properties.  We chose to introduce them as assumptions merely for
-the sake of convenience.)
+statements are formalized in Propositions~\ref{prop.x.syn-rest.fin}
+and~\ref{prop.x.syn-rest.loop}.
 
-\begin{assumption}[label=ass.x.syn-rest]
-  \strut
-  \begin{enumerate}
-  \item\label{ass.x.syn-rest.fin} If~$\stmt=\ceu{\Every{e\,\stmt'}}$ or
-    $\stmt=\ceu{\Fin{\stmt'}}$, then~$\stmt'$ does not contain occurrences
-    of $\ceu{\Loop}$, $\ceu{\Break}$, $\ceu{\AwaitExt}$, $\ceu{\AwaitInt}$,
-    $\ceu{\Every}$, or~$\ceu{\Fin}$.  And so,
-    \[
-      \<\clear(\stmt'),\ell,\nil,\theta>
-      \nst[*]\<\ceu{\Nop},\ell,\nil,\theta'>.
-    \]
-    %%
-  \item\label{ass.x.syn-rest.loop} If~$\stmt=\ceu{\Loop{\stmt'}}$, then all
-    execution paths of~$\stmt'$ contain a matching~$\ceu{\Break}$ or
-    an~$\ceu{\AwaitExt}$.  Consequently,
-    \[
-      \<\ceu{\Loop{\stmt'}},\ell,\nil,\theta>\nst[*]\<\stmt'',\ell,e,\theta'>,
-    \]
-    where $\stmt''=\ceu{{\Break}\AtLoop{\stmt'}}$ or~$\isblk(\stmt'',\ell)$.
-  \end{enumerate}
-\end{assumption}
+\gl{PROOFS}
 
+\begin{proposition}[label=prop.x.syn-rest.loop,restate=propxsynrestloop]
+  If~$\stmt=\ceu{\Loop{\stmt'}}$, then all execution paths within~$\stmt'$
+  contain a matching~$\ceu{\Break}$ or an~$\ceu{\AwaitExt}$, and so,
+  \[
+    \<\ceu{\Loop{\stmt'}},\ell,\nil,\theta>\nst[*]\<\stmt'',\ell,e,\theta'>,
+  \]
+  for some~$\theta'$, $e$, and~$\stmt''$ such that
+  $\stmt''=\ceu{{\Break}\AtLoop{\stmt'}}$ or~$\isblk(\stmt'',\ell)$.
+\end{proposition}
+
+\begin{proposition}[label=prop.x.syn-rest.fin,
+  restate=propxsynrestfin]
+  If~$\stmt=\ceu{\Every{e\,\stmt'}}$ or $\stmt=\ceu{\Fin{\stmt'}}$,
+  then~$\stmt'$ does not contain occurrences of $\ceu{\Loop}$,
+  $\ceu{\Break}$, $\ceu{\AwaitExt}$, $\ceu{\AwaitInt}$, $\ceu{\Every}$,
+  or~$\ceu{\Fin}$, and so,
+  \[
+    \<\clear(\stmt'),\ell,\nil,\theta>
+    \nst[*]\<\stmt'',\ell,\nil,\theta'>,
+  \]
+  for some~$\theta'$ and~$\stmt''$ such that either~$\stmt''=\ceu{\Nop}$
+  or~$\isblk(\stmt'',\ell)$.
+\end{proposition}
+  
 The next theorem, Theorem~\ref{thm.x.term-nst-*}, establishes that a finite
 (possibly zero) number of~$\nst$ transitions eventually leads to a
 nested-irreducible description.  Hence, for any input description~$\delta$,
@@ -173,14 +195,13 @@ it is always possible to transform~$\delta$ in a nested-irreducible
 description~$\delta'$ by applying to it a sufficiently long sequence
 of~$\nst$ transitions.  The proof of the theorem follows by induction on the
 structure of statements and depends on Lemmas~\ref{lem.x.props-nst-i-a}
-and~\ref{lem.x.props-nst-i-b} and on Assumption~\ref{ass.x.syn-rest}.
+and~\ref{lem.x.props-nst-i-b} and on Propositions~\ref{prop.x.syn-rest.fin}
+and~\ref{prop.x.syn-rest.loop}.
 
 \begin{theorem}[label=thm.x.term-nst-*,restate=thmxtermnstx]
   For any~$\delta$ there is a~$\delta'_\Hnst$ such
   that~$\delta\nst[*]\delta'_\Hnst$.
 \end{theorem}
-
-\gl{PAREI AQUI}
 
 The main result of this section, Theorem~\ref{thm.x.term}, is similar to
 Theorem~\ref{thm.x.term-nst-*} but applies to transitions~$\trans$ in
