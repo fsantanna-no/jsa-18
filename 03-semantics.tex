@@ -59,8 +59,8 @@ nonzero value means true while zero means false.
 We distinguish between three kinds of basic \CEU statements.  First, there
 are those statements which are common in imperative languages and behave as
 usual, namely, declarations, assignments, conditionals, sequences, loops,
-and breaks.  (The $\ceu{\Var}$ statement of basic \CEU introduces a single
-local variable whose scope is the statement immediately following it.)
+and breaks.  The $\ceu{\Var}$ statement of basic \CEU introduces a single
+local variable whose scope is the statement immediately following it.
 
 The statements of the second kind are those which are specific to \CEU.
 These are the statements $\ceu{\AwaitExt}$, $\ceu{\AwaitInt}$,
@@ -113,6 +113,7 @@ restriction~\ref{sec.sem.restrictions.4} ensures that the body of
 $\ceu{\Every}$ and~$\ceu{\Fin}$ statements always execute to completion
 within the same reaction.  Similar restrictions exist in full \CEU, as
 discussed in Section~\ref{sec.ceu}.
+All restrictions can be trivially verified by inspecting the AST of programs.
 
 From now on, whenever we speak of a basic \CEU program we mean a well-formed
 basic \CEU program.
@@ -202,7 +203,7 @@ variables: \code{timer\_}, which holds the elapsed time, and \code{delta\_},
 which holds the residual time (initially set to 0).
 
 Listing~\ref{lst.TIMER.b} shows the basic \CEU program resulting from the
-translation of the two timers shown in Listing~\ref{lst.TIMER.a} (ln~1--11).
+translation of the two timers shown in Listing~\ref{lst.TIMER.a} (ln~1,11).
 A timer first adds a (possibly) negative delta from the time it should await
 (ln~1).  Then, it enters in a loop that awakes on every occurrence of
 \code{TIMER} (ln~7) and decrements the time it should await (ln~8).  Each
