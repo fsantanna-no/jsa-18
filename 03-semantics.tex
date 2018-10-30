@@ -77,7 +77,7 @@ $\ceu{\AtParAnd}$, and $\ceu{\AtParOr}$.  These are hidden internal
 statements used by the interpreter to encode in the program's text
 information about its execution.  We will have more to say about these
 \texttt{@}-statements in Section~\ref{sec.sem.opsem}.  Before that, however,
-we need to present the syntactical restrictions of basic \CEU and discuss
+we need to present the syntactic restrictions of basic \CEU and discuss
 the mapping of full \CEU programs into basic \CEU programs.
 
 \subsection{Syntactic Restrictions of Basic \CEU}
@@ -96,7 +96,8 @@ program, the generated program must satisfy the following restrictions:
 \item\label{sec.sem.restrictions.3} If a statement of the
   form~$\ceu{\Loop{\stmt}}$ occurs in the program, then all execution paths
   within~$\stmt$ contain a matching~$\ceu{\Break}$ or an~$\ceu{\AwaitExt}$
-  or an~$\ceu{\Every}$.
+  or an~$\ceu{\EveryExt}$ (i.e., an $\ceu{\Every}$ that expects an external
+  event.)
 \item\label{sec.sem.restrictions.4} If a statement of the
   form~$\ceu{\Every{e}\,{\stmt}}$ or~$\ceu{\Fin{\stmt}}$ occurs in the
   program, then~$\stmt$ does not contain occurrences of $\ceu{\Loop}$,
@@ -716,7 +717,7 @@ the most recent binding of the given variable to the given value:
     (v,n):\updt(\theta,v',n') &\text{otherwise}.
   \end{cases}
 \]
-The first syntactical restriction listed in
+The first syntactic restriction listed in
 Section~\ref{sec.sem.restrictions} ensures that~$\updt$ is always defined.
 
 \subsubsection*{Conditionals}
