@@ -7,9 +7,6 @@ result and terminate. And third, that the maximum amount of memory they
 consume never exceeds a fixed threshold which can be derived statically from
 the input program.
 
-% We anticipate that the proofs of determinism and termination are built
-% from the bottom up.
-
 The proofs of determinism (Section~\ref{sec.proofs.det}) and termination
 (Section~\ref{sec.proofs.term}) are constructed from the bottom up.  We
 first prove the determinism and termination of single~$\out$ and~$\nst$
@@ -17,8 +14,10 @@ transitions, then of their finite iterations~$\out[*]$ and~$\nst[*]$, and
 finally of the finite iteration of transitions in general
 (relation~$\trans[*]$).  Since \emph{reaction} is formally defined in terms
 of relation~$\trans[*]$ (see Section~\ref{sec.sem.opsem}), by proving
-that~$\trans[*]$ is deterministic and always terminates (with an irreducible
-description), we establish that the same holds for \emph{reaction}.
+that~$\trans[*]$ is deterministic and always terminates with an irreducible
+description, we establish that the same holds for \emph{reaction}.
+
+\gl{TODO: Memory-boundedness and equivalence.}
 
 % The proof of the third property of reactions, memory-boundedness, follows
 % from...  We discuss this in Section.
@@ -49,9 +48,9 @@ relation~$\trans$ is in fact a (partial) function.
 The next two lemmas establish the determinism of a single application
 of~$\out$ and~$\nst$.  Lemma~\ref{lem.x.det-out} follows from a simple
 inspection of rules~\R{push} and~\R{pop}.  The proof of
-Lemma~\ref{lem.x.det-nst} follows by induction on the structure of the
-derivation trees produced by the rules for~$\nst$.  Both lemmas are used in
-the proof of the Theorem~\ref{thm.x.det}, the main result of this section.
+Lemma~\ref{lem.x.det-nst} is by induction on the structure of the derivation
+trees produced by the rules for~$\nst$.  Both lemmas are used in the proof
+of the Theorem~\ref{thm.x.det}, the main result of this section.
 
 \begin{lemma}[label=lem.x.det-out,restate=lemxdetout]
   If~$\delta\out\delta_1$ and~$\delta\out\delta_2$ then~$\delta_1=\delta_2$.
@@ -61,10 +60,10 @@ the proof of the Theorem~\ref{thm.x.det}, the main result of this section.
   If~$\delta\nst\delta_1$ and~$\delta\nst\delta_2$ then~$\delta_1=\delta_2$.
 \end{lemma}
 
-Theorem~\ref{thm.x.det} establishes that any given number~$i\ge0$ of
-applications of arbitrary transition rules, starting from the same input
-description, will always lead to the same output description.  In other
-words, any finite sequence of transitions behave deterministically.
+Theorem~\ref{thm.x.det} establishes that any number~$i\ge0$ of applications
+of arbitrary transition rules, starting from the same input description,
+will always lead to the same output description.  In other words, any finite
+sequence of transitions behave deterministically.
 
 \begin{theorem}[name=Determinism,label=thm.x.det,restate=thmxdet]
   $\delta\trans[i]\delta_1$ and~$\delta\trans[i]\delta_2$
@@ -78,7 +77,7 @@ words, any finite sequence of transitions behave deterministically.
     \quad\text{and}\quad
     \delta\trans[1]\delta_2'\trans[i-1]\delta_2\,,
   \]
-  for some~$i>1$, $\delta_1'$ and~$\delta_2'$.
+  for some~$i>1$, $\delta_1'$, and~$\delta_2'$.
   %%
   Then, by Lemma~\ref{lem.x.det-out} or~\ref{lem.x.det-nst}, depending on
   whether the first transition is~$\out$ or~$\nst$ (it cannot be both),
@@ -119,84 +118,72 @@ that there is such~$k\ne{i}$.
   no~$\delta_\Hnst''$ such that~$\delta\nst[k]\delta''_\Hnst$.
 \end{proposition}
 
-The next two lemmas establish that sequences of~$\nst$ transitions behave as
+The next lemma establishes that sequences of~$\nst$ transitions behave as
 expected regarding the internal evaluation of compound statements.  Its
-proof follows by induction on~$i$.
+proof is by induction on~$i$.
 
-\gl{TODO: AtVar}
-
-\begin{lemma}[label=lem.x.props-nst-i-a,restate=lemxpropsnstia]
+\begin{lemma}[label=lem.x.props-nst-i,restate=lemxpropsnsti]
   \strut
-  %%
-  If~$\<\stmt_1,\ell,e,\theta>\nst[i]\<\stmt_1',\ell,e',\theta'>$, then
-  for any~$\stmt_2$,
-  \begin{align*}
-    \<\ceu{\stmt_1;\,\stmt_2},\ell,e,\theta>
-    &\nst[i]\<\stmt_1';\stmt_2,\ell,e',\theta'>\\
-    %%
-    \<\ceu{\stmt_1\AtLoop{p_2}},\stmt_2,\ell,e,\theta>
-    &\nst[i]\<\ceu{\stmt_1'\AtLoop{\stmt_2}},\ell,e',\theta'>\\
-    %% 
-    \<\ceu{{\stmt_1}\AtParAnd{\stmt_2}},\ell,e,\theta>
-    &\nst[i]\<\ceu{{\stmt_1'}\AtParAnd{\stmt_2}},\ell,e',\theta'>\\
-    %% 
-    \<\ceu{{\stmt_1}\AtParOr{\stmt_2}},\ell,e,\theta>
-    &\nst[i]\<\ceu{{\stmt_1}'\AtParOr{\stmt_2}},\ell,e',\theta'>
-  \end{align*}
-\end{lemma}
-
-\begin{lemma}[label=lem.x.props-nst-i-b,restate=lemxpropsnstib]
-  If~$\<\stmt_2,\ell,e,\theta>\nst[i]\<\stmt_2',\ell,e',\theta'>$, then for
-  any~$\stmt_1$ such that~$\isblk(\stmt_1,\ell)$,
-  \begin{align*}
-    \<\ceu{{\stmt_1}\AtParAnd{\stmt_2}},\ell,e,\theta>
-    &\nst[i]\<\ceu{{\stmt_1}\AtParAnd{\stmt_2'}},\ell,e',\theta'>\\
-    %%
-    \<\ceu{{\stmt_1}\AtParOr{\stmt_2}},\ell,e,\theta>
-    &\nst[i]\<\ceu{{\stmt_1}\AtParOr{\stmt_2'}},\ell,e',\theta'>
-  \end{align*}
+  \begin{enumerate}
+  \item\label{lem.x.props-nst-i.1}
+    If~$\<\stmt_1,\nil,\theta>\nst[i]\<\stmt_1',e,\theta'>$ then, for
+    any~$\stmt_2$,
+    \begin{align*}
+      &\<\ceu{\stmt_1;\,\stmt_2},\nil,\theta>\\[-\jot]
+      &\qquad\nst[i]\<\stmt_1';\stmt_2,e,\theta'>\\
+      %%
+      &\<\ceu{\stmt_1\AtLoop{p_2}},\stmt_2,\nil,\theta>\\[-\jot]
+      &\qquad\nst[i]\<\ceu{\stmt_1'\AtLoop{\stmt_2}},e,\theta'>\\
+      %%
+      &\<\ceu{{\stmt_1}\AtParAnd{\stmt_2}},\nil,\theta>\\[-\jot]
+      &\qquad\nst[i]\<\ceu{{\stmt_1'}\AtParAnd{\stmt_2}},e,\theta'>\\
+      %%
+      &\<\ceu{{\stmt_1}\AtParOr{\stmt_2}},\nil,\theta>\\[-\jot]
+      &\qquad\nst[i]\<\ceu{{\stmt_1}'\AtParOr{\stmt_2}},e,\theta'>
+    \end{align*}
+  \item\label{lem.x.props-nst-i.2}
+    If~$\<\stmt_2,\ell,\nil,\theta>\nst[i]\<\stmt_2',\ell,e,\theta'>$ then,
+    for any~$\stmt_1$ such that~$\isblk(\stmt_1,\ell)$,
+    \begin{align*}
+      &\<\ceu{\stmt_1\AtParAnd\stmt_2},\nil,\theta>\\[-\jot]
+      &\qquad\nst[i]\<\ceu{\stmt_1\AtParAnd\stmt_2'},e,\theta'>\\
+      %%
+      &\<\ceu{\stmt_1\AtParOr\stmt_2},\nil,\theta>\\[-\jot]
+      &\qquad\nst[i]\<\ceu{\stmt_1\AtParOr\stmt_2'},e,\theta'>
+    \end{align*}
+  \end{enumerate}
 \end{lemma}
 
 The syntactic restrictions presented in Section~\ref{sec.sem.restrictions}
 regarding the bodies of loops, $\ceu{\Every}$ statements, and $\ceu{\Fin}$
-statements are formalized in Propositions~\ref{prop.x.syn-rest.fin}
-and~\ref{prop.x.syn-rest.loop}.
-
-\gl{PROOFS}
+statements give rise to the following propositions.
 
 \begin{proposition}[label=prop.x.syn-rest.loop,restate=propxsynrestloop]
-  If~$\stmt=\ceu{\Loop{\stmt'}}$, then all execution paths within~$\stmt'$
-  contain a matching~$\ceu{\Break}$ or an~$\ceu{\AwaitExt}$, and so,
+  If~$\stmt$ is the body of a $\ceu{\Loop}$ statement, then
   \[
-    \<\ceu{\Loop{\stmt'}},\ell,\nil,\theta>\nst[*]\<\stmt'',\ell,e,\theta'>,
+    \<\stmt,\ell,\nil,\theta>\nst[*]\<\stmt',\ell,e,\theta'>
   \]
-  for some~$\theta'$, $e$, and~$\stmt''$ such that
-  $\stmt''=\ceu{{\Break}\AtLoop{\stmt'}}$ or~$\isblk(\stmt'',\ell)$.
+  where $\stmt'=\ceu{\Break\AtLoop\stmt}$ or $\isblk(\stmt',\ell)$.
 \end{proposition}
 
-\begin{proposition}[label=prop.x.syn-rest.fin,
-  restate=propxsynrestfin]
-  If~$\stmt=\ceu{\Every{e\,\stmt'}}$ or $\stmt=\ceu{\Fin{\stmt'}}$,
-  then~$\stmt'$ does not contain occurrences of $\ceu{\Loop}$,
-  $\ceu{\Break}$, $\ceu{\AwaitExt}$, $\ceu{\AwaitInt}$, $\ceu{\Every}$,
-  or~$\ceu{\Fin}$, and so,
+\begin{proposition}[label=prop.x.syn-rest.fin,restate=propxsynrestfin]
+  If~$\stmt$ is the body of an $\ceu{\Every}$ or~$\ceu{\Fin}$ statement,
+  then
   \[
-    \<\clear(\stmt'),\ell,\nil,\theta>
-    \nst[*]\<\stmt'',\ell,\nil,\theta'>,
+    \<\clear(\stmt),\ell,\nil,\theta>
+    \nst[*]\<\stmt',\ell,\nil,\theta'>,
   \]
-  for some~$\theta'$ and~$\stmt''$ such that either~$\stmt''=\ceu{\Nop}$
-  or~$\isblk(\stmt'',\ell)$.
+  where $\stmt'=\ceu{\Nop}$ or $\isblk(\stmt',\ell)$.
 \end{proposition}
-  
+
 The next theorem, Theorem~\ref{thm.x.term-nst-*}, establishes that a finite
 (possibly zero) number of~$\nst$ transitions eventually leads to a
 nested-irreducible description.  Hence, for any input description~$\delta$,
 it is always possible to transform~$\delta$ in a nested-irreducible
 description~$\delta'$ by applying to it a sufficiently long sequence
 of~$\nst$ transitions.  The proof of the theorem follows by induction on the
-structure of statements and depends on Lemmas~\ref{lem.x.props-nst-i-a}
-and~\ref{lem.x.props-nst-i-b} and on Propositions~\ref{prop.x.syn-rest.fin}
-and~\ref{prop.x.syn-rest.loop}.
+structure of statements and depends on Lemma~\ref{lem.x.props-nst-i} and
+Propositions~\ref{prop.x.syn-rest.loop} and~\ref{prop.x.syn-rest.fin}.
 
 \begin{theorem}[label=thm.x.term-nst-*,restate=thmxtermnstx]
   For any~$\delta$ there is a~$\delta'_\Hnst$ such
@@ -205,101 +192,151 @@ and~\ref{prop.x.syn-rest.loop}.
 
 The main result of this section, Theorem~\ref{thm.x.term}, is similar to
 Theorem~\ref{thm.x.term-nst-*} but applies to transitions~$\trans$ in
-general.  Before stating and proving it, we need to characterize irreducible
-descriptions in general.  This characterization, given in
-Definition~\ref{def.x.H}, depends on the notions of potency and rank.
+general.  In the statement of Theorem~\ref{thm.x.term-nst-*} we use the
+notion of a general irreducible description~$\delta_\#$, i.e., one that
+cannot be advanced by $\out$ and $\nst$.  This notion is defined with the
+help of the auxiliary notions of potency and rank, introduced below.
 
 \begin{definition}
   \label{def.x.pot}
   %%
-  The \emph{potency} of a program~$p$ in reaction to event~$e$,
-  denoted~$\pot(p,e)$, is the maximum number of~$\ceu{\EmitInt}$ statements
-  that can be executed in a reaction of~$p$ to~$e$, i.e.,
+  The \emph{potency} of a statement $\stmt$ in reaction to event~$e$,
+  denoted~$\pot(\stmt,e)$, is the maximum number of~$\ceu{\EmitInt}$
+  statements that can be executed in a reaction of~$\stmt$ to~$e$, i.e.,
   \[
-    \pot(p,e)=\pot'(\bcast(p,e))\,,
+    \pot(\stmt,e)=\pot'(\bcast(\stmt,e))\,,
   \]
-  where~$\pot'$ is an auxiliary function that counts the maximum number of
-  reachable~$\ceu{\EmitInt}$ statements in the program resulting from the
-  broadcast of event~$e$ to~$p$.
-
-  Function~$\pot'$ is defined by the following clauses:
-  \begin{enumerate:a}
-  \item\label{def.x.pot.first}$\pot'(\ceu{\EmitInt}(e))=1$.
-    %%
-  \item$\pot'(\ceu{\IfElse{\Mem(\Id)\!}{p_1\!}{p_2\!}})\!=\!
-    \max\{\pot'(p_1),\pot'(p_2)\}$.
-    %%
-  \item$\pot'(\ceu{\Loop{p_1}})=\pot'(p_1)$.
-    %%
-  \item$\pot'(\ceu{{p_1}\And{p_2}})=\pot'(\ceu{{p_1}\Or{p_2}})=
-    \pot'(p_1)+\pot'(p_2)$.
-    %%
-  \item If~$p_1\ne\ceu{\Break},\ceu{\AwaitExt(e)}$,
-    \begin{align*}
-      \pot'(\ceu{p_1;\,p_2})&=\pot'(p_1)+\pot'(p_2)\\[-.5\jot]
-      \pot'(\ceu{p_1\AtLoop{p_2}})&=
-      \begin{cases}
-        \pot'(p_1)              &\text{if\enspace(\dag)}\\[-.5\jot]
-        \pot'(p_1)+\pot'(p_2)   &\text{otherwise,}\\[-.5\jot]
-      \end{cases}
-    \end{align*}
-    where~(\dag) stands for: ``a~$\ceu{\Break}$ or~$\ceu{\AwaitExt}$ occurs
-    in all execution paths of~$p_1$''.
-    %%
-  \item If~$p_1,p_2\ne\ceu{\Break}$,
-    $\pot'(\ceu{{p_1}\AtAnd{p_2}})=\pot'(p_1)+\pot'(p_2)$.
-    %%
-  \item\label{def.x.pot.before-last} If~$p_1,p_2\ne\ceu{\Break}$
-    and~$p_1,p_2\ne\ceu{\Nop}$,
-    \vskip-.95em
-    \[
-      \pot'(\ceu{{p_1}\AtOr{p_2}})=\pot'(p_1)+\pot'(p_2)\,.
-    \]
-    %%
-  \item\label{def.x.pot.last} Otherwise, if none
-    of~\ref{def.x.pot.first}--\ref{def.x.pot.before-last} applies,
-    $\pot'(\_)=0$.
-  \end{enumerate:a}
+  where~$\pot'$ is a function that counts the maximum number of
+  reachable~$\ceu{\EmitInt}$'s in the given statement.  (See
+  Figure~\ref{fig.pot'}.)
 \end{definition}
+
+\begin{figure*}[t]
+  \newsavebox{\tmpbox}
+  \sbox{\tmpbox}{$\pot'(\stmt_1)+\pot'(\stmt_2)$}
+  \newlength{\tmplen}
+  \setlength{\tmplen}{.75\columnwidth}
+  \begin{minipage}{\textwidth}
+    \begin{empheq}[box=\fbox]{alignat*=1}
+      \pot'(\ceu{\EmitInt(e)})
+      &=1\\
+      %%
+      \pot'(\ceu{\Var{v\,\stmt}})
+      &=\pot'(\stmt)\\
+      %%
+      \pot'(\ceu{\IfElse{\expr}{\stmt_1}{\stmt_2}})
+      &=\max\{\pot'(\stmt_1),\pot'(\stmt_2)\}\\
+      %%
+      \pot'(\ceu{\stmt_1;\stmt_2})
+      &=\begin{cases}
+        0
+        &\begin{minipage}[t]{\tmplen}
+          if $\stmt_1=\ceu{\Break}$ or $\stmt_1=\ceu{\AwaitExt}$\\
+          \strut\quad or $\stmt_1=\ceu{\EveryExt}$
+        \end{minipage}\\
+        \pot'(\stmt_1)+\pot'(\stmt_2)
+        &\text{otherwise}
+      \end{cases}\\
+      %%
+      \pot'(\ceu{\Loop\stmt})
+      &=\pot'(\stmt)\\
+      %%
+      \pot'(\ceu{\Every{e\,\stmt}})
+      &=\begin{cases}
+        0
+        &\text{if~$e$ is an external event}\\
+        \mathmakebox[\wd\tmpbox][l]{\pot'(\stmt)}
+        &\text{otherwise}
+      \end{cases}\\
+      %%
+      \pot'(\ceu{\stmt_1\ParAnd\stmt_2})
+      &=\pot'(\stmt_1)+\pot'(\stmt_2)\\
+      %%
+      \pot'(\ceu{\stmt_1\ParOr\stmt_2})
+      &=\pot'(\stmt_1)+\pot'(\stmt_2)\\
+      %%
+      \pot'(\ceu{\Fin\stmt})
+      &=\pot'(\stmt)\\
+      %%
+      \pot'(\ceu{\AtVar{v\,n\,\stmt}})
+      &=\pot'(\stmt)\\
+      %%
+      \pot'(\ceu{\stmt_1\AtLoop\stmt_2})
+      &=
+      \begin{cases}
+        \pot'(\stmt_1)
+        &\begin{minipage}[t]{\tmplen}
+          if all execution paths in~$\stmt_1$ have a\\
+          \strut\quad matching
+          $\ceu{\Break}$ or $\ceu{\AwaitExt}$ or $\ceu{\EveryExt}$
+        \end{minipage}\\
+        %%
+        \pot'(\stmt_1)+\pot'(\stmt_2)
+        &\text{otherwise}
+      \end{cases}\\
+      %%
+      \pot'(\ceu{\stmt_1\AtParAnd\stmt_2})
+      &=
+      \begin{cases}
+        0                             &\text{if~$\stmt_1=\ceu{\Break}$}\\
+        \pot'(\stmt_1)+\pot'(\stmt_2) &\text{otherwise}
+      \end{cases}\\
+      %%
+      \pot'(\ceu{\stmt_1\AtParOr\stmt_2})
+      &=
+      \begin{cases}
+        0
+        &\text{if~$\stmt_1=\ceu{\Nop}$ or $\stmt_1=\ceu{\Break}$}\\
+        \pot'(\stmt_1)+\pot'(\stmt_2)
+        &\text{otherwise}
+      \end{cases}\\
+      %%
+      \pot'(\_)
+      &= 0\quad\text{\emph{(otherwise)}}
+    \end{empheq}
+  \end{minipage}
+  \caption{Function~$\pot'$ counts the maximum number of
+    reachable~$\ceu{\protect\EmitInt}$'s in the given statement.}
+  \label{fig.pot'}
+\end{figure*}
 
 \begin{definition}
   \label{def.x.rank}
   %%
-  The \emph{rank} of a description~$\delta=\<p,n,e>$,
-  denoted~$\rank(\delta)$, is a pair of nonnegative integers~$\<i,j>$ such
-  that
+  The \emph{rank} of a description~$\delta=\<\stmt,\ell,e,\theta>$,
+  denoted~$\rank(\delta)$, is a pair~$(i,j)$ of nonnegative integers where
   \begin{alignat*}{2}
-    i&=\pot(p,e) &\quad\text{and}\quad
+    i&=\pot(\stmt,e) &\quad\text{and}\quad
     j&=
        \begin{cases}
-         n  &\text{if~$e=\nil$}\\
-         n+1&\text{otherwise\,.}
+         \ell  &\text{if~$e=\nil$}\\
+         \ell+1&\text{otherwise\,.}
        \end{cases}
   \end{alignat*}
-Intuitively, the rank of a description~$\delta$ is a measure of the maximum
-amount of ``work'' (transitions) required to transform~$\delta$ into an
-irreducible description, in the following sense.
 \end{definition}
 
+Intuitively, the rank of a description~$\delta$ is a measure of the effort
+required to transform~$\delta$ into an irreducible description, i.e., into
+one that satisfies the next definition.
 
 \begin{definition}
   \label{def.x.H}
   %%
-  A description~$\delta$ is \emph{irreducible} (in symbols, $\delta_\#$) iff
-  it is nested-irreducible and its~$\rank(\delta)$ is~$\<i,0>$, for
-  some~$i\ge0$.
+  A description~$\delta$ is \emph{irreducible} (in symbols, $\delta_\#$) if,
+  and only if, it is nested-irreducible and its~$\rank(\delta)$ is~$(i,0)$,
+  for some~$i\ge0$.
 \end{definition}
 
-An irreducible description~$\delta_\#=\<p,n,e>$ serves as a normal form for
-transitions~$\trans$ in general.  Such description cannot be advanced
-by~$\nst$, as it is nested-irreducible, and neither by~$\outpush$
+An irreducible description~$\delta_\#=\<\stmt,\ell,e,\theta>$ serves as a
+normal form for transitions~$\trans$ in general.  Such description cannot be
+advanced by~$\nst$, as it is nested-irreducible, and neither by~$\outpush$
 nor~$\outpop$, as the second coordinate of its rank is~0, which
-implies~$e=\nil$ and~$n=0$.
+implies~$e=\nil$ and~$\ell=0$.
 
 The next two lemmas establish that a single application of~$\out$ or~$\nst$
 either preserves or decreases the rank of the input description.  All rank
-comparisons assume lexicographic order, i.e., if~$\rank(\delta)=\<i,j>$
-and~$\rank(\delta')=\<i',j'>$ then~$\rank(\delta)>\rank(\delta')$ iff~$i>i'$
+comparisons use the lexicographic order, i.e., if~$\rank(\delta)=(i,j)$
+and~$\rank(\delta')=(i',j')$ then~$\rank(\delta)>\rank(\delta')$ iff~$i>i'$
 or~$i=i$ and~$j>j'$.
 %%
 The proof of Lemma~\ref{lem.x.rank-out} follows directly from~\R{push}
@@ -307,24 +344,20 @@ and~\R{pop} and from Definitions~\ref{def.x.pot} and~\ref{def.x.rank}.  The
 proof of Lemma~\ref{lem.x.rank-nst}, however, is by induction on the
 structure of~$\nst$ derivations.
 
-\begin{restatable}{lemma}{lemxrankout}\strut
-  \label{lem.x.rank-out}
+\begin{lemma}[label=lem.x.rank-out,restate=lemxrankout]
+  \strut
   %%
-  \begin{enumerate:a}
+  \begin{enumerate}
   \item\label{lem.x.rank-out-push} If~$\delta\outpush\delta'$
     then~$\rank(\delta)=\rank(\delta')$.
   \item\label{lem.x.rank-out-pop} If~$\delta\outpop\delta'$
     then~$\rank(\delta)>\rank(\delta')$.
-  \end{enumerate:a}
-\end{restatable}
+  \end{enumerate}
+\end{lemma}
 
-%\vskip-.25em
-
-\begin{restatable}{lemma}{lemxranknst}
-  \label{lem.x.rank-nst}
-  %%
+\begin{lemma}[label=lem.x.rank-nst,restate=lemxranknst]
   If~$\delta\nst\delta'$ then~$\rank(\delta)\ge\rank(\delta')$.
-\end{restatable}
+\end{lemma}
 
 The next theorem is a generalization of Lemma~\ref{lem.x.rank-nst}
 for~$\nst[*]$.  Its proof follows from the lemma by induction on~$i$.
@@ -335,12 +368,12 @@ for~$\nst[*]$.  Its proof follows from the lemma by induction on~$i$.
   If~$\delta\nst[*]\delta'$ then~$\rank(\delta)\ge\rank(\delta')$.
 \end{restatable}
 
-We now state and prove the main result of this section,
-Theorem~\ref{thm.x.term}, the termination theorem for~$\trans[*]$.  The idea
-of the proof is that a sufficiently large sequence of~$\nst$ and~$\out$
-transitions eventually decreases the rank of the current description until
-an irreducible description is reached.  This irreducible description is the
-final result of the reaction.
+We are finally in a position to state and prove the main result of this
+section, Theorem~\ref{thm.x.term}, the termination theorem for~$\trans[*]$.
+The idea of the proof is that a sufficiently large sequence of~$\nst$
+and~$\out$ transitions eventually decreases the rank of the current
+description until an irreducible description is reached.  This irreducible
+description is the final result of the reaction.
 %%
 \begin{restatable}[Termination]{theorem}{thmxterm}
   \label{thm.x.term}
@@ -349,66 +382,76 @@ final result of the reaction.
   that~$\delta\trans[*]\delta'_\#$.
 \end{restatable}
 \begin{proof}
-  By lexicographic induction on~$\rank(\delta)$.  Let~$\delta=\<p,n,e>$ and
-  $\rank(\delta)=\<i,j>$.
+  By induction on induction on~$\rank(\delta)$.
+  Let
+  \[
+    \delta=\<\stmt,\ell,e,\theta>
+    \quad\text{and}\quad
+    \rank(\delta)=(i,j).
+  \]
 
-  For the basis, suppose $\<i,j>=\<0,0>$.  Then~$\delta$ cannot be advanced
-  by~$\out$, as~$j=0$ implies~$e=\nil$ and~$n=0$.  If~$\delta$ is
+  For the basis, suppose $(i,j)=(0,0)$.  Then~$\delta$ cannot be advanced
+  by~$\out$, as~$j=0$ implies~$e=\nil$ and~$\ell=0$.  If~$\delta$ is
   nested-irreducible, the theorem is trivially true,
   as~$\delta\nst[0]\delta_\Hnst$ and~$\delta_\#$.  If~$\delta$ is not
   nested-irreducible then, by Theorem~\ref{thm.x.term-nst-*},
   $\delta\nst[*]\delta'_\Hnst$, for some~$\delta'_\Hnst$.  By
   Theorem~\ref{thm.x.rank-nst-*}, $\rank(\delta)\ge\rank(\delta')$, which
-  implies~$\rank(\delta')=\<0,0>$, and so~$\delta'_\#$.
+  implies~$\rank(\delta')=(0,0)$, and so~$\delta'_\#$.
 
-  For the inductive step, suppose~$\<i,j>>\<0,0>$.
-  %%
-  Then, depending on whether or not $\delta$~is nested-irreducible, there
-  are two cases.
+  For the inductive step, suppose~$(i,j)>(0,0)$.  There are two
+  cases.
   \begin{case}
-  \item\label{thm.x.term.Hnst}$\delta$~is nested-irreducible.
+  \item[{$[\delta\text{~is nested-irreducible}]$}]\label{thm.x.term.Hnst}
     %%
     If~$j=0$, by Definition~\ref{def.x.H}, $\delta_\#$, and
     so~$\delta\trans[0]\delta_\#$.  If~$j>0$, there are two subcases:
     \begin{case}
-    \item\label{thm.x.term.Hnst-j>0-nonnil}$e\ne\nil$.
+    \item[{[$e\ne\nil$]}]\label{thm.x.term.Hnst-j>0-nonnil}
       %%
       Then, by~\R{push} and by Theorem~\ref{thm.x.term-nst-*}, there
-      are~$\delta_1'$ and~$\delta'_\Hnst=\<p',n+1,e'>$ such that
-      $\delta\outpush\delta_1'\nst[*]\delta'_\Hnst$.  Thus, by
-      Lemma~\ref{lem.x.rank-out} and by Theorem~\ref{thm.x.rank-nst-*},
+      are~$\delta_1'$ and~$\delta'_\Hnst=\<\stmt',\ell+1,e',\theta'>$ such
+      that
+      \[
+        \delta\outpush\delta_1'\nst[*]\delta'_\Hnst.
+      \]
+      Thus, by Lemma~\ref{lem.x.rank-out} and by
+      Theorem~\ref{thm.x.rank-nst-*},
       \begin{align*}
-        \rank(\delta)=\rank(\delta_1')=\<i,j>
-        \ge\rank(\delta')=\<i',j'>\,.
+        \rank(\delta)=\rank(\delta_1')=(i,j)
+        \ge\rank(\delta')=(i',j').
       \end{align*}
       If~$e'=\nil$, then $i=i'$ and~$j=j'$, and the rest of this proof is
-      similar to that of Case~\ref{thm.x.term.Hnst-j>0-nil} below.
-      Otherwise, if~$e'\ne\nil$, then $i>i'$, as an~$\ceu{\EmitInt(e')}$ was
-      consumed by the nested transitions.  Thus,
+      similar to that of the case for $e=\nil$ below.  Otherwise,
+      if~$e'\ne\nil$, then $i>i'$, as at least one reachable
+      $\ceu{\EmitInt}$ was consumed by the nested transitions.  Thus,
       $\rank(\delta)>\rank(\delta')$.  By the induction hypothesis,
       $\delta'\trans[*]\delta''_\#$, for some~$\delta''_\#$.  Therefore,
       $\delta\trans[*]\delta''_\#$.
       %%
-    \item\label{thm.x.term.Hnst-j>0-nil}$e=\nil$.
+    \item[{[$e=\nil$]}]\label{thm.x.term.Hnst-j>0-nil}
       %%
       Then, as~$j>0$, $\delta\outpop\delta'$, for some~$\delta'$.  By
       Lemma~\ref{lem.x.rank-out}, $\rank(\delta)>\rank(\delta')$.  Hence, by
       the induction hypothesis, $\delta'\trans[*]\delta''_\#$, for
       some~$\delta''_\#$.  And so, $\delta\trans[*]\delta''_\#$.
     \end{case}
-
-  \item$\delta$~is not nested-irreducible.
+    %%
+  \item[{$[\delta\text{~is not nested-irreducible}]$}]
     %%
     Then~$e=\nil$ and, by Theorems~\ref{thm.x.term-nst-*}
     and~\ref{thm.x.rank-nst-*}, there is a~$\delta'_\Hnst$ such
     that~$\delta\nst[*]\delta'_\Hnst$
     with~$\rank(\delta)\ge\rank(\delta'_\Hnst)$.  The rest of this proof is
-    similar to that of Case~\ref{thm.x.term.Hnst} above.\qedhere
+    similar to that of case when $\delta$ is nested-irreducible
+    above.\qedhere
   \end{case}
 \end{proof}
 
 \subsection{Memory Boundedness}
 \label{sec.proofs.bound}
+
+\gl{TODO}
 
 As \CEU has no mechanism for heap allocation, unbounded iteration, or
 general recursion, the maximum memory usage of a given \CEU program is
