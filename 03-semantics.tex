@@ -507,8 +507,8 @@ Function $\bcast$ takes a statement~$\stmt$ and an event~$e$ and awakes any
 trails in~$\stmt$ awaiting for~$e$.  It does so by converting any active
 $\ceu{\protect\AwaitExt(e)}$ and $\ceu{\protect\AwaitInt(e)}$ statements
 in~$\stmt$ to~$\ceu{\protect\Nop}$ (and thus consuming them) and by
-unwinding any active $\ceu{\protect\Every{e\,\stmt'}}$ statements in~$\stmt$
-(and thus allowing their body~$\stmt'$ to execute once).
+unwinding once any active $\ceu{\protect\Every{e\,\stmt'}}$ statements
+in~$\stmt$ (and thus allowing their body~$\stmt'$ to execute once).
 
 Note that \R{push} is the only rule that uses function~$\bcast$.  Moreover,
 it is the only rule in the semantics that matches a nonempty event
@@ -592,7 +592,7 @@ The~$\nst$ transitions have the general form
 They do not affect the stack level and never have an emitted event as a
 precondition.  The distinction between~$\out$ and~$\nst$ prevents rules
 \R{push} and \R{pop} from matching and, consequently, from inadvertently
-modifying the stack level before the nested reaction is over.
+modifying the stack level before a nested reaction is over.
 
 A full reaction follows the pattern
 %%
@@ -687,11 +687,11 @@ of~$\stmt$.  Initially, $n=\bot$ (undefined), but any assignments in~$\stmt$
 may change that.  Thus, after~$\stmt$ is advanced, the value~$n'$ associated
 with variable~$v$ in the (possibly) updated binding~$(v,n')$ is stored back
 in the enclosing $\ceu{\AtVar}$ statement.  (The updated binding itself is
-popped from the resulting memory because at this point the $\ceu{\AtVar}$ is
-no longer in effect.)
+popped from the resulting memory because at this point the $\ceu{\AtVar}$
+statement is no longer in effect.)
 
 We borrowed the technique used in rule~\R{var-adv} to implement lexical
-scoping from the formal semantics of Esterel~\cite{Berry-G-1992}.  Our
+scoping from the operational semantics of Esterel~\cite{Berry-G-1992}.  Our
 version is simpler though.  While in Esterel the memories resulting from
 advancing parallel trails need to be merged into a single memory, in \CEU
 this is not necessary: parallel trails are always advanced from left to
@@ -700,8 +700,7 @@ right and can thus safely operate over the same memory.
 The last $\nst$ rule for dealing with variables is~\R{assign}.
 Rule~\R{assign} transforms~$\ceu{v\coloneqq\expr}$ into $\ceu{\Nop}$ and
 performs the assignment.  That is, it evaluates~$\expr$ to an integer~$n$
-and assigns~$n$ to variable~$v$ in the most recent environment where~$v$ was
-declared.
+and updates the most recent binding of variable~$v$ to~$n$.
 
 Expression evaluation is carried out by function~$\eval$.  For
 simplicity, we assume that~$\eval$ always returns an integer.  In
@@ -717,6 +716,8 @@ the most recent binding of the given variable to the given value:
     (v,n):\updt(\theta,v',n') &\text{otherwise}.
   \end{cases}
 \]
+The first syntactical restriction listed in
+Section~\ref{sec.sem.restrictions} ensures that~$\updt$ is always defined.
 
 \subsubsection*{Conditionals}
 
@@ -763,7 +764,7 @@ affects the control flow.
 
 A sequence whose first part is terminated ($\ceu{\Nop}$) becomes its second
 part (rule \R{seq-nop}).  A sequence whose first part is a~$\ceu{\Break}$,
-propagates the~$\ceu{\Break}$ by dropping its second part (rule
+propagates the~$\ceu{\Break}$ outwards by dropping its second part (rule
 \R{seq-brk}).  And a sequence whose first part is neither $\ceu{\Nop}$
 nor~$\ceu{\Break}$ advances to the sequence, event, and memory resulting
 from advancing just its first part (rule \R{seq-adv}).
@@ -824,21 +825,21 @@ a~$\ceu{\Nop}$.
 
 When the interpreter encounters $\ceu{\ParAnd}$ and $\ceu{\ParOr}$, it
 expands them to $\ceu{\AtParAnd}$ and~$\ceu{\AtParOr}$ prefixing a
-$\ceu{\RunAt(\ell)}$ to the right-hand side of the resulting compositions.
-The $\ceu{\RunAt(\ell)}$ ensures that any reachable~$\ceu{\EmitInt}$ on the
-left-hand side executes to completion before the right-hand side starts
-(rules~\R{par/and-expd} and~\R{par/or-expd}).
+$\ceu{\RunAt(\ell)}$ to the right-hand side of the resulting compositions
+(rules \R{par/and-expd} and \R{par/or-expd}).  The $\ceu{\RunAt(\ell)}$
+ensures that any reachable~$\ceu{\EmitInt}$ on the left-hand side executes
+to completion before the right-hand side starts.
 
 There are twelve rules for advancing the sides of~$\ceu{\AtParAnd}$
 and~$\ceu{\AtParOr}$ statements.  Each of these rules ensures that the
 left-hand side always advances before the right-hand side.  That is, in each
 rule the right-hand side is advanced only when the left-hand side is
 blocked.  The twelve rules are divided into three groups:
-\begin{enumerate}
-\item Those that apply when one of the sides is $\ceu{\Nop}$.
-\item Those that apply when one of the sides is $\ceu{\Break}$.
-\item Those that apply when neither side is $\ceu{\Nop}$ or $\ceu{\Break}$.
-\end{enumerate}
+\begin{enumerate*}[label=(\roman*)]
+\item those that apply when one of the sides is $\ceu{\Nop}$;
+\item those that apply when one of the sides is $\ceu{\Break}$; and
+\item those that apply when neither side is $\ceu{\Nop}$ or $\ceu{\Break}$.
+\end{enumerate*}
 
 We begin by presenting the rules of the last group, which do not involve the
 termination of one of the sides.
@@ -956,8 +957,8 @@ finalization code associated with it (if any).  Thus, by expanding to a
 $clear$ call on the aborted side, rules \R{par/or-nop1} and \R{par/or-nop2},
 ensure that the composition is properly finalized.
 
-Note that, as there are no transition rules for~$\ceu{\Fin}$ statements,
-once reached, a $\ceu{\Fin}$ halts and will only be consumed if its trail is
+Note that as there are no transition rules for~$\ceu{\Fin}$ statements, once
+reached, a $\ceu{\Fin}$ halts and will only be consumed if its trail is
 aborted.  At this moment, its body will execute as a result of the~$\clear$
 call.  Note also that the syntactic restrictions of
 Section~\ref{sec.sem.restrictions} ensure that the body of a~$\ceu{\Fin}$
@@ -965,7 +966,7 @@ statement always execute within the same reaction.
 
 Finally, a~$\ceu{\Break}$ in one of the sides of a $\ceu{\AtParAnd}$ or
 $\ceu{\AtParOr}$ is propagated outwards, terminating the composition and
-properly aborting the other side with a~$\clear$ call
+properly finalizing the aborted side with a~$\clear$ call
 (rules~\R{par/and-brk1}, \R{par/and-brk2}, \R{par/or-brk1},
 and~\R{par/or-brk2}).
 %%
