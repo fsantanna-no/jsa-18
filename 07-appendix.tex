@@ -39,15 +39,15 @@
   Then, by the hypothesis of the lemma, there are derivations $\pi_1$
   and $\pi_2$ such that
   \[
-    \pi_1=\null
     \AxiomC{\strut$\vdots$}
+    \LeftLabel{\strut$\pi_1=\null$}
     \UnaryInfC{\strut$\delta\to\delta_1$}
-    \raisebox{5pt}{\DisplayProof}
+    \DisplayProof
     \quad\text{and}\quad
-    \pi_2=\null
     \AxiomC{\strut$\vdots$}
-    \UnaryInfC{$\delta\to\delta_2$}
-    \raisebox{5pt}{\DisplayProof}.
+    \LeftLabel{\strut$\pi_2=\null$}
+    \UnaryInfC{\strut$\delta\to\delta_2$}
+    \DisplayProof
   \]
   That is, the conclusion of derivation $\pi_1$ is $\delta\nst\delta_1$ and
   the conclusion of derivation $\pi_2$ is $\delta\nst\delta_2$.
@@ -91,19 +91,21 @@
       instances of \R{seq-adv}.  Hence, there are
       derivations $\pi_1'\prec\pi_1$ and $\pi_2'\prec\pi_2$ (i.e.,
       structurally smaller than $\pi_1$ and $\pi_2$) such that
-      \begin{align*}
-        \pi_1'&=\null
+      \[
         \AxiomC{\strut$\vdots$}
-        \UnaryInfC{$\<\stmt',\nil,\theta>
+        \LeftLabel{\strut$\pi_1'=\null$}
+        \UnaryInfC{\strut$\<\stmt',\nil,\theta>
           \nst\<\stmt_1',e_1',\theta_1'>$}
-        \raisebox{5pt}{\DisplayProof}\\
-        \shortintertext{and}
-        \pi_2'&=\null
-                \AxiomC{\strut$\vdots$}
-        \UnaryInfC{$\<\stmt',\nil,\theta>
+        \DisplayProof
+      \]
+      and
+      \[
+        \AxiomC{\strut$\vdots$}
+        \LeftLabel{\strut$\pi_2'=\null$}
+        \UnaryInfC{\strut$\<\stmt',\nil,\theta>
           \nst\<\stmt_2',e_2',\theta_2'>$}
-        \raisebox{5pt}{\DisplayProof}
-      \end{align*}
+        \DisplayProof
+      \]
       By the induction hypothesis, $\stmt_1'=\stmt_2'$, $e_1'=e_2'$
       and $\theta_1'=\theta_2'$.  Therefore,
       \[
@@ -659,7 +661,7 @@
       that
       \[
         \AxiomC{\strut$\vdots$}
-        \LeftLabel{\raisebox{2pt}{$\pi'=\enspace$}}
+        \LeftLabel{\strut$\pi'=\null$}
         \UnaryInfC{$\<\stmt_1,\ell,\nil,\theta>
           \nst\<\stmt_1',\ell,e',\theta'>$}
         \UnaryInfC{$\<\stmt,\ell,\nil,\theta>
@@ -742,7 +744,7 @@
 \thmranknstx*
 \begin{proof}
   If $\delta\nst[*]\delta'$ then $\delta\nst[i]\delta'$, for some~$i$.  We
-  proceed by induction on~$i$.  The theorem is trivially true for~$i=0$ and
+  proceed by induction on~$i$.  The theorem is trivially true for $i=0$ and
   follows directly from Lemma~\ref{lem.rank-nst} for $i=1$.  Suppose
   \[
     \delta\nst[1]\delta_1'\nst[i-1]\delta',

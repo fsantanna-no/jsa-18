@@ -125,25 +125,17 @@ labelwidth=*,align=case,label*=.\arabic*}
 \newcommand*\vars{\mathit{vars}}
 
 % Functions.
-\newcommand*\bcast{\mathop{\mathit{bcast}}}
-\newcommand*\clear{\mathop{\mathit{clear}}}
-\newcommand*\eval{\mathop{\mathit{eval}}}
-\newcommand*\isblk{\mathop{\mathit{isblk}}}
-\newcommand*\pot{\mathop{\mathit{pot}}}
-\newcommand*\rank{\mathop{\mathit{rank}}}
-\newcommand*\reaction{\mathop{\mathit{reaction}}}
-\newcommand*\reactspc{\mathop{\mathit{react}}\nolimits_\mathit{spc}}
-\newcommand*\updt{\mathop{\mathit{updt}}}
-
-% Rule labels.
-\makeatletter
-\newcommand*\Rlabelhook{}
-\newcommand*\@Rlabel[1]{\ensuremath{\text{\@R{#1}\bfseries{:}}}%
-  \appto{\Rlabelhook}{\label{R:#1}}}
-\newcommand*\Rlabel[1]{\@Rlabel{#1}}
-\newcommand*\@R[1]{{\bfseries#1}}
-\newcommand*\R[1]{\hyperref[R:#1]{\@R{#1}}}
-\makeatother
+\let\op\operatorname
+\newcommand*{\opi}[1]{\op{\mathit{#1}}}
+\newcommand*\bcast{\opi{bcast}}
+\newcommand*\clear{\opi{clear}}
+\newcommand*\eval{\opi{eval}}
+\newcommand*\isblk{\opi{isblk}}
+\newcommand*\pot{\opi{pot}}
+\newcommand*\rank{\opi{rank}}
+\newcommand*\reaction{\opi{reaction}}
+\newcommand*\reactspc{\opi{react}\nolimits_\mathit{spc}}
+\newcommand*\updt{\opi{\mathit{updt}}}
 
 % Transition arrows.
 \makeatletter
@@ -162,19 +154,29 @@ labelwidth=*,align=case,label*=.\arabic*}
     \phantom{\longrightarrow}%
   }%
 }
-\newcommand{\trans}[1][]{\@trans[#1]{}}
-\newcommand{\@out}{\mathit{out}}
-\newcommand{\@nst}{\mathit{nst}}
-\newcommand{\out}[1][]{\@trans[#1]{\@out\,\;}}
-\newcommand{\outpush}{\out[\mathit{push}]}
-\newcommand{\outpop}{\out[\mathit{pop}]}
-\newcommand{\nst}[1][]{\@trans[#1]{\@nst\,\;}}
+\newcommand*\trans[1][]{\@trans[#1]{}}
+\newcommand*\@out{\mathit{out}}
+\newcommand*\@nst{\mathit{nst}}
+\newcommand*\out[1][]{\@trans[#1]{\@out\,\;}}
+\newcommand*\outpush{\out[\mathit{push}]}
+\newcommand*\outpop{\out[\mathit{pop}]}
+\newcommand*\nst[1][]{\@trans[#1]{\@nst\,\;}}
 \makeatother
 
-% Irreducible suffix.
+% Suffixes.
 \makeatletter
-\newcommand*{\Hout}{{\#\@out}}
-\newcommand*{\Hnst}{{\#\@nst}}
+\newcommand*\Hout{{\#\@out}}
+\newcommand*\Hnst{{\#\@nst}}
+\makeatother
+
+% Rule labels.
+\makeatletter
+\newcommand*\Rlabelhook{}
+\newcommand*\@Rlabel[1]{\ensuremath{\text{\@R{#1}\bfseries{:}}}%
+  \appto{\Rlabelhook}{\label{R:#1}}}
+\newcommand*\Rlabel[1]{\@Rlabel{#1}}
+\newcommand*\@R[1]{{\bfseries#1}}
+\newcommand*\R[1]{\hyperref[R:#1]{\@R{#1}}}
 \makeatother
 
 % Hacks to reduce the space after captions.
