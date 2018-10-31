@@ -155,25 +155,27 @@ proof is by induction on~$i$.
   \end{enumerate}
 \end{lemma}
 
-The syntactic restrictions presented in Section~\ref{sec.sem.restrictions}
-regarding the bodies of loops, $\ceu{\Every}$ statements, and $\ceu{\Fin}$
-statements give rise to the following propositions.
+The implications of the syntactic restrictions presented in
+Section~\ref{sec.sem.restrictions} regarding the bodies of loops,
+$\ceu{\Every}$ statements, and $\ceu{\Fin}$ statements are formalized by the
+following assumptions.  (These are in fact provable propositions; we
+introduce them as assumptions for the sake of convenience.)
 
-\begin{proposition}[label=prop.syn-rest.loop,restate=propsynrestloop]
+\begin{assumption}[label=ass.syn-rest.loop]
   If~$\stmt$ is the body of a $\ceu{\Loop}$, then
   \[
     \<\stmt,\ell,\nil,\theta>\nst[*]\<\stmt',\ell,e,\theta'>,
   \]
   where $\stmt'=\ceu{\Break\AtLoop\stmt}$ or $\isblk(\stmt',\ell)$.
-\end{proposition}
+\end{assumption}
 
-\begin{proposition}[label=prop.syn-rest.fin,restate=propsynrestfin]
+\begin{assumption}[label=ass.syn-rest.fin]
   If~$\stmt$ is the body of an $\ceu{\Every}$ or~$\ceu{\Fin}$, then
   \[
     \<\clear(\stmt),\ell,\nil,\theta>\nst[*]\<\stmt',\ell,\nil,\theta'>,
   \]
   where $\stmt'=\ceu{\Nop}$ or $\isblk(\stmt',\ell)$.
-\end{proposition}
+\end{assumption}
 
 The next theorem, Theorem~\ref{thm.term-nst-*}, establishes that a finite
 (possibly zero) number of~$\nst$ transitions eventually leads to a
@@ -182,7 +184,7 @@ it is always possible to transform~$\delta$ in a nested-irreducible
 description~$\delta'$ by applying to it a sufficiently long sequence
 of~$\nst$ transitions.  The proof of the theorem follows by induction on the
 structure of statements and depends on Lemma~\ref{lem.props-nst-i} and
-Propositions~\ref{prop.syn-rest.loop} and~\ref{prop.syn-rest.fin}.
+Assumptions~\ref{ass.syn-rest.loop} and~\ref{ass.syn-rest.fin}.
 
 \begin{theorem}[label=thm.term-nst-*,restate=thmtermnstx]
   For any~$\delta$ there is a~$\delta'_\Hnst$ such
@@ -194,7 +196,7 @@ Theorem~\ref{thm.term-nst-*} but applies to transitions~$\trans$ in
 general.  In the statement of Theorem~\ref{thm.term-nst-*} we use the
 notion of a general irreducible description~$\delta_\#$, i.e., one that
 cannot be advanced by $\out$ and $\nst$.  This notion is defined with the
-help of the auxiliary notions of potency and rank, introduced below.
+help of the auxiliary notions of potency and rank, introduced next.
 
 \begin{definition}
   \label{def.pot}
@@ -470,8 +472,8 @@ corresponds to the maximum space it uses when computing
 
 If we assume that to compute~\eqref{eq.bound} the interpreter only keeps
 information about the current description~$\delta_c$, and that recursive
-$\nst$ transitions are computed inline (by rewriting~$\delta_c$), then
-$\reactspc(\stmt,e)$ is the maximum space taken by:
+$\nst$ transitions are computed inline (by rewriting~$\delta_c$ in place),
+then $\reactspc(\stmt,e)$ is the maximum space taken by:
 \begin{enumerate}
 \item the statement part~$\stmt_c$ of~$\delta_c$;
 \item the memory part~$\theta_c$ of~$\delta_c$; and
@@ -507,8 +509,8 @@ follows.  Let~$\stmt$ be a program that can react to external events~$e_1$,
 
 Similarly, we can extend the definition of maximal space to histories of
 external events (or sequences of reactions), and lastly, to the worst-case
-prefix of such a history, i.e., to the prefix which would trigger the worst
-possible $\reactspc$ call.  But this is out of the scope of this paper.
+prefix of such a history, i.e., to the prefix which maximizes $\reactspc$.
+
 
 % - program is finite
 % - lexical scope

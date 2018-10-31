@@ -35,6 +35,13 @@
 \newlist{enumerate:i}{enumerate}{4}
 \setlist[enumerate:i]{label=(\roman*)}
 
+% Theorems.
+\makeatletter
+\AtEndPreamble{%
+  \theoremstyle{definition}
+  \newtheorem{assumption}[theorem]{Assumption}}
+\makeatother
+
 % Proof by cases.
 \newlist{case}{enumerate}{4}
 \SetLabelAlign{case}{\emph{Case}~#1.\hfil}
