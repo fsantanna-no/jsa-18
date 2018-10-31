@@ -18,7 +18,7 @@ that~$\trans[*]$ is deterministic and that it always terminates (with an
 irreducible description), we establish that both properties also hold for
 \emph{reaction}.
 
-The remaining property of reactions, memory-bound\-ed\-ness
+The remaining property of reactions, memory-boundedness
 (Section~\ref{sec.proofs.bound}), follows from termination and from the fact
 that only a limited amount of expansions, declarations, and emissions can
 occur during a reaction.
@@ -85,9 +85,9 @@ introduce some notation and establish some basic properties of the
 transition relations~$\nst$ and~$\out$.
 
 \begin{definition}[label=def.Hnst]
-  A description~$\delta=\<\stmt,\ell,e,\theta>$ is
-  \emph{nested-irre\-ducible} if, and only if, $e\ne\nil$
-  or~$\stmt=\ceu{\Nop}$ or~$\stmt=\ceu{\Break}$ or~$\isblk(\stmt,\ell)$.
+  A description~$\delta=\<\stmt,\ell,e,\theta>$ is \emph{nested-irreducible}
+  if, and only if, $e\ne\nil$ or~$\stmt=\ceu{\Nop}$ or~$\stmt=\ceu{\Break}$
+  or~$\isblk(\stmt,\ell)$.
 \end{definition}
 
 Nested-irreducible descriptions serve as normal forms for~$\nst$
@@ -517,7 +517,10 @@ possible $\reactspc$ call.  But this is out of the scope of this paper.
 %     - reexecution only due to loops
 %     - loop reuse nested vars
 
+% LocalWords:  thmterm eq expd
+
 %%% Local Variables:
 %%% mode: latex
 %%% TeX-master: "index.tex"
 %%% End:
+
