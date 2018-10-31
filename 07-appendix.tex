@@ -2,7 +2,7 @@
 \label{sec.appendix}
 
 
-\lemxdetout*
+\lemdetout*
 \begin{proof}
   The lemma is vacuously true if $\delta$ cannot be advanced by $\out$
   transitions.  Suppose that is not the case, and let $\delta$, $\delta_1$,
@@ -25,7 +25,7 @@
 \end{proof}
 
 
-\lemxdetnst*
+\lemdetnst*
 \begin{proof}
   By induction on the structure of $\nst$ derivations.  The lemma is
   vacuously true if $\delta$ cannot be advanced by $\nst$ transitions.
@@ -141,7 +141,7 @@
 \end{proof}
 
 
-\propxirrnsti*
+\propirrnsti*
 \begin{proof}
   By contradiction on the hypothesis that there is such $k$.
   %%
@@ -149,14 +149,14 @@
   %%
   There are two cases.
   \begin{case}
-  \item\label{prop.x.irr-nst-i-case1}
+  \item\label{prop.irr-nst-i-case1}
     %%
     Suppose there are $k>i$ and $\delta''_\Hnst$ such
     that $\delta\nst[k]\delta''$.
     %%
     Then, by definition of $\nst[k]$,
     \begin{equation}
-      \label{prop.x.irr-nst-i-eq1}
+      \label{prop.irr-nst-i-eq1}
       %%
       \delta\nst[i]\delta'\nst[i+1]\delta_1'\nst[i+2]\cdots\nst[k]\delta''.
     \end{equation}
@@ -164,26 +164,26 @@
     $e'=\nil$ or $\stmt'=\ceu{\Nop}$ or $\stmt'=\ceu{\Break}$
     or $\isblk(\stmt',\ell)$.  In any of these cases, by the definition
     of $\nst$, there is no $\delta_1'$ such that $\delta'\nst[1]\delta_1'$,
-    which contradicts \eqref{prop.x.irr-nst-i-eq1}.  Therefore, no such $k$
+    which contradicts \eqref{prop.irr-nst-i-eq1}.  Therefore, no such $k$
     can exist.
     %%
   \item Suppose there are $k<i$ and $\delta''_\Hnst$ such
     that $\delta\nst[k]\delta''$.  Then, since $i>k$, by
-    Case \ref{prop.x.irr-nst-i-case1}, $\delta'$ cannot exist, which is
+    Case \ref{prop.irr-nst-i-case1}, $\delta'$ cannot exist, which is
     absurd.  Therefore, the assumption that there is such $k$ is
     false.\qedhere
   \end{case}
 \end{proof}
 
 
-\lemxpropsnsti*
+\lempropsnsti*
 \begin{proof}
   By induction on $i$.  We will only prove the case for the $\ceu{\AtParOr}$
-  composition in item~\eqref{lem.x.props-nst-i.1}.  The proof of the other
+  composition in item~\eqref{lem.props-nst-i.1}.  The proof of the other
   cases is similar.
 
   So, considering the case for the $\ceu{\AtParOr}$ in
-  item~\eqref{lem.x.props-nst-i.1}, the lemma is trivially true for $i=0$,
+  item~\eqref{lem.props-nst-i.1}, the lemma is trivially true for $i=0$,
   as $\stmt_1=\stmt_1'$, and follows directly from \R{par/or-adv1} for
   $i=1$.  Suppose
   \begin{align*}
@@ -215,15 +215,15 @@
 \end{proof}
 
 
-\propxsynrestloop*
+\propsynrestloop*
 \gl{TODO}
 
 
-\propxsynrestfin*
+\propsynrestfin*
 \gl{TODO}
 
 
-\thmxtermnstx*
+\thmtermnstx*
 \begin{proof}
   By induction on the structure of statements.  The theorem is trivially
   true if $\delta$ is nested-irreducible, as by definition
@@ -287,7 +287,7 @@
       \[
         \<\stmt',\nil,\theta>\nst[*]\<\stmt_1',e,\theta'>_\Hnst.
       \]
-      Then, by Lemma \ref{lem.x.props-nst-i},
+      Then, by Lemma \ref{lem.props-nst-i},
       \[
         \<\ceu{\stmt';\stmt''},\nil,\theta>
         \nst[*]\<\ceu{\stmt_1';\stmt''},e,\theta'>=\delta'.
@@ -362,12 +362,12 @@
         &\nst[1]\<\ceu{\Loop{\stmt''}},\ell,\nil,\theta>\\
         &\nst[1]\<\ceu{\stmt''\AtLoop\stmt''},\ell,\theta>
       \end{align*}
-      By Proposition~\ref{prop.x.syn-rest.loop},
+      By Proposition~\ref{prop.syn-rest.loop},
       \[
         \<\stmt'',\ell,\nil,\theta>\nst[*]\<\stmt''',\ell,e,\theta'>.
       \]
       where either~$\stmt'''=\ceu{\Break}$ or $\isblk(\stmt''',\ell)$.  By
-      Lemma~\ref{lem.x.props-nst-i},
+      Lemma~\ref{lem.props-nst-i},
       \begin{align*}
         &\<\ceu{\stmt''\AtLoop\stmt''},\ell,\nil,\theta>\\
         &\qquad\nst[*]\<\ceu{\stmt'''\AtLoop\stmt''},\ell,e,\theta'>=\delta'.
@@ -403,12 +403,12 @@
         &\<\ceu{\Break\AtParAnd\stmt''},\nil,\theta>\\
         &\qquad\nst[1]\<\ceu{\clear(\stmt'');\Break},\nil,\theta>.
       \end{align*}
-      By Proposition~\ref{prop.x.syn-rest.fin},
+      By Proposition~\ref{prop.syn-rest.fin},
       \[
         \<\ceu{\clear(\stmt'')},\ell,\nil,\theta>.
         \nst[*]\<\stmt''',\ell,e,\theta'>_\Hnst.
       \]
-      And so, by Lemma~\ref{lem.x.props-nst-i},
+      And so, by Lemma~\ref{lem.props-nst-i},
       \begin{align*}
         &\<\ceu{\clear(\stmt'');\Break},\ell,\nil,\theta>\\
         &\qquad\nst[*]\<\ceu{\stmt''';\Break},\ell,e,\theta'>_\Hnst.
@@ -418,7 +418,7 @@
       \[
         \<\stmt',\ell,\nil,\theta>\nst[*]\<\stmt_1',\ell,e,\theta'>_\Hnst.
       \]
-      Hence, by Lemma~\ref{lem.x.props-nst-i},
+      Hence, by Lemma~\ref{lem.props-nst-i},
       \begin{align*}
         &\<\ceu{\stmt'\AtParAnd\stmt''},\ell,\nil,\theta>\\
         &\qquad\nst[*]\<\ceu{\stmt_1'\AtParAnd\stmt''},\ell,e,\theta>=\delta'.
@@ -444,7 +444,7 @@
 \end{proof}
 
 
-\lemxrankout*
+\lemrankout*
 \begin{proof}
   Let
   \begin{alignat*}{2}
@@ -487,7 +487,7 @@
 \end{proof}
 
 
-\lemxranknst*
+\lemranknst*
 \begin{proof}
   By induction on the structure of $\nst$ derivations.  In this proof, we
   will write~$\pot_e(\stmt)$ for~$\pot(\stmt,e)$, and we will often use
@@ -570,7 +570,7 @@
       \]
       By the induction hypothesis,
       \begin{equation}
-        \label{lem.x.rank-nst.seq-adv.eq1}
+        \label{lem.rank-nst.seq-adv.eq1}
         \rank\<\stmt_1,\ell,\nil,\theta>
         \ge\rank\<\stmt_1',\ell,e',\theta'>\,.
       \end{equation}
@@ -584,7 +584,7 @@
         \rank(\delta')&=(\pot_\nil(\stmt'),\ell)\\
                      &=(\pot'(\stmt_1')+\pot'(\stmt_2),\ell)
       \end{align*}
-      By~\eqref{lem.x.rank-nst.seq-adv.eq1},
+      By~\eqref{lem.rank-nst.seq-adv.eq1},
       $\pot'(\stmt_1)\ge\pot'(\stmt_1')$.
       Thus,
       \[
@@ -736,6 +736,22 @@
       \qedhere
     \end{case}
   \end{case}
+\end{proof}
+
+
+\thmranknstx*
+\begin{proof}
+  If $\delta\nst[*]\delta'$ then $\delta\nst[i]\delta'$, for some~$i$.  We
+  proceed by induction on~$i$.  The theorem is trivially true for~$i=0$ and
+  follows directly from Lemma~\ref{lem.rank-nst} for $i=1$.  Suppose
+  \[
+    \delta\nst[1]\delta_1'\nst[i-1]\delta',
+  \]
+  for some~$i>1$.  Then, by Lemma~\ref{lem.rank-nst} and by the induction
+  hypothesis,
+  \[
+    \rank(\delta)\ge\rank(\delta_1')\ge\rank(\delta')\,.\qedhere
+  \]
 \end{proof}
 
 %%% Local Variables:
