@@ -469,8 +469,6 @@ it:
 \end{enumerate*}
 
 Function~$\bcast$ is defined as
-\begingroup
-\setlength{\jot}{.5\jot}
 \begin{align*}
   \bcast(\ceu{\AwaitExt(e)},e)
   &=\ceu{\Nop}\\
@@ -478,8 +476,8 @@ Function~$\bcast$ is defined as
   \bcast(\ceu{\AwaitInt(e)},e)
   &=\ceu{\Nop}\\
   %%
-  \bcast(\ceu{\Every{e}\ {\stmt}},e)
-  &=\ceu{\stmt;\Every{e}\ {\stmt}}\\
+  \bcast(\ceu{\Every{e\,\stmt}},e)
+  &=\ceu{\stmt;\Every{e\,\stmt}}\\
   %%
   \bcast(\ceu{\stmt_1;\stmt_2},e)
   &=\ceu{\bcast(\stmt_1,e);\stmt_2}\\
@@ -491,16 +489,15 @@ Function~$\bcast$ is defined as
   &=\ceu{\bcast(\stmt_1,e)\AtLoop{\stmt_2}}\\
   %%
   \bcast(\ceu{\stmt_1\AtParAnd{\stmt_2}},e)
-  &=\\[-1\jot]
+  &=\\
   &\hskip-3em\ceu{{\bcast(\stmt_1,e)}\AtParAnd{\bcast(\stmt_2,e)}}\\
   %%
   \bcast(\ceu{\stmt_1\AtParOr{\stmt_2}},e)
-  &=\\[-1\jot]
+  &=\\
   &\hskip-3em\ceu{{\bcast(\stmt_1,e)}\AtParOr{\bcast(\stmt_2,e)}}\\
   %%
   bcast(\_,e)&=\_\quad\text{\emph{(otherwise)}}
 \end{align*}
-\endgroup
 %%
 where the underscore ($\_$) denotes the omitted patterns.
 
@@ -528,8 +525,6 @@ trails in the given program are blocked waiting for events, finalization
 clauses, or certain stack levels; otherwise, it evaluates to \emph{false}.
 Predicate~$\isblk$ is defined as
 %%
-\begingroup
-\setlength{\jot}{.5\jot}
 \begin{align*}
   \isblk(\ceu{\AwaitExt(e)},\ell)
   &=\mathit{true}\\
@@ -537,7 +532,7 @@ Predicate~$\isblk$ is defined as
   \isblk(\ceu{\AwaitInt(e)},\ell)
   &=\mathit{true}\\
   %%
-  \isblk(\ceu{\Every{e}\ {\stmt}},\ell)
+  \isblk(\ceu{\Every{e\,\stmt}},\ell)
   &=\mathit{true}\\
   %%
   \isblk(\ceu{\RunAt(\ell')},\ell)
@@ -556,17 +551,16 @@ Predicate~$\isblk$ is defined as
   &=\isblk(\stmt_1,\ell)\\
   %%
   \isblk(\ceu{\stmt_1\AtParAnd{\stmt_2}},\ell)
-  &=\\[-1\jot]
+  &=\\
   &\hskip-3em\isblk(\stmt_1,\ell)\land\isblk(\stmt_2,\ell)\\
   %%
   \isblk(\ceu{\stmt_1\AtParOr{\stmt_2}},\ell)
-  &=\\[-1\jot]
+  &=\\
   &\hskip-3em\isblk(\stmt_1,\ell)\land\isblk(\stmt_2,\ell)\\
   %%
   \isblk(\_,\ell)
   &=\mathit{false}\quad\text{\emph{(otherwise)}}
 \end{align*}
-\endgroup
 %%
 where the underscore ($\_$) denotes the omitted patterns.
 
@@ -915,8 +909,6 @@ Function~$\clear$ takes a statement~$\stmt$ and extracts the bodies of all
 active $\ceu{\protect\Fin}$ statements in~$\stmt$, returning them in a
 sequence:
 %%
-\begingroup
-\setlength{\jot}{.5\jot}
 \begin{align*}
   \clear(\ceu{\AwaitExt(e)})
   &=\ceu{\Nop}\\
@@ -924,7 +916,7 @@ sequence:
   \clear(\ceu{\AwaitInt(e)})
   &=\ceu{\Nop}\\
   %%
-  \clear(\ceu{\Every{e}\ \stmt})
+  \clear(\ceu{\Every{e\,\stmt}})
   &=\ceu{\Nop}\\
   %%
   \clear(\ceu{\RunAt(\ell)})
@@ -951,7 +943,6 @@ sequence:
   \clear(\_)
   &=\bot\quad\text{\emph{(undefined)}}
 \end{align*}
-\endgroup
 
 When applied to the aborted side of a~$\ceu{\AtParOr}$, $\clear$ returns all
 finalization code associated with it (if any).  Thus, by expanding to a
