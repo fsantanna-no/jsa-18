@@ -110,15 +110,6 @@ labelwidth=*,align=case,label*=.\arabic*}
   \def\AtLoop{\@ceuop{@loop}}%
   \def\AtParAnd{\@ceubin{@par\!/\!and}}%
   \def\AtParOr{\@ceubin{@par\!/\!or}}%
-  \def\Id{\mathit{id}}%             TO BE REMOVED
-  \def\Mem{\@ceuop{mem}}%           TO BE REMOVED
-  \def\Locals{\@ceuop{locals}}%     TO BE REMOVED
-  \def\And{\@ceubin{and}}%          TO BE REMOVED
-  \def\Or{\@ceubin{or}}%            TO BE REMOVED
-  \def\CanRun{\@ceuop{@canrun}}%    TO BE REMOVED
-  \def\Restore{\@ceuop{@restore}}%  TO BE REMOVED 
-  \def\AtAnd{\@ceubin{@and}}%       TO BE REMOVED
-  \def\AtOr{\@ceubin{@or}}%         TO BE REMOVED
   \ensuremath{#1}\ignorespaces
   \egroup
 }
@@ -138,27 +129,11 @@ labelwidth=*,align=case,label*=.\arabic*}
 \newcommand*\clear{\mathop{\mathit{clear}}}
 \newcommand*\eval{\mathop{\mathit{eval}}}
 \newcommand*\isblk{\mathop{\mathit{isblk}}}
-\newcommand*\reactspc{\mathop{\mathit{react}}\nolimits_\mathit{spc}}
+\newcommand*\pot{\mathop{\mathit{pot}}}
+\newcommand*\rank{\mathop{\mathit{rank}}}
 \newcommand*\reaction{\mathop{\mathit{reaction}}}
+\newcommand*\reactspc{\mathop{\mathit{react}}\nolimits_\mathit{spc}}
 \newcommand*\updt{\mathop{\mathit{updt}}}
-
-% Proof environments: assumptions and proof-by-cases.
-\makeatletter
-\AtEndPreamble{%
-  \theoremstyle{definition}
-  \newtheorem{assumption}[theorem]{Assumption}}
-\makeatother
-
-% Functions bcast, clear, eval, and isblocked.
-\makeatletter
-\let\op\operatorname
-\newcommand{\opi}[1]{\op{\mathit{#1}}}
-%%
-\def\isblockedext{\opi{isblocked}_\@ext}
-\def\isblocked{\opi{isblocked}}
-\def\pot{\opi{pot}}
-\def\rank{\opi{rank}}
-\makeatother
 
 % Rule labels.
 \makeatletter
@@ -168,7 +143,6 @@ labelwidth=*,align=case,label*=.\arabic*}
 \newcommand*\Rlabel[1]{\@Rlabel{#1}}
 \newcommand*\@R[1]{{\bfseries#1}}
 \newcommand*\R[1]{\hyperref[R:#1]{\@R{#1}}}
-\newcommand*\Rtag[1]{\tag{\@R{#1}}\label{R:#1}} % TO BE REMOVED
 \makeatother
 
 % Transition arrows.
@@ -197,10 +171,10 @@ labelwidth=*,align=case,label*=.\arabic*}
 \newcommand{\nst}[1][]{\@trans[#1]{\@nst\,\;}}
 \makeatother
 
-% Irreducible predicate.
+% Irreducible suffix.
 \makeatletter
-\newcommand{\Hout}{{\#\@out}}
-\newcommand{\Hnst}{{\#\@nst}}
+\newcommand*{\Hout}{{\#\@out}}
+\newcommand*{\Hnst}{{\#\@nst}}
 \makeatother
 
 % Hacks to reduce the space after captions.
