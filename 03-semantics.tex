@@ -35,7 +35,7 @@ denotes an expression.
      \N9&&&\ceu{\Loop \stmt}             &&\text{\it infinite loop}\\
   \N{10}&&&\ceu{\Every{e}\,\stmt}        &&\text{\it event iteration}\\
   \N{11}&&&\ceu{\stmt_1\ParAnd\stmt_2}   &&\text{\it par/and statement}\\
-  \N{12}&&&\ceu{\stmt_2\ParOr\stmt_2}    &&\text{\it par/or statement}\\
+  \N{12}&&&\ceu{\stmt_1\ParOr\stmt_2}    &&\text{\it par/or statement}\\
   \N{13}&&&\ceu{\Fin\stmt}               &&\text{\it finalization statement}\\
   \N{14}&&&\ceu{\Nop}                    &&\text{\it dummy statement}\\
   \N{15}&&&\ceu{\RunAt(n)}               &&\text{\it run at stack level~$n$}\\
@@ -113,8 +113,8 @@ violate the synchronous hypothesis).  And
 restriction~\ref{sec.sem.restrictions.4} ensures that the body of
 $\ceu{\Every}$ and~$\ceu{\Fin}$ statements always execute to completion
 within the same reaction.  Similar restrictions exist in full \CEU, as
-discussed in Section~\ref{sec.ceu}.
-All restrictions can be easily verified by inspecting the AST of programs.
+discussed in Section~\ref{sec.ceu}.  All restrictions can be easily verified
+by inspecting the abstract syntax tree of programs.
 
 From now on, whenever we speak of a basic \CEU program we mean a well-formed
 basic \CEU program.
@@ -996,7 +996,7 @@ with an example of their application in the computation of reactions.
 \newcommand*\evtrecv{e_{\mathit{rd}}}
 \newcommand*\ddd{\mathmakebox[1em][c]{.\hfil.\hfil.}}
 
-Consider the the following basic \CEU program:
+Consider the following basic \CEU program:
 \begin{align*}
   &\ceu{\Var{\,\led}}\\
   &\quad\ceu{\big(\AwaitExt(\evtbttn)\big)\enspace\ParOr\enspace}

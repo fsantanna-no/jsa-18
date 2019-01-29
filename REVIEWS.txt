@@ -1,0 +1,90 @@
+Comments from the editors and reviewers:
+- Reviewer 1
+
+  - This paper is a nice extension of the prior LCTES paper.
+
+All aspects of the paper have been improved, most notably - for me - the motivation is greatly improved.
+The presentation of the semantics with more room is also beneficial and makes this paper the better reference to read.
+
+I have no major concerns and would be happy to see this paper accepted in its current form.
+
+- Reviewer 2
+
+  - I read and reviewed a first version of this paper when it has been submitted
+to the LCTES conference, at which it was accepted.
+My review for this extended version will not be very different from that
+I made for the conference.
+
+The paper presents an operational semantics for the imperative synchronous language Céu
+(a language which was inspired by Esterel).
+The semantics is used to prove general properties of determinism, termination (of a reaction)
+and memory-boundedness.
+
+As a semantic paper, its main section (Section 3, "Formal Semantics of Céu"),
+which follows a section in which the language is nicely informally presented,
+is very technical and not always easy to read. This is not necessarily a problem,
+and indeed, after a careful reading, the whole development seems totally correct.
+
+In my first review, I had the following remark that "the reader is not a machine and sometimes,
+some more explanations or concrete examples for the precise meaning of the rules
+and intuition behind them could help the reading".
+In this new version, which integrates some changes in the presentation of the formal semantics,
+I had the impression that I was able to follow more easily the description.
+I also appreciated the more explicit handling of the memory in the semantics.
+Also in my first review, I required for a simple running example, that would have helped
+understanding for instance the evolutions in the stack level.
+A subsection (3.6, "Using the Rules to Compute Reactions") has been added,
+which is useful, I think. I suggest that the authors could add comments to accompany the application
+of transitions, and it would be even better to support the reading.
+This is probably necessary because, as I already observed, a difficulty for the reader is also
+that the model which is presented is very specific to the language Céu
+(it probably would not apply to some other formalism).
+
+With respect to the conference paper, the presentation of the semantics has evolved,
+as I said, and the subsection illustrating the application of the semantic rules
+has been added.
+The transformation from Full Céu to Basic Céu is also more precisely described.
+And there is also an additional detailed presentation of "first-class timers".
+In relation to this, I must admit that I did not understand very well the philosophy behind this concept.
+What are precisely the relations between the program, the underlying system
+and the scheduler? This is not very clear.
+This would benefit from a more precise explanation,
+especially since I am not sure that the current additions of this new version of the article
+correspond to the usual rules of 30% additional contents over 
+
+the original LCTES submission...
+
+
+I observed in my first review that an interesting feature of the language is the way
+
+internal events introduce micro reactions within external reactions.
+
+It made me think to the notion of oversampling in the language Signal,
+
+which allows to have internal clocks more frequent than the clocks of input-output signals.
+
+I regret that the authors did not seem to have had the curiosity to look at this
+
+(the notion is described in many articles on Signal),
+
+since no specific reference to the "polychronous" Signal language is made.
+
+By the way, the "Related Work" section seems rather minimal
+
+and the conclusion lacks openings towards the envisaged perspectives...
+
+
+A few minor remarks:
+
+
+- First line of Section 2: delete references [19, 21], they already appear twice before!
+
+- Figure 5: some statements (await, emit) use parentheses, which are not present elsewhere
+
+- Figure 5, line 12 : stmt_2 par/or stmt_2
+
+- Under Figure 5: "are build up"
+
+- Section 3.1: Even if it is well-known, give the meaning of "AST"
+
+- Section 3.6: "Consider the the following"
