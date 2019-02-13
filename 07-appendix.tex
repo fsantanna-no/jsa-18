@@ -125,7 +125,7 @@
     instances of \R{run-at}.  Hence, $\stmt_1=\stmt_2=\ceu{\Nop}$,
     $e_1=e_2=\nil$, and $\theta_1=\theta_2=\theta$.
     %%
-  \item[{[$\ceu{\AtVar{v\,n\,stmt'}}$]}] Similar to the case for sequences.
+  \item[{[$\ceu{\AtVar{v\,n\,\stmt'}}$]}] Similar to the case for sequences.
     %%
   \item[{[$\ceu{\stmt'\AtLoop\stmt''}$]}] Ditto.
     %%
@@ -237,7 +237,7 @@
   \item[{[$\ceu{\Var{v\,\stmt'}}$]}] By \R{var-expd},
     \[
       \<\ceu{\Var{v\,\stmt'}},\nil,\theta>
-      \nst[1]\<\ceu{\Var{v\,\bot\,\stmt'}},\nil,\theta>.
+      \nst[1]\<\ceu{\AtVar{v\,\bot\,\stmt'}},\nil,\theta>.
     \]
     The rest of the proof is similar to that of the case for~$\ceu{\AtVar}$.
     %%
@@ -259,7 +259,7 @@
     hypothesis, for some~$\delta'$,
     \begin{align*}
       \<\ceu{\IfElse{\expr}{\stmt'}{\stmt''}},\nil,\theta>
-      &\nst[1]\<stmt',\nil,\theta>\\
+      &\nst[1]\<\stmt',\nil,\theta>\\
       &\nst[*]\delta'_\Hnst.
     \end{align*}
     The case for $\eval(\theta,\expr)=0$ is similar.
@@ -268,19 +268,19 @@
     %%
     There are three subcases.
     \begin{case}
-    \item[{[$stmt'=\ceu{\Nop}$]}] By \R{seq-nop} and by the induction
+    \item[{[$\stmt'=\ceu{\Nop}$]}] By \R{seq-nop} and by the induction
       hypothesis, for some~$\delta'$,
       \begin{align*}
         \<\ceu{\Nop;\stmt''},\nil,\theta>
-        &\nst[1]\<\ceu{\stmt''},\nil\,theta>\\
+        &\nst[1]\<\ceu{\stmt''},\nil,\theta>\\
         &\nst[*]\delta'_\Hnst.
       \end{align*}
-    \item[{[$stmt'=\ceu{\Break}$]}] By \R{seq-brk},
+    \item[{[$\stmt'=\ceu{\Break}$]}] By \R{seq-brk},
       \[
         \<\ceu{\Break;\stmt''},\nil,\theta>
         \nst[1]\<\ceu{\Break},\nil,\theta>_\Hnst.
       \]
-    \item[{[$stmt'\ne\ceu{\Nop,\Break}$]}] By induction hypothesis,
+    \item[{[$\stmt'\ne\ceu{\Nop,\Break}$]}] By induction hypothesis,
       for some~$\stmt_1'$,
       \[
         \<\stmt',\nil,\theta>\nst[*]\<\stmt_1',e,\theta'>_\Hnst.
@@ -316,7 +316,7 @@
   \item[{[$\ceu{\stmt'\ParAnd\stmt''}$]}]  By \R{par/and-expd},
     \begin{align*}
       &\<\ceu{\stmt'\ParAnd\stmt''},\ell,\nil,\theta>\\
-      &\qquad\nst[1]\<\ceu{\stmt1\AtParAnd(\RunAt(\ell);\stmt'')},
+      &\qquad\nst[1]\<\ceu{\stmt'\AtParAnd(\RunAt(\ell);\stmt'')},
         \ell,\nil,\theta>.
     \end{align*}
     The rest of the proof is similar to that of the case for
@@ -325,7 +325,7 @@
   \item[{[$\ceu{\stmt'\ParOr\stmt''}$]}] By \R{par/or-expd},
     \begin{align*}
       &\<\ceu{\stmt'\ParOr\stmt''},\ell,\nil,\theta>\\
-      &\qquad\nst[1]\<\ceu{\stmt1\AtParOr(\RunAt(\ell);\stmt'')},
+      &\qquad\nst[1]\<\ceu{\stmt'\AtParOr(\RunAt(\ell);\stmt'')},
         \ell,\nil,\theta>.
     \end{align*}
     The rest of the proof is similar to that of the case for
@@ -353,7 +353,7 @@
   \item[{[$\ceu{\stmt'\AtLoop{\stmt''}}$]}]
     There are three subcases.
     \begin{case}
-    \item[{[$stmt'=\ceu{\Nop}$]}] By \R{loop-nop} and
+    \item[{[$\stmt'=\ceu{\Nop}$]}] By \R{loop-nop} and
       \R{loop-expd},
       \begin{align*}
         \<\ceu{\Nop\AtLoop{\stmt''}},\ell,\nil,\theta>
@@ -374,36 +374,36 @@
       $\ceu{\Break\AtLoop\stmt''}$.  Otherwise, $\isblk(\stmt''',\ell)$, and
       so, $\delta'_\Hnst$.
       %%
-    \item[{[$stmt'=\ceu{\Break}$]}] By \R{loop-brk},
+    \item[{[$\stmt'=\ceu{\Break}$]}] By \R{loop-brk},
       \[
         \<\ceu{\Break\AtLoop{\stmt''}},\nil,\theta>
         \nst[1]\<\ceu{\Nop},\nil,\theta>_\Hnst.
       \]
-    \item[{[$stmt'\ne\ceu{\Nop,\Break}$]}] Similar to the case for\sloppy\
+    \item[{[$\stmt'\ne\ceu{\Nop,\Break}$]}] Similar to the case for\sloppy\
       $\stmt';\stmt''$ with $\stmt'\ne\ceu{\Nop,\Break}$.
     \end{case}
     %%
-  \item[{[$stmt=\ceu{\stmt'\AtParAnd\stmt''}$]}] The proof depends on
+  \item[{[$\ceu{\stmt'\AtParAnd\stmt''}$]}] The proof depends on
     whether or not $\stmt'$ is blocked.  We will prove the case for
     $\lnot\isblk(\stmt',\ell)$; the proof of the case for
     $\isblk(\stmt',\ell)$ is similar.  So, assuming $\stmt'$ is not blocked,
     there are three subcases.
     \begin{case}
-    \item[{[$stmt'=\ceu{\Nop}$]}] By \R{par/and-nop1} and by the induction
+    \item[{[$\stmt'=\ceu{\Nop}$]}] By \R{par/and-nop1} and by the induction
       hypothesis, for some $\delta'$,
       \[
         \<\ceu{{\Nop}\AtParAnd{\stmt''}},\nil,\theta>
         \nst[1]\<\ceu{\stmt''},\nil,\theta>
         \nst[*]\delta'_\Hnst.
       \]
-    \item[{[$stmt'=\ceu{\Break}$]}] By \R{par/and-brk1},
+    \item[{[$\stmt'=\ceu{\Break}$]}] By \R{par/and-brk1},
       \begin{align*}
         &\<\ceu{\Break\AtParAnd\stmt''},\nil,\theta>\\
         &\qquad\nst[1]\<\ceu{\clear(\stmt'');\Break},\nil,\theta>.
       \end{align*}
       By Assumption~\ref{ass.syn-rest.fin},
       \[
-        \<\ceu{\clear(\stmt'')},\ell,\nil,\theta>.
+        \<\ceu{\clear(\stmt'')},\ell,\nil,\theta>
         \nst[*]\<\stmt''',\ell,e,\theta'>_\Hnst.
       \]
       And so, by Lemma~\ref{lem.props-nst-i},
@@ -412,7 +412,7 @@
         &\qquad\nst[*]\<\ceu{\stmt''';\Break},\ell,e,\theta'>_\Hnst.
       \end{align*}
       %%
-    \item[{[$stmt'\ne\ceu{\Nop,\Break}$]}] By the induction hypothesis,
+    \item[{[$\stmt'\ne\ceu{\Nop,\Break}$]}] By the induction hypothesis,
       \[
         \<\stmt',\ell,\nil,\theta>\nst[*]\<\stmt_1',\ell,e,\theta'>_\Hnst.
       \]
@@ -430,13 +430,13 @@
       \item if $e\ne\nil$ then $\delta'_\Hnst$;
       \item if $\stmt_1'=\ceu{\Nop,\Break}$, then this case becomes
         $\ceu{\Nop\AtParAnd\stmt''}$ or $\ceu{\Break\AtParAnd\stmt''}$; and
-      \item if $\isblk(stmt_1')$, then this case becomes
-        $\ceu{\stmt'\AtParAnd\stmt''}$ with $\isblk(stmt',\ell)$ evaluating
+      \item if $\isblk(\stmt_1')$, then this case becomes
+        $\ceu{\stmt'\AtParAnd\stmt''}$ with $\isblk(\stmt',\ell)$ evaluating
         to true.
       \end{enumerate*}
     \end{case}
     %%
-  \item[{[$stmt=\ceu{\stmt'\AtParOr\stmt''}$]}] Similar to the case
+  \item[{[$\ceu{\stmt'\AtParOr\stmt''}$]}] Similar to the case
     for\sloppy\ $\ceu{\stmt'\AtParAnd\stmt''}$.\qedhere
   \end{case}
 \end{proof}
@@ -752,7 +752,7 @@
   \]
 \end{proof}
 
-% LocalWords:  expd nop brk stmt irr nst eq TODO
+% LocalWords:  expd nop brk irr nst eq TODO
 
 %%% Local Variables:
 %%% mode: latex
